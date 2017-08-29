@@ -59,7 +59,7 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
     xhr.open('GET', url, false);
     xhr.responseType = 'moz-chunked-arraybuffer';
     xhr.onprogress = function onprogress(e) {
-      callback(new Uint8Array(e.result));
+      callback(new Uint8Array(xhr.result));
     };
     xhr.send();
     return Promise.resolve();
