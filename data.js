@@ -56,7 +56,7 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
   }
   function mozChunkedURL(callback, url) {
     var xhr = new XMLHttpRequest;
-    xhr.open(url, false);
+    xhr.open('GET', url, false);
     xhr.responseType = 'moz-chunked-arraybuffer';
     xhr.onprogress = function onprogress(e) {
       callback(new Uint8Array(e.result));
@@ -66,7 +66,7 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
   }
   function downloadBlobThenManuallyStream(callback, url) {
     var xhr = new XMLHttpRequest;
-    xhr.open(url, false);
+    xhr.open('GET', url, false);
     xhr.responseType = 'blob';
     xhr.send();
     return streamBlobManually(xhr.result);
@@ -77,7 +77,7 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
     return;
   }
   var xhr = new XMLHttpRequest;
-  xhr.open('/');
+  xhr.open('GET', '/');
   xhr.responseType = 'moz-chunked-arraybuffer';
   if (xhr.responseType === 'moz-chunked-arraybuffer') {
     data.streamURL = mozChunkedURL;
