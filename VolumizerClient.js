@@ -6,6 +6,8 @@ function VolumizerClient(worker) {
 
 VolumizerClient.prototype = {
   task: function(def, callbacks) {
+    if (typeof def === 'string') def = {headline:def};
+    callbacks = callbacks || {};
     var worker = this.worker;
     return new Promise(function(resolve, reject) {
       var id;
