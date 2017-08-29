@@ -55,14 +55,21 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
     });
   }
   function mozChunkedURL(callback, url) {
-    var xhr = new XMLHttpRequest;
-    xhr.open('GET', url, false);
-    xhr.responseType = 'moz-chunked-arraybuffer';
-    xhr.onprogress = function onprogress(e) {
-      callback(new Uint8Array(xhr.result));
-    };
-    xhr.send();
-    return Promise.resolve();
+    return new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest;
+      xhr.open('GET', url);
+      xhr.responseType = 'moz-chunked-arraybuffer';
+      xhr.onprogress = function onprogress(e) {
+        callback(new Uint8Array(xhr.result));
+      };
+      xhr.onload = function oncomplete(e) {
+        resolve();
+      };
+      xhr.onerror = function onerror(e) {
+        reject('download error');
+      };
+      xhr.send();
+    });
   }
   function downloadBlobThenManuallyStream(callback, url) {
     var xhr = new XMLHttpRequest;
