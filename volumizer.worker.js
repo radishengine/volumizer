@@ -1,5 +1,5 @@
 
-function onmessage(e) {
+self.onmessage = function onmessage(e) {
   var message = e.data;
   switch (message.headline) {
     case 'open-blob':
@@ -33,4 +33,4 @@ function onmessage(e) {
       });
       break;
   }
-}
+};
