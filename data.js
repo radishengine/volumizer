@@ -45,16 +45,10 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
       var reader = r.body.getReader();
       function nextChunk(chunk) {
         if (chunk.done) {
-          postMessage({
-            id: message.id,
-            headline: 'close',
-            final: true,
-            result: null,
-          });
           return;
         }
         chunk = chunk.value;
-        console.log(chunk.length);
+        callback(chunk);
         return reader.read().then(nextChunk);
       }
       return reader.read().then(nextChunk);
