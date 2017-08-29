@@ -5,7 +5,7 @@ self.onmessage = function onmessage(e) {
     case 'open-blob':
       var url = URL.createObjectURL(new Blob([new Uint8Array(1024 * 1024)]));
       fetch(url).then(function(r) {
-        var reader = r.getReader();
+        var reader = r.body.getReader();
         function nextChunk(chunk) {
           if (chunk.done) {
             URL.revokeObjectURL(url);
