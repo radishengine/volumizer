@@ -38,6 +38,9 @@ onmessage.handlers = {
     var blob = new Blob([
       meg, meg, meg, meg, meg,
       meg, meg, meg, meg, meg]);
+    blob = new Blob([
+      blob, blob, blob, blob, blob,
+      blob, blob, blob, blob, blob]);
     function onChunk(chunk) {
       console.log(chunk.length);
     }
