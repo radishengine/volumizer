@@ -20,8 +20,8 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
   var manualBufferSize = 1024 * 1024;
   function streamBlobAsURL(callback, blob) {
     if (blob.size <= manualBufferSize) {
-      callback(frs.readAsArrayBuffer(blob));
-      return Promise.resolve();
+      var cancelled = callback(frs.readAsArrayBuffer(blob)) === 'cancel';
+      return Promise.resolve(cancelled);
     }
     var url = URL.createObjectURL(blob);
     return data.streamURL(callback, url).then(
@@ -36,19 +36,24 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
   }
   function streamBlobManually(callback, blob) {
     for (var offset = 0; offset < blob.size; offset += manualBufferSize) {
-      callback(frs.readAsArrayBuffer(blob.slice(offset, Math.min(blob.size, offset + manualBufferSize))));
+      if (callback(frs.readAsArrayBuffer(blob.slice(offset, Math.min(blob.size, offset + manualBufferSize)))) === 'cancel') {
+        return Promise.resolve(true);
+      }
     }
-    return Promise.resolve();
+    return Promise.resolve(false);
   }
   function fetchChunkedURL(callback, url) {
     return fetch(url).then(function(r) {
       var reader = r.body.getReader();
       function nextChunk(chunk) {
         if (chunk.done) {
-          return;
+          return false;
         }
         chunk = chunk.value;
-        callback(chunk);
+        if (callback(chunk) === 'cancel') {
+          reader.cancel();
+          return true;
+        }
         return reader.read().then(nextChunk);
       }
       return reader.read().then(nextChunk);
@@ -60,10 +65,15 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
       xhr.open('GET', url);
       xhr.responseType = 'moz-chunked-arraybuffer';
       xhr.onprogress = function onprogress(e) {
-        callback(new Uint8Array(xhr.response));
+        if (callback(new Uint8Array(xhr.response)) === 'cancel') {
+          xhr.abort();
+        }
       };
       xhr.onload = function oncomplete(e) {
-        resolve();
+        resolve(false);
+      };
+      xhr.onabort = function onabort(e) {
+        resolve(true);
       };
       xhr.onerror = function onerror(e) {
         reject('download error');
