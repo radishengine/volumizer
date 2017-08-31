@@ -5,17 +5,20 @@ Uint8Array.prototype.subrange = Uint8Array.prototype.subarray;
 Blob.prototype.subrange = Blob.prototype.slice;
 String.prototype.subrange = String.prototype.substring;
 Uint8Array.prototype.sublen = function(offset, length) {
-	return this.subarray(offset, offset+length);
+  return this.subarray(offset, offset+length);
 };
 Blob.prototype.sublen = function(offset, length) {
-	return this.slice(offset, offset+length);
+  return this.slice(offset, offset+length);
 };
 String.prototype.sublen = String.prototype.substr;
 Object.defineProperty(Blob.prototype, 'byteLength', {
-	get: function() {
-		return this.size;
-	},
+  get: function() {
+    return this.size;
+  },
 });
+String.prototype.nullTerminate = function() {
+  return this.replace(/\0.*/, '');
+};
 
 Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
   if (typeof self.TextDecoder === 'function') {
