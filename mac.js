@@ -3,11 +3,10 @@ if (!('data' in self)) importScripts('data.js');
 
 self.mac = {};
 
-mac.PartitionHeaderView = function PartitionHeaderView(buffer, byteOffset, byteLength) {
-  this.bytes = new Uint8Array(buffer, byteOffset, byteLength);
-  this.dv = new DataView(buffer, byteOffset, byteLength);
+mac.PartitionHeaderView = function PartitionHeaderView() {
+  this._init.apply(this, arguments);
 };
-mac.PartitionHeaderView.prototype = {
+mac.PartitionHeaderView.prototype = Object.defineProperties({
   get signature() {
     return this.bytes.subarray(0, 2).toByteString();
   },
@@ -56,5 +55,5 @@ mac.PartitionHeaderView.prototype = {
   get processorType() {
     return this.bytes.subarray(120, 136).toByteString().nullTerminate();
   },
-};
+}, data.struct_props);
 mac.PartitionHeaderView.byteLength = 512;
