@@ -34,17 +34,11 @@ self.onmessage = function onmessage(e) {
 
 onmessage.handlers = {
   'open-blob': function(message) {
-    var meg = new Uint8Array(1024 * 1024);
-    var blob = new Blob([
-      meg, meg, meg, meg, meg,
-      meg, meg, meg, meg, meg]);
-    blob = new Blob([
-      blob, blob, blob, blob, blob,
-      blob, blob, blob, blob, blob]);
-    function onChunk(chunk) {
-      console.log(chunk.length);
-    }
-    return data.streamBlob(onChunk, blob);
+    var cc = new data.ChunkCache;
+    cc.initBlob(message.blob);
+    return cc.getBytes([{start:1024, end:1024+512}]).then(function(bytes) {
+      console.log(bytes);
+    });
   },
 };
 
