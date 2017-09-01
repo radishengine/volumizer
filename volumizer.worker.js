@@ -1,6 +1,7 @@
 
 importScripts(
-  'data.js');
+  'data.js',
+  'mac.js');
 
 self.onmessage = function onmessage(e) {
   onmessage.promiseChain = onmessage.promiseChain.then(function() {
@@ -37,7 +38,10 @@ onmessage.handlers = {
     var cc = new data.ChunkCache;
     cc.initBlob(message.blob);
     return cc.getBytes([{start:1024, end:1024+512}]).then(function(bytes) {
-      console.log(bytes);
+      var partitionHeader = new mac.PartitionHeaderView(bytes);
+      if (partitionHeader.hasValidSignature) {
+        console.log(partitionHeader);
+      }
     });
   },
 };
