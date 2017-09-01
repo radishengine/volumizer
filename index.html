@@ -8,8 +8,67 @@
       body {
         font-family: sans-serif;
       }
+      #dropzone {
+        display: none;
+        position: fixed;
+        z-order: 1000;
+        background: rgba(255, 255, 255, 0.5);
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        padding: 30px;
+      }
+      .drop-border {
+        border: 10px dashed silver;
+        height: 100%;
+      }
+      body.dropping > #dropzone {
+        display: block;
+      }
     </style>
   </head>
   <body>
+    <div id='dropzone'>
+      <div class='drop-border'></div>
+    </div>
+    <script>
+      document.body.dragEnterCount = 0;
+      
+      document.body.ondragenter = function(e) {
+        e.preventDefault();
+        if (++document.body.dragEnterCount === 1) {
+          e.dataTransfer.dropEffect = 'copy';
+          document.body.classList.add('dropping');
+        }
+      };
+
+      document.documentElement.ondragenter = function(e) {
+        e.preventDefault();
+        document.body.classList.add('dropping');
+      };
+      document.body.ondragleave = function(e) {
+        e.preventDefault();
+        if (--document.body.dragEnterCount === 0) {
+          document.body.classList.remove('dropping');
+        }
+      };
+      document.body.ondragover = function(e) {
+        e.preventDefault();
+      }
+      document.body.ondragend = function(e) {
+        e.preventDefault();
+        document.body.classList.remove('dropping');
+      };
+      document.body.ondrop = function(e) {
+        e.preventDefault();
+        document.body.classList.remove('dropping');
+        var file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) {
+          history.pushState(undefined, undefined, '#upload:' + file.name);
+          console.log(file);
+        }
+      };
+    </script>
   </body>
 </html>
