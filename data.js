@@ -23,7 +23,9 @@ String.prototype.nullTerminate = function() {
 Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
   if (typeof self.TextDecoder === 'function') {
     var decoder = new TextDecoder('iso-8859-1');
-    return decoder.decode.bind(decoder);
+    return function toByteString() {
+      return decoder.decode(this);
+    };
   }
   var frs = new FileReaderSync;
   return function toByteString() {
