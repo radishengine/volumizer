@@ -5,11 +5,11 @@ data.struct_props = {
   _init: {
     value: function(buffer, byteOffset, byteLength) {
       if (isNaN(byteOffset)) byteOffset = 0;
+      if (isNaN(byteLength)) byteLength = buffer.byteLength - byteOffset;
       if (ArrayBuffer.isView(buffer)) {
         byteOffset += buffer.byteOffset;
         buffer = buffer.buffer;
       }
-      if (isNaN(byteLength)) byteLength = buffer.byteLength - byteOffset;
       this.buffer = buffer;
       this.byteOffset = byteOffset;
       this.byteLength = byteLength;
