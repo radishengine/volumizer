@@ -123,3 +123,143 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
   data.streamURL = downloadBlobThenManuallyStream;
   data.streamBlob = streamBlobManually;
 })();
+
+data.ChunkCache = function ChunkCache() {
+  this.onchunk = this.onchunk.bind(this);
+};
+data.ChunkCache.prototype = {
+  initURL: function(url) {
+    this.listeners = [];
+    this.complete = false;
+    this.head = 0;
+    var self = this;
+    data.streamURL(this.onchunk, url).then(function(cancelled) {
+      self.complete = true;
+      self.callListeners(null, self.head);
+      delete self.listeners;
+    });
+  },
+  initBlob: function(blob) {
+    this.blob = blob;
+    this.head = blob.size;
+    delete this.listeners;
+    this.complete = true;
+  },
+  initSectorPattern: function(chunkCache, totalSectorLength, dataSectorLength) {
+    throw new Error('TODO');
+  },
+  callListeners: function(chunk, head) {
+    for (var i = this.listeners.length-1; i >= 0; i--) {
+      if (this.listeners[i](chunk, head) === true) {
+        this.listeners.splice(i, 1);
+      }
+    }
+  },
+  addListener: function(listener) {
+    if (this.complete) {
+      listener(null);
+      return;
+    }
+    this.listeners.unshift(listener);
+  },
+  onchunk: function(chunk) {
+    if (this.blob) {
+      this.blob = new Blob([this.blob, chunk]);
+    }
+    this.callListeners(chunk, this.head);
+    this.head += chunk.length;
+  },
+  getBlob: function(sectors) {
+    if (sectors.length === 0) {
+      return Promise.resolve(new Blob([]));
+    }
+    if (sectors.length === 1 && sectors[0].end <= this.blob.size) {
+      return Promise.resolve(this.blob.slice(sectors[0].start, sectors[0].end));
+    }
+    function concatBlob(blob) {
+      var slices = [];
+      for (var i = 0; i < sectors.length; i++) {
+        slices.push(blob.slice(sectors[i].start, sectors[i].end));
+      }
+      return new Blob(slices);
+    }
+    var lastEnd = 0;
+    for (var i = 0; i < sectors.length; i++) {
+      lastEnd = Math.max(lastEnd, sectors[i].end);
+    }
+    if (lastEnd <= this.blob.size) {
+      return Promise.resolve(concatBlob(this.blob));
+    }
+    var self = this;
+    return new Promise(function(resolve, reject) {
+      self.addListener(function() {
+        if (self.blob.size >= lastEnd) {
+          resolve(concatBlob(self.blob));
+          return true;
+        }
+        else if (self.complete) {
+          reject('not enough data');
+          return true;
+        }
+      });
+    });
+  },
+  getBytes: function(sectors) {
+    if (sectors.length === 0) return Promise.resolve(new Uint8Array(0));
+    if (sectors.length === 1 && sectors[0].end <= this.blob.size) {
+      var blob = this.blob.slice(sectors[0].start, sectors[0].end);
+      var frs = new FileReaderSync;
+      return Promise.resolve(new Uint8Array(frs.readAsArrayBuffer(blob)));
+    }
+    var blob = this.blob;
+    for (var i = 0; i < sectors.length; i++) {
+      if (sectors[i].start <= blob.size) {
+        return this.getBlob(sectors).then(function(blob) {
+          var frs = new FileReaderSync;
+          return new Uint8Array(frs.readAsArrayBuffer(blob));
+        });
+      }
+    }
+    var totalLength = 0, copy = [];
+    for (var i = 0; i < sectors.length; i++) {
+      var length = sectors[i].end - sectors[i].start;
+      copy.push({
+        bufPos: totalLength,
+        blobPos: sectors[i].start,
+        length: length,
+      });
+      totalLength += length;
+    }
+    copy.sort(function(a, b) {
+      return b.blobPos - a.blobPos;
+    });
+    var self = this;
+    return new Promise(function(resolve, reject) {
+      var buf, bufPos = 0;
+      self.addListener(function(chunk, head) {
+        if (chunk === null) {
+          reject('not enough data');
+          return true;
+        }
+        while (copy[0].blobPos < (head+chunk.length)) {
+          var i = copy[0].blobPos - head;
+          var j = Math.min(chunk.length, i + copy[0].length);
+          chunk = chunk.subarray(i, j);
+          if (!buf) {
+            if (copy.length === 1 && chunk.length === copy[0].length) {
+              resolve(chunk);
+              return true;
+            }
+            buf = new Uint8Array(totalLength);
+          }
+          buf.set(chunk, copy[0].bufPos);
+          if (copy.length === 1) {
+            resolve(buf);
+            return true;
+          }
+          copy.splice(0, 1);
+        }
+      });
+    });
+  },
+};
