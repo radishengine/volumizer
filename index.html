@@ -33,6 +33,9 @@
       <div class='drop-border'></div>
     </div>
     <script>
+      
+      var vc = null;
+      
       document.body.dragEnterCount = 0;
       
       document.body.ondragenter = function(e) {
@@ -66,9 +69,42 @@
         var file = e.dataTransfer.files && e.dataTransfer.files[0];
         if (file) {
           history.pushState(undefined, undefined, '#upload:' + file.name);
-          console.log(file);
+          if (vc) {
+            vc.close();
+          }
+          vc = new VolumizerClient;
+          document.body.classList.remove('cancelled', 'error');
+          document.body.classList.add('loading');
+          vc.task(
+            {
+              headline: 'open-blob',
+              blob: file,
+            },
+            {
+              
+            }
+          ).then(
+            function() {
+              document.body.classList.remove('loading');
+            },
+            function() {
+              document.body.classList.remove('loading');
+              document.body.classList.add('error');
+            }
+          );
         }
       };
+      
+      window.onkeydown = function(e) {
+        if (e.keyCode === 27) {
+          if (vc) {
+            vc.close();
+            vc = null;
+            document.body.classList.add('cancelled');
+          }
+        }
+      };
+      
     </script>
   </body>
 </html>
