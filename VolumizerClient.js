@@ -5,6 +5,13 @@ function VolumizerClient(worker) {
 }
 
 VolumizerClient.prototype = {
+  close: function() {
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
+      this.tasks = null;
+    }
+  },
   task: function(def, callbacks) {
     if (typeof def === 'string') def = {headline:def};
     callbacks = callbacks || {};
