@@ -57,4 +57,4 @@ mac.PartitionHeaderView.prototype = {
     return this.bytes.subarray(120, 136).toByteString().nullTerminate();
   },
 };
-mac.PartitionView.byteLength = 512;
+mac.PartitionHeaderView.byteLength = 512;
