@@ -1,6 +1,36 @@
 
 self.data = {};
 
+data.struct_proto = {
+  _init: function(buffer, byteOffset, byteLength) {
+    if (isNaN(byteOffset)) byteOffset = 0;
+    if (ArrayBuffer.isView(buffer)) {
+      byteOffset += buffer.byteOffset;
+      buffer = buffer.buffer;
+    }
+    if (isNaN(byteLength)) byteLength = buffer.byteLength - byteOffset;
+    this.buffer = buffer;
+    this.byteOffset = byteOffset;
+    this.byteLength = byteLength;
+  },
+  get bytes() {
+    var bytes = new Uint8Array(this.buffer, this.byteOffset, this.byteLength);
+    Object.defineProperty(this, 'bytes', {
+      value: bytes,
+      enumerable: true,
+    });
+    return bytes;
+  },
+  get dv() {
+    var dv = new DataView(this.buffer, this.byteOffset, this.byteLength);
+    Object.defineProperty(this, 'dv', {
+      value: dv,
+      enumerable: true,
+    });
+    return dv;
+  },
+};
+
 Uint8Array.prototype.subrange = Uint8Array.prototype.subarray;
 Blob.prototype.subrange = Blob.prototype.slice;
 String.prototype.subrange = String.prototype.substring;
