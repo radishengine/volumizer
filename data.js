@@ -190,6 +190,9 @@ data.ChunkCache.prototype = {
   initSectorPattern: function(chunkCache, totalSectorLength, dataSectorLength) {
     throw new Error('TODO');
   },
+  sublen: function(offset, length) {
+    return new data.SubChunkCache(this, offset, offset+length);
+  },
   callListeners: function(chunk, head) {
     for (var i = this.listeners.length-1; i >= 0; i--) {
       if (this.listeners[i](chunk, head) === true) {
@@ -303,5 +306,25 @@ data.ChunkCache.prototype = {
         }
       });
     });
+  },
+};
+
+data.SubChunkCache = function SubChunkCache(cc, start, end) {
+  this.cc = cc;
+  this.start = start;
+  this.end = end;
+};
+data.SubChunkCache.prototype = {
+  offsetSectors: function(sectors) {
+    var offset = this.start;
+    return sectors.map(function(sector) {
+      return {start:sector.start + offset, end:sector.end + offset};
+    });
+  },
+  getBlob: function(sectors) {
+    return this.cc.getBlob(this.offsetSectors(sectors));
+  },
+  getBytes: function(sectors) {
+    return this.cc.getBytes(this.offsetSectors(sectors));
   },
 };
