@@ -33,16 +33,36 @@ self.onmessage = function onmessage(e) {
   });
 };
 
+var loaders = {
+  'volume/mac-partitioned': function(cc) {
+    return cc.getBytes([{start:1024, end:1024+512}])
+    .then(function(bytes) {
+      var pttn = new mac.PartitionBlock(bytes);
+      if (pttn.hasValidSignature) {
+        if (pttn.type === 'Apple_HFS') {
+          return loaders['volume/mac-hfs'](cc.sublen(pttn.firstSector * 512, pttn.sectorCount * 512));
+        }
+      }
+      return false;
+    });
+  },
+  'volume/mac-hfs': function(cc) {
+    return cc.getBytes([{start:1024, end:1024+512}]).then(function(bytes) {
+      var mdb = new mac.HFSMasterDirectoryBlock(bytes);
+      if (!mdb.hasValidSignature) {
+        return false;
+      }
+      console.log('mdb');
+      return true;
+    });
+  },
+};
+
 onmessage.handlers = {
   'open-blob': function(message) {
     var cc = new data.ChunkCache;
     cc.initBlob(message.blob);
-    return cc.getBytes([{start:1024, end:1024+512}]).then(function(bytes) {
-      var partitionHeader = new mac.PartitionHeaderView(bytes);
-      if (partitionHeader.hasValidSignature) {
-        console.log(partitionHeader);
-      }
-    });
+    return loaders['volume/mac-partitioned'](cc);
   },
 };
 
