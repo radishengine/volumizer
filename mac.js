@@ -113,7 +113,7 @@ mac.HFSExtentsBlock.prototype = Object.defineProperties({
 mac.HFSMasterDirectoryBlock = function HFSMasterDirectoryBlock() {
   this._init.apply(this, arguments);
 };
-mac.HFSMasterDirectoryBlock.prototype = {
+mac.HFSMasterDirectoryBlock.prototype = Object.defineProperties({
   get signature() {
     return this.bytes.subarray(0, 2).toByteString();
   },
@@ -223,5 +223,5 @@ mac.HFSMasterDirectoryBlock.prototype = {
     Object.defineProperty(this, 'catalogFirstExtents', {value:list});
     return list;
   },
-};
+}, data.struct_props);
 mac.HFSMasterDirectoryBlock.byteLength = 162;
