@@ -92,15 +92,16 @@ var loaders = {
             var leaf = new mac.HFSNodeBlock(leaf);
             if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
             leaf.records.forEach(function(record) {
-              if (record.overflowFileID < 5) {
+              var id = record.overflowFileID;
+              if (id < 5) {
                 throw new Error('TODO: special overflow handling');
               }
               switch (record.overflowForkType) {
                 case 'data':
-                  result.data[record.overflowFileID] = record.overflowExtentDataRecord.extents;
+                  result.data[id] = (result.data[id] || []).concat(record.overflowExtentDataRecord.extents);
                   break;
                 case 'resource':
-                  result.resource[record.overflowFileID] = record.overflowExtentDataRecord.extents;
+                  result.resource[id] = (result.resource[id] || []).concat(record.overflowExtentDataRecord.extents);
                   break;
               }
             });
