@@ -327,4 +327,7 @@ data.SubChunkCache.prototype = {
   getBytes: function(sectors) {
     return this.cc.getBytes(this.offsetSectors(sectors));
   },
+  sublen: function(offset, length) {
+    return new data.SubChunkCache(this.cc, this.start + offset, this.start + offset + length);
+  },
 };
