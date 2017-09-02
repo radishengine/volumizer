@@ -34,13 +34,13 @@ self.onmessage = function onmessage(e) {
 };
 
 var loaders = {
-  'volume/mac-partitioned': function(cc) {
+  'volume/mac-partitioned': function(cc, id) {
     return cc.getBytes([{start:1024, end:1024+512}])
     .then(function(bytes) {
       var pttn = new mac.PartitionBlock(bytes);
       if (pttn.hasValidSignature) {
         if (pttn.type === 'Apple_HFS') {
-          return loaders['volume/mac-hfs'](cc.sublen(pttn.firstSector * 512, pttn.sectorCount * 512));
+          return loaders['volume/mac-hfs'](cc.sublen(pttn.firstSector * 512, pttn.sectorCount * 512), id);
         }
       }
       return false;
