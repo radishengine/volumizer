@@ -116,9 +116,58 @@ var loaders = {
         postMessage({
           id: id,
           headline: 'callback',
-          callback: 'onfile',
+          callback: 'onmetadata',
           args: [{path:path}],
         });
+        var result = [];
+        function getForkSectors(extents, byteLength, overflowType) {
+          var dataSectors = getSectors(extents, 0, byteLength);
+          if (!dataSectors.remaining) {
+            return Promise.resolve(dataSectors);
+          }
+          else return gotOverflow.then(function(overflow) {
+            var extra = overflow[overflowType][metadata.id];
+            if (!extra) return Promise.reject('insufficient extents');
+            extra = getSectors(extra, 0, dataSectors.remaining);
+            if (extra.remaining) return Promise.reject('insufficient extents');
+            return dataSectors.concat(extra);
+          });
+        }
+        if (metadata.dataForkInfo.logicalEOF > 0) {
+          var gotSectors = getForkSectors(
+            metadata.dataForkFirstExtentRecord,
+            metadata.dataForkInfo.logicalEOF,
+            'data');
+          result.push(gotSectors.then(function(sectors) {
+            return alloc.getBlob(sectors);
+          })
+          .then(function(blob) {
+            postMessage({
+              id: id,
+              headline: 'callback',
+              callback: 'onfile',
+              args: [{path:path, blob:blob}],
+            });
+          }));
+        }
+        if (metadata.resourceForkInfo.logicalEOF > 0) {
+          var gotSectors = getForkSectors(
+            metadata.resourceForkFirstExtentRecord,
+            metadata.resourceForkInfo.logicalEOF,
+            'resource');
+          result.push(gotSectors.then(function(sectors) {
+            return alloc.getBlob(sectors);
+          })
+          .then(function(blob) {
+            postMessage({
+              id: id,
+              headline: 'callback',
+              callback: 'onfile',
+              args: [{path:path.concat('.rsrc'), blob:blob}],
+            });
+          }));
+        }
+        return Promise.all(result);
       }
       var catalogExtents = mdb.catalogFirstExtents;
       var gotCatalog = alloc.getBytes(getSectors(catalogExtents, 0, 512))
@@ -129,8 +178,9 @@ var loaders = {
         }
         header = header.records[0];
         var parentPaths = {0:'', 1:'', 2:'_EXTENTS:', 3:'_CATALOG:', 4:'_BADALLOC:'};
+        var pending = [];
         function nextLeaf(i) {
-          if (i === 0) return;
+          if (i === 0) return Promise.all(pending);
           return alloc.getBytes(getSectors(catalogExtents, 512 * i, 512))
           .then(function(leaf) {
             var leaf = new mac.HFSNodeBlock(leaf);
@@ -141,10 +191,10 @@ var loaders = {
               var path = parentPath + record.name;
               if (record.leafType === 'folder') {
                 parentPaths[record.asFolder.id] = path + ':';
-                onFolder(path.split(/:/g), record.asFolder);
+                pending.push(onFolder(path.split(/:/g), record.asFolder));
               }
               else {
-                onFile(path.split(/:/g), record.asFile);
+                pending.push(onFile(path.split(/:/g), record.asFile));
               }
             });
             return nextLeaf(leaf.nextNodeNumber);
