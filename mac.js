@@ -571,7 +571,7 @@ mac.HFSForkBlock.prototype = Object.defineProperties({
 mac.HFSFolderBlock = function HFSFolderBlock() {
   this._init.apply(this, arguments);
 };
-mac.HFSFolderBlock.prototype = {
+mac.HFSFolderBlock.prototype = Object.defineProperties({
   get flags() {
     return this.dv.getUint16(2);
   },
