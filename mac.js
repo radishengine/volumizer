@@ -292,9 +292,9 @@ mac.HFSNodeBlock.prototype = Object.defineProperties({
         }
         var rawHeader = this.rawRecords[0], rawMap = this.rawRecords[2];
         records = [
-          new mac.HFSHeaderRecord(rawHeader),
+          new mac.HFSHeaderBlock(rawHeader),
           'unused',
-          new mac.HFSMapRecord(rawMap),
+          new mac.HFSMapBlock(rawMap),
         ];
         break;
       case 'map':
