@@ -125,7 +125,7 @@ var loaders = {
         header = header.records[0];
         var parentPaths = {0:'', 1:'', 2:'_EXTENTS:', 3:'_CATALOG:', 4:'_BADALLOC:'};
         function nextLeaf(i) {
-          if (i === 0) return result;
+          if (i === 0) return;
           return alloc.getBytes(getSectors(catalogExtents, 512 * i, 512))
           .then(function(leaf) {
             var leaf = new mac.HFSNodeBlock(leaf);
