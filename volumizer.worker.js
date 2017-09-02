@@ -109,10 +109,10 @@ var loaders = {
         }
         return nextLeaf(header.firstLeaf);
       });
-      function onFolder(path, folderInfo) {
+      function onFolder(path, metadata) {
         // TODO: post back metadata (createdAt, modifiedAt, isInvisible?)
       }
-      function onFile(path, fileInfo) {
+      function onFile(path, metadata) {
         console.log(path);
       }
       var catalogExtents = mdb.catalogFirstExtents;
@@ -135,11 +135,11 @@ var loaders = {
               var parentPath = parentPaths[record.parentFolderID];
               var path = parentPath + record.name;
               if (record.leafType === 'folder') {
-                parentPaths[record.folderInfo.id] = path + ':';
-                onFolder(path.split(/:/g), record.folderInfo);
+                parentPaths[record.asFolder.id] = path + ':';
+                onFolder(path.split(/:/g), record.asFolder);
               }
               else {
-                onFile(path.split(/:/g), record.fileInfo);
+                onFile(path.split(/:/g), record.asFile);
               }
             });
             return nextLeaf(leaf.nextNodeNumber);
