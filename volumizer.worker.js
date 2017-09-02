@@ -80,10 +80,10 @@ var loaders = {
           leaf.records.forEach(function(record) {
             switch (record.overflowForkType) {
               case 'data':
-                result.data[record.overflowFileID] = record.overflowExtentDataRecord;
+                result.data[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
                 break;
               case 'resource':
-                result.resource[record.overflowFileID] = record.overflowExtentDataRecord;
+                result.resource[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
                 break;
             }
           });
