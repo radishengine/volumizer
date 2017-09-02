@@ -24,10 +24,8 @@ VolumizerClient.prototype = {
       function onmessage(e) {
         var message = e.data;
         if (message.id !== id) return;
-        var callback = 'on'+message.headline;
-        if (callback in callbacks) {
-          delete message.id;
-          callbacks[callback].apply(callbacks, message);
+        if (message.headline === 'callback' && message.callback in callbacks) {
+          callbacks[message.callback].apply(callbacks, message.args);
         }
         if (message.final) {
           worker.removeEventListener('message', onmessage);
