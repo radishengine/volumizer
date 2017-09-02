@@ -58,7 +58,7 @@ var loaders = {
         if (isNaN(byteLength)) byteLength = Infinity;
         for (var i = 0; byteLength > 0 && i < extents.length; i++) {
           var offset = CHUNK_LENGTH * extents[i].offset;
-          var length = Math.min(byteLength, CHUNK_LENGTH * extent.length);
+          var length = Math.min(byteLength, CHUNK_LENGTH * extents[i].length);
           sectors.push({start:offset, end:offset+length});
           byteLength -= length;
         }
