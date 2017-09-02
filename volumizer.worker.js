@@ -68,7 +68,7 @@ var loaders = {
       var alloc = cc.sublen(mdb.firstAllocationBlock * 512, mdb.allocationChunkCount * CHUNK_LENGTH);
       var gotOverflow = alloc.getBytes(getSectors(mdb.overflowFirstExtents, mdb.overflowByteLength))
       .then(function(bytes) {
-        var header = new mac.HFSNode(bytes.subarray(0, 512));
+        var header = new mac.HFSNodeBlock(bytes.subarray(0, 512));
         if (header.type !== 'header') {
           return Promise.reject('invalid overflow');
         }
@@ -76,7 +76,7 @@ var loaders = {
         var node_i = header.firstLeaf;
         var result = {data:{}, resource:{}};
         while (node_i !== 0) {
-          var leaf = new mac.HFSNode(bytes.sublen(node_i * 512, 512));
+          var leaf = new mac.HFSNodeBlock(bytes.sublen(node_i * 512, 512));
           leaf.records.forEach(function(record) {
             switch (record.overflowForkType) {
               case 'data':
