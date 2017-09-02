@@ -548,7 +548,7 @@ mac.HFSFileBlock.prototype = Object.defineProperties({
   },
   get resourceForkFirstExtentRecord() {
     var extents = new mac.HFSExtentsBlock(this.dv, 86, 3 * 4).extents;
-    Object.defineProperty(this, 'dataForkFirstExtentRecord', {value:extents});
+    Object.defineProperty(this, 'resourceForkFirstExtentRecord', {value:extents});
     return extents;
   },
 }, data.struct_props);
