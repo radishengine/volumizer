@@ -53,43 +53,57 @@ var loaders = {
         return false;
       }
       const CHUNK_LENGTH = mdb.allocationChunkByteLength;
-      function getSectors(extents, byteLength) {
+      function getSectors(extents, initialOffset, byteLength) {
         var sectors = [];
+        if (isNaN(initialOffset)) initialOffset = 0;
         if (isNaN(byteLength)) byteLength = Infinity;
-        for (var i = 0; byteLength > 0 && i < extents.length; i++) {
-          var offset = CHUNK_LENGTH * extents[i].offset;
-          var length = Math.min(byteLength, CHUNK_LENGTH * extents[i].length);
+        var i = 0;
+        while (initialOffset > 0) {
+          if (initialOffset < (CHUNK_LENGTH * extents[i].length)) {
+            break;
+          }
+          initialOffset -= CHUNK_LENGTH * extents[i].length;
+          i++;
+        }
+        for (; byteLength > 0 && i < extents.length; i++) {
+          var offset = initialOffset + CHUNK_LENGTH * extents[i].offset;
+          var length = Math.min(byteLength, CHUNK_LENGTH * extents[i].length - initialOffset);
           sectors.push({start:offset, end:offset+length});
           byteLength -= length;
+          initialOffset = 0;
         }
         if (isFinite(byteLength)) sectors.remaining = byteLength;
         return sectors;
       }
       var alloc = cc.sublen(mdb.firstAllocationBlock * 512, mdb.allocationChunkCount * CHUNK_LENGTH);
-      var gotOverflow = alloc.getBytes(getSectors(mdb.overflowFirstExtents, mdb.overflowByteLength))
-      .then(function(bytes) {
-        var header = new mac.HFSNodeBlock(bytes.subarray(0, 512));
+      var overflowExtents = mdb.overflowFirstExtents;
+      var gotOverflow = alloc.getBytes(getSectors(overflowExtents, 0, 512))
+      .then(function(header) {
+        header = new mac.HFSNodeBlock(header);
         if (header.type !== 'header') {
           return Promise.reject('invalid overflow');
         }
         header = header.records[0];
-        var node_i = header.firstLeaf;
         var result = {data:{}, resource:{}};
-        while (node_i !== 0) {
-          var leaf = new mac.HFSNodeBlock(bytes.sublen(node_i * 512, 512));
-          leaf.records.forEach(function(record) {
-            switch (record.overflowForkType) {
-              case 'data':
-                result.data[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
-                break;
-              case 'resource':
-                result.resource[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
-                break;
-            }
+        function nextLeaf(i) {
+          if (i === 0) return result;
+          return alloc.getBytes(getSectors(overflowExtents, 512 * i, 512))
+          .then(function(leaf) {
+            var leaf = new mac.HFSNodeBlock(leaf);
+            leaf.records.forEach(function(record) {
+              switch (record.overflowForkType) {
+                case 'data':
+                  result.data[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
+                  break;
+                case 'resource':
+                  result.resource[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
+                  break;
+              }
+            });
+            return nextLeaf(leaf.nextNodeNumber);
           });
-          node_i = leaf.nextNodeNumber;
         }
-        return result;
+        return nextLeaf(header.firstLeaf);
       });
       return gotOverflow.then(console.log);
     });
