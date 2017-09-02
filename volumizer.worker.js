@@ -46,7 +46,7 @@ var loaders = {
       return false;
     });
   },
-  'volume/mac-hfs': function(cc) {
+  'volume/mac-hfs': function(cc, id) {
     return cc.getBytes([{start:1024, end:1024+512}]).then(function(bytes) {
       var mdb = new mac.HFSMasterDirectoryBlock(bytes);
       if (!mdb.hasValidSignature) {
@@ -113,7 +113,12 @@ var loaders = {
         // TODO: post back metadata (createdAt, modifiedAt, isInvisible?)
       }
       function onFile(path, metadata) {
-        console.log(path);
+        postMessage({
+          id: id,
+          headline: 'callback',
+          callback: 'onfile',
+          args: [{path:path}],
+        });
       }
       var catalogExtents = mdb.catalogFirstExtents;
       var gotCatalog = alloc.getBytes(getSectors(catalogExtents, 0, 512))
@@ -156,7 +161,7 @@ onmessage.handlers = {
   'open-blob': function(message) {
     var cc = new data.ChunkCache;
     cc.initBlob(message.blob);
-    return loaders['volume/mac-partitioned'](cc);
+    return loaders['volume/mac-partitioned'](cc, message.id);
   },
 };
 
