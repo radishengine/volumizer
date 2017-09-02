@@ -97,10 +97,10 @@ var loaders = {
               }
               switch (record.overflowForkType) {
                 case 'data':
-                  result.data[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
+                  result.data[record.overflowFileID] = record.overflowExtentDataRecord.extents;
                   break;
                 case 'resource':
-                  result.resource[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
+                  result.resource[record.overflowFileID] = record.overflowExtentDataRecord.extents;
                   break;
               }
             });
