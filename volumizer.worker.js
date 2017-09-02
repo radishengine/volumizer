@@ -91,6 +91,9 @@ var loaders = {
           .then(function(leaf) {
             var leaf = new mac.HFSNodeBlock(leaf);
             leaf.records.forEach(function(record) {
+              if (record.overflowFileID < 5) {
+                throw new Error('TODO: special overflow handling');
+              }
               switch (record.overflowForkType) {
                 case 'data':
                   result.data[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
