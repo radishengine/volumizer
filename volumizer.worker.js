@@ -65,7 +65,8 @@ var loaders = {
         if (isFinite(byteLength)) sectors.remaining = byteLength;
         return sectors;
       }
-      var gotOverflow = cc.getBytes(getSectors(mdb.overflowFirstExtents, mdb.overflowByteLength))
+      var alloc = cc.sublen(mdb.firstAllocationBlock * 512, mdb.allocationChunkCount * CHUNK_LENGTH);
+      var gotOverflow = alloc.getBytes(getSectors(mdb.overflowFirstExtents, mdb.overflowByteLength))
       .then(function(bytes) {
         var header = new mac.HFSNode(bytes.subarray(0, 512));
         if (header.type !== 'header') {
