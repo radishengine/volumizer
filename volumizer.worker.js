@@ -152,7 +152,7 @@ var loaders = {
         }
         return nextLeaf(header.firstLeaf);
       });
-      return gotOverflow.then(console.log);
+      return gotCatalog;
     });
   },
 };
