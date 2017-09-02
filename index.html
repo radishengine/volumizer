@@ -81,7 +81,9 @@
               blob: file,
             },
             {
-              
+              onfile: function(info) {
+                console.log(info.path.join(':'));
+              },
             }
           ).then(
             function() {
