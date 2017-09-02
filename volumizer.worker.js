@@ -90,6 +90,7 @@ var loaders = {
           return alloc.getBytes(getSectors(overflowExtents, 512 * i, 512))
           .then(function(leaf) {
             var leaf = new mac.HFSNodeBlock(leaf);
+            if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
             leaf.records.forEach(function(record) {
               if (record.overflowFileID < 5) {
                 throw new Error('TODO: special overflow handling');
@@ -101,6 +102,44 @@ var loaders = {
                 case 'resource':
                   result.resource[record.overflowFileID] = getSectors(record.overflowExtentDataRecord.extents);
                   break;
+              }
+            });
+            return nextLeaf(leaf.nextNodeNumber);
+          });
+        }
+        return nextLeaf(header.firstLeaf);
+      });
+      function onFolder(path, folderInfo) {
+        // TODO: post back metadata (createdAt, modifiedAt, isInvisible?)
+      }
+      function onFile(path, fileInfo) {
+        console.log(path);
+      }
+      var catalogExtents = mdb.catalogFirstExtents;
+      var gotCatalog = alloc.getBytes(getSectors(catalogExtents, 0, 512))
+      .then(function(header) {
+        header = new mac.HFSNodeBlock(header);
+        if (header.type !== 'header') {
+          return Promise.reject('invalid catalog');
+        }
+        header = header.records[0];
+        var parentPaths = {0:'', 1:'', 2:'_EXTENTS:', 3:'_CATALOG:', 4:'_BADALLOC:'};
+        function nextLeaf(i) {
+          if (i === 0) return result;
+          return alloc.getBytes(getSectors(catalogExtents, 512 * i, 512))
+          .then(function(leaf) {
+            var leaf = new mac.HFSNodeBlock(leaf);
+            if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
+            leaf.records.forEach(function(record) {
+              if (['folder', 'file'].indexOf(record.leafType) === -1) return;
+              var parentPath = parentPaths[record.parentFolderID];
+              var path = parentPath + record.name;
+              if (record.leafType === 'folder') {
+                parentPaths[record.folderInfo.id] = path + ':';
+                onFolder(path.split(/:/g), record.folderInfo);
+              }
+              else {
+                onFile(path.split(/:/g), record.fileInfo);
               }
             });
             return nextLeaf(leaf.nextNodeNumber);
