@@ -52,8 +52,45 @@ var loaders = {
       if (!mdb.hasValidSignature) {
         return false;
       }
-      console.log('mdb');
-      return true;
+      const CHUNK_LENGTH = mdb.allocationChunkByteLength;
+      function getSectors(extents, byteLength) {
+        var sectors = [];
+        if (isNaN(byteLength)) byteLength = Infinity;
+        for (var i = 0; byteLength > 0 && i < extents.length; i++) {
+          var offset = CHUNK_LENGTH * extents[i].offset;
+          var length = Math.min(byteLength, CHUNK_LENGTH * extent.length);
+          sectors.push({start:offset, end:offset+length});
+          byteLength -= length;
+        }
+        if (isFinite(byteLength)) sectors.remaining = byteLength;
+        return sectors;
+      }
+      var gotOverflow = cc.getBytes(getSectors(mdb.overflowFirstExtents, mdb.overflowByteLength))
+      .then(function(bytes) {
+        var header = new mac.HFSNode(bytes.subarray(0, 512));
+        if (header.type !== 'header') {
+          return Promise.reject('invalid overflow');
+        }
+        header = header.records[0];
+        var node_i = header.firstLeaf;
+        var result = {data:{}, resource:{}};
+        while (node_i !== 0) {
+          var leaf = new mac.HFSNode(bytes.sublen(node_i * 512, 512));
+          leaf.records.forEach(function(record) {
+            switch (record.overflowForkType) {
+              case 'data':
+                result.data[record.overflowFileID] = record.overflowExtentDataRecord;
+                break;
+              case 'resource':
+                result.resource[record.overflowFileID] = record.overflowExtentDataRecord;
+                break;
+            }
+          });
+          node_i = leaf.nextNodeNumber;
+        }
+        return result;
+      });
+      return gotOverflow.then(console.log);
     });
   },
 };
