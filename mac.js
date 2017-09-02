@@ -448,9 +448,9 @@ mac.HFSLeafBlock.prototype = Object.defineProperties({
   },
 }, data.struct_props);
 
-function HFSFileBlock() {
+mac.HFSFileBlock = function HFSFileBlock() {
   this._init.apply(this, arguments);
-}
+};
 mac.HFSFileBlock.prototype = Object.defineProperties({
   get locked() {
     return !!(record[2] & 0x01);
