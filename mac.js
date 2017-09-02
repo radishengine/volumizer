@@ -35,7 +35,21 @@ Uint8Array.prototype.toMacRoman = function() {
   });
 };
 
-mac.PartitionBlock = function PartitionHeaderView() {
+mac.RectBlock = function RectBlock() {
+  this._init.apply(this, arguments);
+}
+mac.RectBlock.prototype = Object.defineProperties({
+  get top()    { return this.dv.getInt16(0); },
+  get left()   { return this.dv.getInt16(2); },
+  get bottom() { return this.dv.getInt16(4); },
+  get right()  { return this.dv.getInt16(6); },
+  
+  get width()  { return this.right - this.left; },
+  get height() { return this.bottom - this.top; },
+}, data.struct_props);
+mac.RectBlock.byteLength = 8;
+
+mac.PartitionBlock = function PartitionBlock() {
   this._init.apply(this, arguments);
 };
 mac.PartitionBlock.prototype = Object.defineProperties({
@@ -225,3 +239,421 @@ mac.HFSMasterDirectoryBlock.prototype = Object.defineProperties({
   },
 }, data.struct_props);
 mac.HFSMasterDirectoryBlock.byteLength = 162;
+
+mac.HFSNodeBlock = function HFSNodeBlock() {
+  this._init.apply(this, arguments);
+};
+mac.HFSNodeBlock.prototype = Object.defineProperties({
+  get typeCode() {
+    return this.bytes[8];
+  },
+  get type() {
+    switch (this.typeCode) {
+      case 0: return 'index';
+      case 1: return 'header';
+      case 2: return 'map';
+      case 0xff: return 'leaf';
+      default: return 'unknown';
+    }
+  },
+  get rawRecords() {
+    var records = new Array(this.dv.getUint16(10));
+    for (var i = 0; i < records.length; i++) {
+      records[i] = this.bytes.subarray(
+        this.dv.getUint16(512 - 2*(i+1)),
+        this.dv.getUint16(512 - 2*(i+2)));
+    }
+    Object.defineProperty(this, 'rawRecords', {value:records});
+    return records;
+  },
+  get nextNodeNumber() {
+    return this.dv.getInt32(0);
+  },
+  get previousNodeNumber() {
+    return this.dv.getInt32(4);
+  },
+  get depth() {
+    return this.bytes[9];
+  },
+  get records() {
+    var records;
+    switch (this.type) {
+      case 'index':
+        records = this.rawRecords.map(function(recordBytes) {
+          return new mac.HFSIndexBlock(recordBytes);
+        })
+        .filter(function(indexRecord) {
+          return !indexRecord.isDeleted;
+        });
+        break;
+      case 'header':
+        if (this.rawRecords.length !== 3) {
+          throw new Error('HFS header node: expected 3 records, got ' + this.rawRecords.length);
+        }
+        var rawHeader = this.rawRecords[0], rawMap = this.rawRecords[2];
+        records = [
+          new mac.HFSHeaderRecord(rawHeader),
+          'unused',
+          new mac.HFSMapRecord(rawMap),
+        ];
+        break;
+      case 'map':
+        records = this.rawRecords.map(function(rawMap) {
+          return new mac.HFSMapBlock(rawMap);
+        });
+        break;
+      case 'leaf':
+        records = this.rawRecords.map(function(rawLeaf) {
+          return new mac.HFSLeafBlock(rawLeaf);
+        })
+        .filter(function(leaf) {
+          return !leaf.isDeleted;
+        });
+        break;
+      default: return null;
+    }
+    Object.defineProperty(this, 'records', {value:records});
+    return records;
+  },
+}, data.struct_props);
+
+mac.HFSIndexBlock = function HFSIndexBlock() {
+  this._init.apply(this, arguments);
+};
+mac.HFSIndexBlock.prototype = Object.defineProperties({
+  get isDeleted() {
+    return !(this.bytes.length > 0 && this.bytes[0]);
+  },
+  get parentFolderID() {
+    return this.dv.getUint32(2);
+  },
+  get name() {
+    return this.bytes.sublen(7, this.bytes[6]).toMacRoman();
+  },
+  get nodeNumber() {
+    return this.dv.getUint32(1 + this.bytes[0], false);
+  },
+}, data.struct_props);
+
+mac.HFSHeaderBlock = function HFSHeaderBlock() {
+  this._init.apply(this, arguments);
+};
+mac.HFSHeaderBlock.prototype = Object.defineProperties({
+  get treeDepth() {
+    return this.dv.getUint16(0);
+  },
+  get rootNodeNumber() {
+    return this.dv.getUint32(2);
+  },
+  get leafRecordCount() {
+    return this.dv.getUint32(6);
+  },
+  get firstLeaf() {
+    return this.dv.getUint32(10);
+  },
+  get lastLeaf() {
+    return this.dv.getUint32(14);
+  },
+  get nodeByteLength() {
+    return this.dv.getUint16(18); // always 512?
+  },
+  get maxKeyByteLength() {
+    return this.dv.getUint16(20);
+  },
+  get nodeCount() {
+    return this.dv.getUint32(22);
+  },
+  get freeNodeCount() {
+    return this.dv.getUint32(26);
+  },
+}, data.struct_props);
+
+mac.HFSMapBlock = function HFSMapBlock() {
+  this._init.apply(this, arguments);
+};
+mac.HFSMapBlock.prototype = Object.defineProperties({
+  getIsNodeUsed: function(index) {
+    var byte = index >> 3, bit = (0x80 >> (index & 7));
+    if (byte < 0 || byte >= this.byteLength) {
+      throw new RangeError('map index out of range: '+index+' (size: '+this.nodeCount+')');
+    }
+    return !!(this.bytes[byte] & bit);
+  },
+  get nodeCount() {
+    return this.byteLength * 8;
+  },
+}, data.struct_props);
+
+mac.HFSLeafBlock = function HFSLeafBlock() {
+  this._init.apply(this, arguments);
+
+  if (!this.isDeleted) {
+    var dataOffset = 1 + this.bytes[0];
+    dataOffset += dataOffset % 2;
+    this.dataBytes = this.bytes.subarray(dataOffset);
+  }
+}
+mac.HFSLeafBlock.prototype = Object.defineProperties({
+  get isDeleted() {
+    return !(this.bytes.length > 0 && this.bytes[0]);
+  },
+  get overflowForkType() {
+    switch (this.bytes[1]) {
+      case 0x00: return 'data';
+      case 0xFF: return 'resource';
+      default: return 'unknown';
+    }
+  },
+  get overflowFileID() {
+    return this.dv.getUint32(2);
+  },
+  get parentFolderID() {
+    return this.dv.getUint32(2);
+  },
+  get overflowStartingFileAllocationBlock() {
+    return this.dv.getUint32(6);
+  },
+  get name() {
+    return this.bytes.sublen(7, this.bytes[6]).toMacRoman();
+  },
+  get overflowExtentDataRecord() {
+    return new mac.HFSExtentsBlock(this.bytes.subarray(1 + this.bytes[0]));
+  },
+  get leafType() {
+    switch (this.dataBytes[0]) {
+      case 1: return 'folder';
+      case 2: return 'file';
+      case 3: return 'folderthread';
+      case 4: return 'filethread';
+      default: return 'unknown';
+    }
+  },
+  get asFile() {
+    if (this.leafType !== 'file') return null;
+    var fileInfo = new mac.HFSFileBlock(this.dataBytes);
+    Object.defineProperty(this, 'asFile', {value:fileInfo});
+    return fileInfo;
+  },
+  get asFolder() {
+    if (this.leafType !== 'folder') return null;
+    var folderInfo = new mac.HFSFolderBlock(this.dataBytes);
+    Object.defineProperty(this, 'asFolder', {value:folderInfo});
+    return folderInfo;
+  },
+  get asThread() {
+    if (!/^(file|folder)thread$/.test(this.leafType)) return null;
+    var threadInfo = new mac.HFSThreadBlock(this.dataBytes);
+    Object.defineProperty(this, 'asThread', {value:threadInfo});
+    return threadInfo;
+  },
+}, data.struct_props);
+
+function HFSFileBlock() {
+  this._init.apply(this, arguments);
+}
+mac.HFSFileBlock.prototype = Object.defineProperties({
+  get locked() {
+    return !!(record[2] & 0x01);
+  },
+  get hasThreadRecord() {
+    return  !!(record[2] & 0x02);
+  },
+  get recordUsed() {
+    return  !!(record[2] & 0x80);
+  },
+  get type() {
+    return this.bytes.sublen(4, 4).toMacRoman();
+  },
+  get creator() {
+    return this.bytes.sublen(8, 4).toMacRoman();
+  },
+  get flags() {
+    return this.dv.getUint16(12);
+  },
+  get isOnDesk() {
+    return !!(0x0001 & this.flags);
+  },
+  get color() {
+    return !!(0x000E & this.flags);
+  },
+  get requireSwitchLaunch() {
+    return !!(0x0020 & this.flags);
+  },
+  get isShared() {
+    return !!(0x0040 & this.flags);
+  },
+  get hasNoINITs() {
+    return !!(0x0080 & this.flags);
+  },
+  get hasBeenInited() {
+    return !!(0x0100 & this.flags);
+  },
+  get hasCustomIcon() {
+    return !!(0x0400 & this.flags);
+  },
+  get isStationery() {
+    return !!(0x0800 & this.flags);
+  },
+  get isNameLocked() {
+    return !!(0x1000 & this.flags);
+  },
+  get hasBundle() {
+    return !!(0x2000 & this.flags);
+  },
+  get isInvisible() {
+    return !!(0x4000 & this.flags);
+  },
+  get isAlias() {
+    return !!(0x8000 & this.flags);
+  },
+  get id() {
+    return this.dv.getUint32(20);
+  },
+  get iconPosition() {
+    var position = {
+      v: this.dv.getInt16(14),
+      h: this.dv.getInt16(16),
+    };
+    return !(position.v && position.h) ? 'default' : position;
+  },
+  get dataForkInfo() {
+    return new mac.HFSForkBlock(this.bytes, 24);
+  },
+  get resourceForkInfo() {
+    return new mac.HFSForkBlock(this.bytes, 34);
+  },
+  get createdAt() {
+    return this.dv.getMacDate(44);
+  },
+  get modifiedAt() {
+    return this.dv.getMacDate(48);
+  },
+  get backupAt() {
+    return this.dv.getMacDate(52);
+  },
+  // 56: fxInfoReserved (8 bytes)
+  get fxinfoFlags() {
+    return this.dv.getUint16(64);
+  },
+  get putAwayFolderID() {
+    return this.dv.getUint32(68);
+  },
+  get clumpSize() {
+    return this.dv.getUint16(72);
+  },
+  get dataForkFirstExtentRecord() {
+    var extents = new mac.HFSExtentsBlock(this.dv, 74, 3 * 4).extents;
+    Object.defineProperty(this, 'dataForkFirstExtentRecord', {value:extents});
+    return extents;
+  },
+  get resourceForkFirstExtentRecord() {
+    var extents = new mac.HFSExtentsBlock(this.dv, 86, 3 * 4).extents;
+    Object.defineProperty(this, 'dataForkFirstExtentRecord', {value:extents});
+    return extents;
+  },
+}, data.struct_props);
+
+mac.HFSForkBlock = function HFSForkBlock() {
+  this._init.apply(this, arguments);
+}
+mac.HFSForkBlock.prototype = Object.defineProperties({
+  get firstAllocationBlock() {
+    return this.dv.getUint16(0);
+  },
+  get logicalEOF() {
+    return this.dv.getUint32(2);
+  },
+  get physicalEOF() {
+    return this.dv.getUint32(6);
+  },
+}, data.struct_props);
+
+mac.HFSFolderBlock = function HFSFolderBlock() {
+  this._init.apply(this, arguments);
+};
+mac.HFSFolderBlock.prototype = {
+  get flags() {
+    return this.dv.getUint16(2);
+  },
+  get id() {
+    return this.dv.getUint32(6);
+  },
+  get modifiedAt() {
+    return this.dv.getMacDate(14);
+  },
+  get iconPosition() {
+    var position = {
+      v: this.dv.getInt16(32),
+      h: this.dv.getInt16(34),
+    };
+    if (position.v === 0 && position.h === 0) {
+      return 'default';
+    }
+    return position;
+  },
+  get windowRect() {
+    return new mac.RectBlock(this.bytes.sublen(22, mac.RectBlock.byteLength));
+  },
+  get flags() {
+    return this.dv.getUint16(30);
+  },
+  get isOnDesk() {
+    return !!(this.flags & 0x0001);
+  },
+  get isColor() {
+    return !!(this.flags & 0x000E);
+  },
+  get requiresSwitchLaunch() {
+    return !!(this.flags & 0x0020);
+  },
+  get hasCustomIcon() {
+    return !!(this.flags & 0x0400);
+  },
+  get isNameLocked() {
+    return !!(this.flags & 0x1000);
+  },
+  get hasBundle() {
+    return !!(this.flags & 0x2000);
+  },
+  get isInvisible() {
+    return !!(this.flags & 0x4000);
+  },
+  get scrollY() {
+    return this.dv.getInt16(38);
+  },
+  get scrollX() {
+    return this.dv.getInt16(40);
+  },
+  // dinfoReserved: dv.getInt16(36, false),
+  // dxinfoReserved: dv.getInt32(42, false),
+  get dxinfoFlags() {
+    return this.dv.getUint16(46);
+  },
+  get dxinfoComment() {
+    return this.dv.getUint16(48);
+  },
+  get fileCount() {
+    return this.dv.getUint16(4);
+  },
+  get createdAt() {
+    return this.dv.getMacDate(10);
+  },
+  get backupAt() {
+    return this.dv.getMacDate(18);
+  },
+  get putAwayFolderID() {
+    return this.dv.getInt32(50);
+  },
+}, data.struct_props);
+
+mac.HFSThreadBlock = function HFSThreadBlock() {
+  this._init.apply(this, arguments);
+}
+mac.HFSThreadBlock.prototype = Object.defineProperties({
+  get parentFolderID() {
+    return this.dv.getUint32(10);
+  },
+  get parentFolderName() {
+    return this.bytes.sublen(15, this.bytes[14]).toMacRoman();
+  },
+}, data.struct_props);
