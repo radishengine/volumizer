@@ -1,6 +1,8 @@
 
 self.data = {};
 
+const frs = new FileReaderSync;
+
 data.struct_props = {
   _init: {
     value: function(buffer, byteOffset, byteLength) {
@@ -67,7 +69,6 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
       return decoder.decode(this);
     };
   }
-  var frs = new FileReaderSync;
   return function toByteString() {
     if (this.length < 1024) {
       return String.fromCharCode.apply(null, this);
@@ -77,7 +78,6 @@ Uint8Array.prototype.toByteString = (function INIT_TOBYTESTRING() {
 })();
 
 (function INIT_STREAM_METHODS() {
-  var frs = new FileReaderSync;
   var manualBufferSize = 1024 * 1024;
   function streamBlobAsURL(callback, blob) {
     if (blob.size <= manualBufferSize) {
@@ -253,14 +253,12 @@ data.ChunkCache.prototype = {
     if (sectors.length === 0) return Promise.resolve(new Uint8Array(0));
     if (sectors.length === 1 && sectors[0].end <= this.blob.size) {
       var blob = this.blob.slice(sectors[0].start, sectors[0].end);
-      var frs = new FileReaderSync;
       return Promise.resolve(new Uint8Array(frs.readAsArrayBuffer(blob)));
     }
     var blob = this.blob;
     for (var i = 0; i < sectors.length; i++) {
       if (sectors[i].start <= blob.size) {
         return this.getBlob(sectors).then(function(blob) {
-          var frs = new FileReaderSync;
           return new Uint8Array(frs.readAsArrayBuffer(blob));
         });
       }
