@@ -717,7 +717,7 @@ mac.ResourceMapBlock.prototype = Object.defineProperties({
     var list = new Array(this.groupCount);
     for (var i = 0; i < list.length; i++) {
       var header = this.getGroupHeader(i);
-      var group = {name:header.name, resources:[]};
+      var group = list[i] = {name:header.name, resources:[]};
       var refs = this.getReferenceList(
         header.referenceListOffset,
         header.resourceCount);
@@ -726,7 +726,6 @@ mac.ResourceMapBlock.prototype = Object.defineProperties({
         ref.name = this.getName(ref.nameOffset);
         group.resources.push(ref);
       }
-      list.push(group);
     }
     Object.defineProperty(this, 'groups', {value:list});
     return list;
