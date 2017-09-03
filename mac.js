@@ -680,7 +680,7 @@ mac.ResourceHeaderBlock.byteLength = 16;
 mac.ResourceMapBlock = function ResourceMapBlock() {
   this._init.apply(this, arguments);
 };
-mac.ResourceMapView.prototype = Object.defineProperties({
+mac.ResourceMapBlock.prototype = Object.defineProperties({
   get isReadOnly() {
     return !!(this.dv.getUint16(22) & 0x0080);
   },
