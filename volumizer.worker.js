@@ -157,15 +157,32 @@ var loaders = {
             metadata.resourceForkInfo.logicalEOF,
             'resource');
           result.push(gotSectors.then(function(sectors) {
-            return alloc.getBlob(sectors);
+            return alloc.getBytes(sectors);
           })
-          .then(function(blob) {
-            postMessage({
-              id: id,
-              headline: 'callback',
-              callback: 'onfile',
-              args: [{path:path.concat('.rsrc'), blob:blob}],
-            });
+          .then(function(bytes) {
+            var header = new mac.ResourceHeaderBlock(bytes.subarray(0, mac.ResourceHeaderBlock.byteLength));
+            var data = bytes.sublen(header.dataOffset, header.dataLength);
+            var dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+            var map = bytes.sublen(header.mapOffset, header.mapLength);
+            map = new mac.ResourceMapBlock(map);
+            for (var group_i = 0; group_i < map.groups.length; group_i++) {
+              var group = map.groups[group_i];
+              for (var resource_i = 0; resource_i < group.resources.length; resource_i++) {
+                var resource = group.resources[resource_i];
+                var name = '[' + resource.id + ']';
+                if (typeof resource.name === 'string') {
+                  name += ' ' + resource.name;
+                }
+                var offset = resource.dataOffset;
+                var resourceData = data.sublen(offset + 4, dv.getUint32(offset));
+                postMessage({
+                  id: id,
+                  headline: 'callback',
+                  callback: 'onfile',
+                  args: [{path:path.concat('.rsrc', group.name, name), blob:new Blob([resourceData])}],
+                });
+              }
+            }
           }));
         }
         return Promise.all(result);
