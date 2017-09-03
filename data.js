@@ -1,6 +1,14 @@
 
 self.data = {};
 
+function download(v) {
+  if (!(v instanceof Blob)) v = new Blob([v]);
+  postMessage({
+    headline: 'download',
+    file: v,
+  });
+}
+
 const frs = new FileReaderSync;
 
 data.struct_props = {
