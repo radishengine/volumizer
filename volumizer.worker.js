@@ -179,7 +179,7 @@ var loaders = {
                   id: id,
                   headline: 'callback',
                   callback: 'onfile',
-                  args: [{path:path.concat('.rsrc', group.name, name), blob:new Blob([resourceData])}],
+                  args: [{path:path.concat('[rsrc]', group.name, name), blob:new Blob([resourceData])}],
                 });
               }
             }
