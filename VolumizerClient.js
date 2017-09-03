@@ -1,7 +1,17 @@
 
-function VolumizerClient(worker) {
-  this.worker = worker = worker || new Worker('volumizer.worker.js');
-  worker.tasks = worker.tasks || Object.create(null);
+function VolumizerClient() {
+  this.worker = new Worker('volumizer.worker.js');
+  this.worker.tasks = {};
+  this.worker.addEventListener('message', function downloadChecker(e) {
+    if (e.data.headline === 'download') {
+      var link = document.createElement('A');
+      link.href = URL.createObjectURL(e.data.file);
+      link.setAttribute('download', e.data.file.name || 'file.dat');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  });
 }
 
 VolumizerClient.prototype = {
