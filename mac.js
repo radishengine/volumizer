@@ -657,3 +657,131 @@ mac.HFSThreadBlock.prototype = Object.defineProperties({
     return this.bytes.sublen(15, this.bytes[14]).toMacRoman();
   },
 }, data.struct_props);
+
+mac.ResourceHeaderBlock = function ResourceHeaderBlock() {
+  this._init.apply(this, arguments);
+};
+mac.ResourceHeaderBlock.prototype = Object.defineProperties({
+  get dataOffset() {
+    return this.dv.getUint32(0);
+  },
+  get mapOffset() {
+    return this.dv.getUint32(4);
+  },
+  get dataLength() {
+    return this.dv.getUint32(8);
+  },
+  get mapLength() {
+    return this.dv.getUint32(12);
+  },
+}, data.struct_props);
+mac.ResourceHeaderBlock.byteLength = 16;
+
+mac.ResourceMapBlock = function ResourceMapBlock() {
+  this._init.apply(this, arguments);
+};
+mac.ResourceMapView.prototype = {
+  get isReadOnly() {
+    return !!(this.dv.getUint16(22) & 0x0080);
+  },
+  get typeListOffset() {
+    return this.dv.getUint16(24);
+  },
+  get nameListOffset() {
+    return this.dv.getUint16(26);
+  },
+  get groupCount() {
+    return this.dv.getInt16(this.typeListOffset) + 1;
+  },
+  getGroupHeader: function(i) {
+    return new mac.ResourceGroupBlock(this.bytes.sublen(
+      this.typeListOffset + 2 + mac.ResourceGroupBlock.byteLength * i,
+      mac.ResourceGroupBlock.byteLength));
+  },
+  getReferenceList: function(offset, count) {
+    var byteOffset = this.typeListOffset + offset;
+    var byteLength = mac.ReferenceBlock.byteLength;
+    var list = new Array(count);
+    for (var i = 0; i < list.length; i++) {
+      list[i] = new mac.ReferenceBlock(this.bytes.sublen(byteOffset, byteLength));
+      byteOffset += byteLength;
+    }
+    return list;
+  },
+  getName: function(offset) {
+    if (offset < 0) return null;
+    offset += this.nameListOffset;
+    return this.bytes.sublen(offset + 1, this.bytes[offset]).toMacRoman();
+  },
+  get groups() {
+    var list = new Array(this.groupCount);
+    for (var i = 0; i < list.length; i++) {
+      var header = this.getGroupHeader(i);
+      var group = {name:header.name, resources:[]};
+      var refs = this.getReferenceList(
+        header.referenceListOffset,
+        header.resourceCount);
+      for (var j = 0; j < refs.length; j++) {
+        var ref = refs[j];
+        ref.name = this.getName(ref.nameOffset);
+        group.resources.push(ref);
+      }
+      list.push(group);
+    }
+    Object.defineProperty(this, 'groups', {value:list});
+    return list;
+  },
+}, data.struct_props);
+
+mac.ResourceGroupBlock = function ResourceGroupBlock() {
+  this._init.apply(this, arguments);
+};
+mac.ResourceGroupBlock.prototype = Object.defineProperties({
+  get name() {
+    return this.bytes.subarray(0, 4).toMacRoman();
+  },
+  get resourceCount() {
+    return this.dv.getInt16(4) + 1;
+  },
+  get referenceListOffset() {
+    return this.dv.getUint16(6);
+  },
+}, data.struct_props);
+mac.ResourceGroupBlock.byteLength = 8;
+
+mac.ReferenceBlock = function ReferenceBlock() {
+  this._init.apply(this, arguments);
+};
+mac.ReferenceBlock.prototype = Object.defineProperties({
+  get id() {
+    return this.dv.getInt16(0);
+  },
+  get nameOffset() {
+    return this.dv.getInt16(2);
+  },
+  get hasName() {
+    return this.nameOffset >= 0;
+  },
+  get isLoadedInSystemHeap() {
+    return !!(this.bytes[4] & 0x40);
+  },
+  get mayBePagedOutOfMemory() {
+    return !!(this.bytes[4] & 0x20);
+  },
+  get doNotMoveInMemory() {
+    return !!(this.bytes[4] & 0x10);
+  },
+  get isReadOnly() {
+    return !!(this.bytes[4] & 0x08);
+  },
+  get isPreloaded() {
+    return !!(this.bytes[4] & 0x04);
+  },
+  get isCompressed() {
+    return !!(this.bytes[4] & 0x01);
+  },
+  get dataOffset() {
+    return this.dv.getUint32(4) & 0xffffff;
+  },
+}, data.struct_props);
+mac.ReferenceBlock.byteLength = 12;
