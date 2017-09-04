@@ -841,7 +841,7 @@ mac.partitioned = function(id, cc, sectors) {
 
 mac.hfs = function hfs(id, cc, sectors) {
   return cc.getBytes(data.sectorize(sectors, 1024, 512)).then(function(mdb) {
-    mdb = new mac.HFSDirectoryBlock(mdb);
+    mdb = new mac.HFSMasterDirectoryBlock(mdb);
     if (!mdb.hasValidSignature) return false;
     const CHUNK_LENGTH = mdb.allocationChunkByteLength;
     var allocSectors = data.sectorize(sectors, mdb.firstAllocationBlock * 512, mdb.allocationChunkCount * CHUNK_LENGTH);
