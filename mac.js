@@ -814,6 +814,7 @@ mac.partitioned = function(id, cc, sectors) {
         },
       };
       postMessage({
+        id: id,
         headline: 'callback',
         callback: 'entry',
         args: [{
