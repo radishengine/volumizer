@@ -931,7 +931,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       }
       else {
         gotDataSectors = getForkSectors(
-          getExtentSectors(metadata.dataForkFirstExtentRecord.extents),
+          getExtentSectors(metadata.dataForkFirstExtentRecord),
           metadata.dataForkInfo.logicalEOF,
           'data');
       }
@@ -940,7 +940,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       }
       else {
         gotResourceSectors = getForkSectors(
-          getExtentSectors(metadata.resourceForkFirstExtentRecord.extents),
+          getExtentSectors(metadata.resourceForkFirstExtentRecord),
           metadata.resourceForkInfo.logicalEOF,
           'resource');
       }
