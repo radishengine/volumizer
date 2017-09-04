@@ -225,12 +225,66 @@ var loaders = {
   },
 };
 
+var routing = [];
+var urls = {};
+
 onmessage.handlers = {
+  'routing': function(message) {
+    routing.push.apply(routing, message.routing);
+  },
+  'volumize': function(message) {
+    var sectors = message.sectors;
+    var structure = message.structure;
+    var cc;
+    if (message.source instanceof Blob) {
+      cc = new data.ChunkCache;
+      cc.initBlob(message.source);
+    }
+    else if (typeof message.source !== 'string') {
+      return Promise.reject('source must be Blob or URL string');
+    }
+    else if (message.source in urls) {
+      cc = urls[message.source];
+    }
+    else {
+      cc = new data.ChunkCache;
+      cc.initURL(message.source);
+      urls[message.source] = cc;
+    }
+    if (typeof structure === 'string') structure = [structure];
+    var promise = Promise.resolve(false);
+    var errors = [];
+    function tryStructure(i) {
+      if (i > structure.length) {
+        if (errors.length === 0) {
+          return Promise.reject('file structure not recognized');
+        }
+        return Promise.reject(errors.join('\n'));
+      }
+      var parts = structure[i].match(/^([^\/]+)\/([^\/+])/);
+      var libName = parts[1];
+      var funcName = parts[2];
+      if (!(libName in self)) importScripts(libName + '.js');
+      var lib = self[libName];
+      return lib[funcName].call(lib, message.id, cc, sectors)
+      .catch(function(reason) {
+        errors.push(structure[i] + ': ' + reason);
+        return false;
+      })
+      .then(function(result) {
+        if (result) return true;
+        return tryStructure(i + 1);
+      });
+    }
+    return tryStructure(0);
+  },
+  /*
   'open-blob': function(message) {
     var cc = new data.ChunkCache;
     cc.initBlob(message.blob);
     return loaders['volume/mac-partitioned'](cc, message.id);
   },
+  */
 };
 
 onmessage.promiseChain = Promise.resolve();
