@@ -816,7 +816,7 @@ mac.partitioned = function(id, cc, sectors) {
       postMessage({
         id: id,
         headline: 'callback',
-        callback: 'entry',
+        callback: 'onentry',
         args: [{
           metadata: metadata,
           sectors: mainSectors,
