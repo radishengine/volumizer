@@ -307,11 +307,47 @@ data.ChunkCache.prototype = {
       });
     });
   },
+  cacheHint: function(sectors) {
+    if (!sectors || sectors.length === 0) {
+      delete this.cache;
+      return;
+    }
+    var blob = this.blob;
+    for (var i = 0; i < sectors.length; i++) {
+      var s = sectors[i];
+      if (s.offset+s.length > blob.size) {
+        delete this.cache;
+        return;
+      }
+    }
+    sectors = this.cache = sectors.slice().sort(function(a, b) {
+      return b.offset - a.offset;
+    });
+    var raw = frs.readAsArrayBuffer(blob.sectorize(sectors));
+    var offset = 0;
+    for (var i = 0; i < sectors.length; i++) {
+      var bytes = new Uint8Array(raw, offset, sectors[i].length);
+      bytes.offset = sectors[i].offset;
+      sectors[i] = bytes;
+      offset += bytes.length;
+    }
+  },
   getBytes: function(sectors) {
     if (sectors.length === 0) return Promise.resolve(new Uint8Array(0));
-    if (sectors.length === 1 && (sectors[0].offset + sectors[0].length) <= this.blob.size) {
-      var blob = this.blob.sublen(sectors[0].offset, sectors[0].length);
-      return Promise.resolve(new Uint8Array(frs.readAsArrayBuffer(blob)));
+    if (sectors.length === 1) {
+      var s = sectors[0];
+      if (this.cache) {
+        for (var i = 0; i < this.cache.length; i++) {
+          var c = this.cache[i];
+          if (s.offset < c.offset) break;
+          if ((s.offset + s.length) > (c.offset + c.length)) continue;
+          return Promise.resolve(c.sublen(s.offset - c.offset, s.length));
+        }
+      }
+      if ((s.offset + s.length) <= this.blob.size) {
+        var blob = this.blob.sublen(sectors[0].offset, sectors[0].length);
+        return Promise.resolve(new Uint8Array(frs.readAsArrayBuffer(blob)));
+      }
     }
     var blob = this.blob;
     for (var i = 0; i < sectors.length; i++) {
