@@ -787,8 +787,8 @@ mac.ReferenceBlock.byteLength = 12;
 
 mac.partitioned = function(id, cc, sectors) {
   return cc.getBytes(data.sectorize(sectors, 512, 1024)).then(function(first2) {
-    var first = new PartitionBlock(first2, 0, 512);
-    var second = new PartitionBlock(first2, 512, 512);
+    var first = new mac.PartitionBlock(first2, 0, 512);
+    var second = new mac.PartitionBlock(first2, 512, 512);
     if (!first.hasValidSignature || !second.hasValidSignature) return false;
     function doPartition(partition) {
       var sectors = data.sectorize(sectors, partition.firstSector * 512, partition.sectionCount * 512);
@@ -828,7 +828,7 @@ mac.partitioned = function(id, cc, sectors) {
     if (first.totalPartitionCount < 3) return true;
     return cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512)).then(function(rest) {
       for (var i = 0; i < rest.length; i += 512) {
-        doPartition(new PartitionBlock(rest, i, 512));
+        doPartition(new mac.PartitionBlock(rest, i, 512));
       }
     });
   });
