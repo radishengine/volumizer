@@ -798,8 +798,8 @@ mac.partitioned = function(id, cc, sectors) {
         flags: partition.flags,
         processorType: partition.processorType,
       };
-      var dataSectors = data.sectorize(sectors, partition.firstDataSector * 512, partition.dataSectorCount * 512);
-      var bootSectors = data.sectorize(sectors, partition.firstBootCodeSector * 512, partition.bootCodeByteLength);
+      var dataSectors = data.sectorize(mainSectors, partition.firstDataSector * 512, partition.dataSectorCount * 512);
+      var bootSectors = data.sectorize(mainSectors, partition.firstBootCodeSector * 512, partition.bootCodeByteLength);
       var secondary = {
         data: {
           sectors: dataSectors,
