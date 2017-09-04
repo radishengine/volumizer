@@ -30,11 +30,11 @@ data.sectorize = function(outSectors, inSectors) {
     return [];
   }
   var final = [];
-  var j = 0;
   for (var i = 0; i < inSectors.length; i++) {
     var offset = inSectors[i].offset;
     var length = inSectors[i].length;
     if (length === 0) continue;
+    var j = 0;
     while (offset > outSectors[j].length) {
       offset -= outSectors[j++].length;
     }
