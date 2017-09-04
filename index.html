@@ -32,6 +32,9 @@
       .container > .title {
         white-space: pre-wrap;
       }
+      .container.folder > .title::after {
+        content: '/';
+      }
       .container.open {
         background: white;
       }
