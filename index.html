@@ -124,13 +124,13 @@
               if ('path' in entry) {
                 var el = getElementForPath(entry.path);
                 if (entry.metadata.isInvisible) {
-                  entry.classList.add('hidden');
+                  el.classList.add('hidden');
                 }
                 if (entry.metadata.isFolder) {
-                  entry.classList.add('folder');
+                  el.classList.add('folder');
                 }
                 else {
-                  entry.classList.add('file');
+                  el.classList.add('file');
                 }
               }
               else {
