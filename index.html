@@ -132,6 +132,9 @@
                 else {
                   el.classList.add('file');
                 }
+                if (entry.metadata.isOnDesk) {
+                  document.getElementById('content').appendChild(el.parentNode.removeChild(el));
+                }
               }
               else {
                 console.dir(entry);
