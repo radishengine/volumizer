@@ -56,7 +56,7 @@
         var id = path.map(encodeURIComponent).join('/');
         var el = document.getElementById(id);
         if (!el) {
-          var el = document.querySelector('#templates > .container').cloneNode();
+          var el = document.querySelector('#templates > .container').cloneNode(true);
           el.setAttribute('id', id);
           el.titleElement = el.querySelector('.title');
           el.titleElement.innerText = path[path.length-1];
