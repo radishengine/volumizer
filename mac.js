@@ -912,7 +912,6 @@ mac.hfs = function hfs(id, cc, sectors) {
       });
     }
     function onFile(path, metadata) {
-      var result = [];
       function getForkSectors(extentSectors, byteLength, overflowType) {
         var covered = data.sectorsTotalLength(extentSectors);
         if (covered >= byteLength) {
