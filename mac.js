@@ -784,3 +784,52 @@ mac.ReferenceBlock.prototype = Object.defineProperties({
   },
 }, data.struct_props);
 mac.ReferenceBlock.byteLength = 12;
+
+mac.partitioned = function(id, cc, sectors) {
+  return cc.getBytes(data.sectorize(sectors, 512, 1024)).then(function(first2) {
+    var first = new PartitionBlock(first2, 0, 512);
+    var second = new PartitionBlock(first2, 512, 512);
+    if (!first.hasValidSignature || !second.hasValidSignature) return false;
+    function doPartition(partition) {
+      var sectors = data.sectorize(sectors, partition.firstSector * 512, partition.sectionCount * 512);
+      var metadata = {
+        name: partition.name,
+        type: partition.type,
+        flags: partition.flags,
+        processorType: partition.processorType,
+      };
+      var dataSectors = data.sectorize(sectors, partition.firstDataSector * 512, partition.dataSectorCount * 512);
+      var bootSectors = data.sectorize(sectors, partition.firstBootCodeSector * 512, partition.bootCodeByteLength);
+      var secondary = {
+        data: {
+          sectors: dataSectors,
+        },
+        bootCode: {
+          sectors: bootSectors,
+          metadata: {
+            entryPoint: partition.bootCodeEntryPoint,
+            checksum: partition.bootCodeChecksum,
+            loaderAddress: partition.bootLoaderAddress,
+          }
+        },
+      };
+      postMessage({
+        headline: 'callback',
+        callback: 'entry',
+        args: [{
+          metadata: metadata,
+          sectors: sectors,
+          secondary: secondary,
+        }],
+      });
+    }
+    doPartition(first);
+    doPartition(second);
+    if (first.totalPartitionCount < 3) return true;
+    return cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512)).then(function(rest) {
+      for (var i = 0; i < rest.length; i += 512) {
+        doPartition(new PartitionBlock(rest, i, 512));
+      }
+    });
+  });
+};
