@@ -261,7 +261,7 @@ onmessage.handlers = {
         }
         return Promise.reject(errors.join('\n'));
       }
-      var parts = structure[i].match(/^([^\/]+)\/([^\/+])/);
+      var parts = structure[i].match(/^([^\/]+)\/([^\/]+)/);
       var libName = parts[1];
       var funcName = parts[2];
       if (!(libName in self)) importScripts(libName + '.js');
