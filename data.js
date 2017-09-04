@@ -8,6 +8,12 @@ Blob.prototype.sectorize = function(sectors, options) {
   }), options);
 };
 
+data.sectorsTotalLength = function(sectors) {
+  return sectors.reduce(function(sum, sector) {
+    return sum + sector.length;
+  }, 0);
+};
+
 data.sectorize = function(outSectors, inSectors) {
   if (typeof inSectors === 'number') {
     inSectors = [{offset:arguments[1], length:arguments[2]}];
