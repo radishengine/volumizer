@@ -32,6 +32,15 @@
       .container > .title {
         white-space: pre-wrap;
       }
+      .container.open {
+        background: white;
+      }
+      .container:not(.open) {
+        background: silver;
+      }
+      .container:not(.open) > .children {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -49,6 +58,15 @@
     </div>
     <script>
       
+      document.getElementById('content').addEventListener('click', function(e) {
+        for (var el = e.target; el !== this; el = el.parentNode) {
+          if (el.classList.contains('container')) {
+            el.classList.toggle('open');
+            break;
+          }
+        }
+      });
+      
       var blobVC = null;
       var vc = null;
       
@@ -63,6 +81,7 @@
           el.childrenElement = el.querySelector('.children');
           if (path.length === 1) {
             document.getElementById('content').appendChild(el);
+            el.classList.append('open');
           }
           else {
             getElementForPath(path.slice(0, -1)).childrenElement.appendChild(el);
