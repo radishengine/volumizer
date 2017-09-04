@@ -34,7 +34,46 @@
     </div>
     <script>
       
+      var blobVC = null;
       var vc = null;
+      
+      function onFile(file) {
+        var structure = [];
+        if (/^(\.iso|\.dsk|\.img|\.image|\.toast)/i.test(file.name)) {
+          structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
+        }
+        if (structure.length === 0) {
+          alert('unrecognized file type');
+          return;
+        }
+        if (!blobVC) {
+          blobVC = new VolumizerClient;
+        }
+        var vc = blobVC;
+        document.body.classList.remove('cancelled', 'error');
+        document.body.classList.add('loading');
+        vc.task(
+          {
+            headline: 'volumize',
+            source: file,
+            sectors: [{offset:0, length:file.size}],
+            structure: structure,
+          },
+          {
+            onentry: function(entry) {
+              console.log(entry);
+            },
+          }
+        ).then(
+          function() {
+            document.body.classList.remove('loading');
+          },
+          function() {
+            document.body.classList.remove('loading');
+            document.body.classList.add('error');
+          }
+        );
+      }
       
       document.body.dragEnterCount = 0;
       
@@ -68,32 +107,13 @@
         document.body.classList.remove('dropping');
         var file = e.dataTransfer.files && e.dataTransfer.files[0];
         if (file) {
-          history.pushState(undefined, undefined, '#upload:' + file.name);
-          if (vc) {
-            vc.close();
+          if (/^#?(upload:|$)/.test(location.hash)) {
+            history.replaceState(undefined, undefined, '#upload:' + file.name);
           }
-          vc = new VolumizerClient;
-          document.body.classList.remove('cancelled', 'error');
-          document.body.classList.add('loading');
-          vc.task(
-            {
-              headline: 'open-blob',
-              blob: file,
-            },
-            {
-              onfile: function(info) {
-                console.log(info.path.join(':'), info.blob.size);
-              },
-            }
-          ).then(
-            function() {
-              document.body.classList.remove('loading');
-            },
-            function() {
-              document.body.classList.remove('loading');
-              document.body.classList.add('error');
-            }
-          );
+          else {
+            history.pushState(undefined, undefined, '#upload:' + file.name);
+          }
+          onFile(file);
         }
       };
       
