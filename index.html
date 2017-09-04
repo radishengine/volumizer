@@ -26,16 +26,50 @@
       body.dropping > #dropzone {
         display: block;
       }
+      .container > .children {
+        padding-left: 5px;
+      }
+      .container > .title {
+        white-space: pre-wrap;
+      }
     </style>
   </head>
   <body>
     <div id='dropzone'>
       <div class='drop-border'></div>
     </div>
+    <div id='templates' style='display:none'>
+      <div class='container'>
+        <span class='title'></span>
+        <div class='children'>
+        </div>
+      </div>
+    </div>
+    <div id='content'>
+    </div>
     <script>
       
       var blobVC = null;
       var vc = null;
+      
+      function getElementForPath(path) {
+        var id = path.filter(encodeURIComponent).join('/');
+        var el = document.getElementById(id);
+        if (!el) {
+          var el = document.querySelector('#templates > .container').cloneNode();
+          el.setAttribute('id', id);
+          el.titleElement = el.querySelector('.title');
+          el.titleElement.innerText = path[path.length-1];
+          el.childrenElement = el.querySelector('.children');
+          if (path.length === 1) {
+            document.getElementById('content').appendChild(el);
+          }
+          else {
+            getElementForPath(path.slice(0, -1)).childrenElement.appendChild(el);
+          }
+        }
+        return el;
+      }
       
       function onFile(file) {
         var structure = [];
@@ -52,6 +86,7 @@
         var vc = blobVC;
         document.body.classList.remove('cancelled', 'error');
         document.body.classList.add('loading');
+        document.getElementById('content').innerHTML = '';
         vc.task(
           {
             headline: 'volumize',
@@ -61,6 +96,9 @@
           },
           {
             onentry: function(entry) {
+              if ('path' in entry) {
+                var el = getElementForPath(entry.path);
+              }
               console.dir(entry);
             },
           }
