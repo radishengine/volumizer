@@ -852,6 +852,7 @@ mac.hfs = function hfs(id, cc, sectors) {
     }
     var overflowSectors = getExtentSectors(mdb.overflowFirstExtents);
     var catalogSectors = getExtentSectors(mdb.catalogFirstExtents);
+    cc.cacheHint(overflowSectors);
     var gotOverflow = cc.getBytes(data.sectorize(overflowSectors, 0, 512))
     .then(function(header) {
       header = new mac.HFSNodeBlock(header);
@@ -1011,6 +1012,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       return nextLeaf(header.firstLeaf);
     });
     return gotCatalog.then(function() {
+      cc.cacheHint(null);
       return true;
     });
   });
