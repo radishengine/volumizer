@@ -39,7 +39,7 @@
       
       function onFile(file) {
         var structure = [];
-        if (/^(\.iso|\.dsk|\.img|\.image|\.toast)/i.test(file.name)) {
+        if (/\.(?:iso|dsk|img|image|toast)/i.test(file.name)) {
           structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
         }
         if (structure.length === 0) {
