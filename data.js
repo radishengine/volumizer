@@ -1,6 +1,48 @@
 
 self.data = {};
 
+Blob.prototype.sectorize = function(sectors, options) {
+  var blob = this;
+  return new Blob(sectors.map(function(sector) {
+    return blob.slice(sector.offset, sector.offset + sector.length);
+  }), options);
+};
+
+data.sectorize = function(outSectors, inSectors) {
+  if (typeof inSectors === 'number') {
+    inSectors = [{offset:arguments[1], length:arguments[2]}];
+  }
+  if (outSectors.length === 1 && outSectors[0].offset === 0) {
+    return inSectors;
+  }
+  if (outSectors.length === 0) {
+    for (var i = 0; i < inSectors.length; i++) {
+      if (inSectors[i].length !== 0) {
+        throw new RangeError('not enough data');
+      }
+    }
+    return [];
+  }
+  var final = [];
+  var j = 0;
+  for (var i = 0; i < inSectors.length; i++) {
+    var offset = inSectors[i].offset;
+    var length = inSectors[i].length;
+    if (length === 0) continue;
+    while (offset > outSectors[j].length) {
+      offset -= outSectors[j++].length;
+    }
+    while (length > 0) {
+      var partLength = Math.min(length, outSectors[j].length - offset);
+      final.push({offset:outSectors[j].offset + offset, length:partLength});
+      length -= partLength;
+      offset = 0;
+      j++;
+    }
+  }
+  return final;
+};
+
 function download(v) {
   if (!(v instanceof Blob)) v = new Blob([v]);
   postMessage({
@@ -198,9 +240,11 @@ data.ChunkCache.prototype = {
   initSectorPattern: function(chunkCache, totalSectorLength, dataSectorLength) {
     throw new Error('TODO');
   },
+  /*
   sublen: function(offset, length) {
     return new data.SubChunkCache(this, offset, offset+length);
   },
+  */
   callListeners: function(chunk, head) {
     for (var i = this.listeners.length-1; i >= 0; i--) {
       if (this.listeners[i](chunk, head) === true) {
@@ -226,19 +270,19 @@ data.ChunkCache.prototype = {
     if (sectors.length === 0) {
       return Promise.resolve(new Blob([]));
     }
-    if (sectors.length === 1 && sectors[0].end <= this.blob.size) {
-      return Promise.resolve(this.blob.slice(sectors[0].start, sectors[0].end));
+    if (sectors.length === 1 && (sectors[0].offset + sectors[0].length) <= this.blob.size) {
+      return Promise.resolve(this.blob.sublen(sectors[0].offset, sectors[0].length));
     }
     function concatBlob(blob) {
       var slices = [];
       for (var i = 0; i < sectors.length; i++) {
-        slices.push(blob.slice(sectors[i].start, sectors[i].end));
+        slices.push(blob.sublen(sectors[i].offset, sectors[i].length));
       }
       return new Blob(slices);
     }
     var lastEnd = 0;
     for (var i = 0; i < sectors.length; i++) {
-      lastEnd = Math.max(lastEnd, sectors[i].end);
+      lastEnd = Math.max(lastEnd, sectors[i].offset + sectors[i].length);
     }
     if (lastEnd <= this.blob.size) {
       return Promise.resolve(concatBlob(this.blob));
@@ -259,13 +303,13 @@ data.ChunkCache.prototype = {
   },
   getBytes: function(sectors) {
     if (sectors.length === 0) return Promise.resolve(new Uint8Array(0));
-    if (sectors.length === 1 && sectors[0].end <= this.blob.size) {
-      var blob = this.blob.slice(sectors[0].start, sectors[0].end);
+    if (sectors.length === 1 && (sectors[0].offset + sectors[0].length) <= this.blob.size) {
+      var blob = this.blob.sublen(sectors[0].offset, sectors[0].length);
       return Promise.resolve(new Uint8Array(frs.readAsArrayBuffer(blob)));
     }
     var blob = this.blob;
     for (var i = 0; i < sectors.length; i++) {
-      if (sectors[i].start <= blob.size) {
+      if (sectors[i].offset < blob.size) {
         return this.getBlob(sectors).then(function(blob) {
           return new Uint8Array(frs.readAsArrayBuffer(blob));
         });
@@ -273,10 +317,10 @@ data.ChunkCache.prototype = {
     }
     var totalLength = 0, copy = [];
     for (var i = 0; i < sectors.length; i++) {
-      var length = sectors[i].end - sectors[i].start;
+      var length = sectors[i].length;
       copy.push({
         bufPos: totalLength,
-        blobPos: sectors[i].start,
+        blobPos: sectors[i].offset,
         length: length,
       });
       totalLength += length;
@@ -315,6 +359,7 @@ data.ChunkCache.prototype = {
   },
 };
 
+/*
 data.SubChunkCache = function SubChunkCache(cc, start, end) {
   this.cc = cc;
   this.start = start;
@@ -337,3 +382,4 @@ data.SubChunkCache.prototype = {
     return new data.SubChunkCache(this.cc, this.start + offset, this.start + offset + length);
   },
 };
+*/
