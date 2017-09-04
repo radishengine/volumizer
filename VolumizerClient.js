@@ -1,43 +1,6 @@
 
 function VolumizerClient() {
   this.worker = new Worker('volumizer.worker.js');
-  this.worker.postMessage({
-    headline: 'routing',
-    routing: [
-      {
-        endpoint: 'mac/hfs',
-        data: /^.{1024}BD.{510,}/,
-        ext: ['cdr', 'iso', 'toast', 'dsk', 'img', 'image'],
-      },
-      {
-        endpoint: 'mac/mfs',
-        data: /^.{1024}\xD2\xD7.{510,}/,
-        ext: ['dsk', 'img', 'image'],
-      },
-      {
-        endpoint: 'mac/partitioned',
-        data: /^.{512}PM.{510,}PM.{510,}/,
-        ext: ['cdr', 'iso', 'toast', 'dsk', 'img', 'image'],
-      },
-      {
-        endpoint: 'mac/stuffit-pre5',
-        data: /^SIT!/,
-        ext: 'sit',
-        type: 'application/x-stuffit-compressed',
-      },
-      {
-        endpoint: 'mac/stuffit-5',
-        data: /^StuffIt (c)1997-\d{4} Aladdin Systems, Inc\./,
-        ext: 'sit',
-        type: 'application/x-stuffit-compressed',
-      },
-      {
-        endpoint: 'mac/hqx-encoded',
-        data: /(?:^|\r|\n])\(This file must be converted with BinHex[^\r\n]+[\r\n]+ *:([!-,\-0-9@A-Z\[`a-r]+\s*)+:/,
-        ext: 'hqx',
-      },
-    ],
-  });
   this.worker.tasks = {};
   this.worker.addEventListener('message', function downloadChecker(e) {
     if (e.data.headline === 'download') {
