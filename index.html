@@ -81,7 +81,7 @@
           el.childrenElement = el.querySelector('.children');
           if (path.length === 1) {
             document.getElementById('content').appendChild(el);
-            el.classList.append('open');
+            el.classList.add('open');
           }
           else {
             getElementForPath(path.slice(0, -1)).childrenElement.appendChild(el);
