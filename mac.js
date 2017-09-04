@@ -791,7 +791,7 @@ mac.partitioned = function(id, cc, sectors) {
     var second = new mac.PartitionBlock(first2, 512, 512);
     if (!first.hasValidSignature || !second.hasValidSignature) return false;
     function doPartition(partition) {
-      var sectors = data.sectorize(sectors, partition.firstSector * 512, partition.sectorCount * 512);
+      var mainSectors = data.sectorize(sectors, partition.firstSector * 512, partition.sectorCount * 512);
       var metadata = {
         name: partition.name,
         type: partition.type,
@@ -818,7 +818,7 @@ mac.partitioned = function(id, cc, sectors) {
         callback: 'entry',
         args: [{
           metadata: metadata,
-          sectors: sectors,
+          sectors: mainSectors,
           secondary: secondary,
         }],
       });
