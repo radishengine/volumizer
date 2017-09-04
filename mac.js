@@ -46,6 +46,10 @@ mac.RectBlock.prototype = Object.defineProperties({
   
   get width()  { return this.right - this.left; },
   get height() { return this.bottom - this.top; },
+  
+  toJSON: function() {
+    return {top:this.top, left:this.left, bottom:this.bottom, right:this.right};
+  },
 }, data.struct_props);
 mac.RectBlock.byteLength = 8;
 
@@ -473,7 +477,7 @@ mac.HFSFileBlock.prototype = Object.defineProperties({
   get isOnDesk() {
     return !!(0x0001 & this.flags);
   },
-  get color() {
+  get isColor() {
     return !!(0x000E & this.flags);
   },
   get requireSwitchLaunch() {
@@ -831,6 +835,184 @@ mac.partitioned = function(id, cc, sectors) {
       for (var i = 0; i < rest.length; i += 512) {
         doPartition(new mac.PartitionBlock(rest, i, 512));
       }
+    });
+  });
+};
+
+mac.hfs = function hfs(id, cc, sectors) {
+  return cc.getBytes(data.sectorize(sectors, 1024, 512)).then(function(mdb) {
+    mdb = new mac.HFSDirectoryBlock(mdb);
+    if (!mdb.hasValidSignature) return false;
+    const CHUNK_LENGTH = mdb.allocationChunkByteLength;
+    var allocSectors = data.sectorize(sectors, mdb.firstAllocationBlock * 512, mdb.allocationChunkCount * CHUNK_LENGTH);
+    function getExtentSectors(extents) {
+      return data.sectorize(allocSectors, extents.map(function(extent) {
+        return {offset:extent.offset * CHUNK_LENGTH, length:extent.length * CHUNK_LENGTH};
+      }));
+    }
+    var overflowSectors = getExtentSectors(mdb.overflowFirstExtents);
+    var catalogSectors = getExtentSectors(mdb.catalogFirstExtents);
+    var gotOverflow = cc.getBytes(data.sectorize(overflowSectors, 0, 512))
+    .then(function(header) {
+      header = new mac.HFSNodeBlock(header);
+      if (header.type !== 'header') {
+        return Promise.reject('invalid overflow');
+      }
+      header = header.records[0];
+      var result = {data:{}, resource:{}};
+      function nextLeaf(i) {
+        if (i === 0) return result;
+        return cc.getBytes(data.sectorize(overflowSectors, 512 * i, 512))
+        .then(function(leaf) {
+          var leaf = new mac.HFSNodeBlock(leaf);
+          if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
+          leaf.records.forEach(function(record) {
+            var id = record.overflowFileID;
+            if (id < 5) {
+              throw new Error('TODO: special overflow handling');
+            }
+            var sectors = getExtentSectors(record.overflowExtentDataRecord.extents);
+            switch (record.overflowForkType) {
+              case 'data':
+                result.data[id] = (result.data[id] || []).concat(sectors);
+                break;
+              case 'resource':
+                result.resource[id] = (result.resource[id] || []).concat(sectors);
+                break;
+            }
+          });
+          return nextLeaf(leaf.nextNodeNumber);
+        });
+      }
+      return nextLeaf(header.firstLeaf);
+    });
+    function onFolder(path, metadata) {
+      postMessage({
+        id: id,
+        headline: 'callback',
+        callback: 'onentry',
+        args: [{
+          path: path,
+          metadata: {
+            isFolder: true,
+            id: metadata.id,
+            createdAt: metadata.createdAt,
+            modifiedAt: metadata.modifiedAt,
+            backupAt: metadata.backupAt,
+            isInvisible: metadata.isInvisible,
+            iconPosition: metadata.iconPosition,
+            windowRect: metadata.windowRect.toJSON(),
+            isOnDesk: metadata.isOnDesk,
+            isColor: metadata.isColor,
+            hasCustomIcon: metadata.hasCustomIcon,
+            scrollX: metadata.scrollX,
+            scrollY: metadata.scrollY,
+          },
+        }],
+      });
+    }
+    function onFile(path, metadata) {
+      var result = [];
+      function getForkSectors(extentSectors, byteLength, overflowType) {
+        var covered = data.sectorsTotalLength(extentSectors);
+        if (covered >= byteLength) {
+          return Promise.resolve(data.sectorize(extentSectors, 0, byteLength));
+        }
+        else return gotOverflow.then(function(overflow) {
+          var extra = overflow[overflowType][metadata.id];
+          if (!extra) return Promise.reject('insufficient extents');
+          covered += data.sectorsTotalLength(extra);
+          if (covered < byteLength) return Promise.reject('insufficient extents');
+          return data.sectorize(extentSectors.concat(extra), 0, byteLength);
+        });
+      }
+      var gotDataSectors, gotResourceSectors;
+      if (metadata.dataForkInfo.logicalEOF === 0) {
+        gotDataSectors = Promise.resolve([]);
+      }
+      else {
+        gotDataSectors = getForkSectors(
+          getExtentSectors(metadata.dataForkFirstExtentRecord.extents),
+          metadata.dataForkInfo.logicalEOF,
+          'data');
+      }
+      if (metadata.resourceForkInfo.logicalEOF === 0) {
+        gotResourceSectors = Promise.resolve([]);
+      }
+      else {
+        gotResourceSectors = getForkSectors(
+          getExtentSectors(metadata.resourceForkFirstExtentRecord.extents),
+          metadata.resourceForkInfo.logicalEOF,
+          'resource');
+      }
+      return Promise.all([gotDataSectors, gotResourceSectors])
+      .then(function(values) {
+        var dataSectors = values[0], resourceSectors = values[1];
+        postMessage({
+          id: id,
+          headline: 'callback',
+          callback: 'onentry',
+          args: [{
+            path: path,
+            sectors: dataSectors,
+            metadata: {
+              type: metadata.type,
+              creator: metadata.creator,
+              isOnDesk: metadata.isOnDesk,
+              isColor: metadata.isColor,
+              hasCustomIcon: metadata.hasCustomIcon,
+              isInvisible: metadata.isInvisible,
+              isAlias: metadata.isAlias,
+              id: metadata.id,
+              iconPosition: metadata.iconPosition,
+              createdAt: metadata.createdAt,
+              modifiedAt: metadata.modifiedAt,
+              backupAt: metadata.backupAt,
+              putAwayFolderID: metadata.putAwayFolderID,
+            },
+            secondary: {
+              resourceFork: {
+                sectors: resourceSectors,
+              },
+            },
+          }],
+        });
+      });
+    }
+    var gotCatalog = cc.getBytes(data.sectorize(catalogSectors, 0, 512))
+    .then(function(header) {
+      header = new mac.HFSNodeBlock(header);
+      if (header.type !== 'header') {
+        return Promise.reject('invalid catalog');
+      }
+      header = header.records[0];
+      var parentPaths = {0:'', 1:'', 2:'_EXTENTS:', 3:'_CATALOG:', 4:'_BADALLOC:'};
+      var pending = [];
+      function nextLeaf(i) {
+        if (i === 0) return Promise.all(pending);
+        return cc.getBytes(data.sectorize(catalogSectors, 512 * i, 512))
+        .then(function(leaf) {
+          var leaf = new mac.HFSNodeBlock(leaf);
+          if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
+          leaf.records.forEach(function(record) {
+            if (['folder', 'file'].indexOf(record.leafType) === -1) return;
+            var parentPath = parentPaths[record.parentFolderID];
+            var path = parentPath + record.name;
+            if (record.leafType === 'folder') {
+              parentPaths[record.asFolder.id] = path + ':';
+              pending.push(onFolder(path.split(/:/g), record.asFolder));
+            }
+            else {
+              pending.push(onFile(path.split(/:/g), record.asFile));
+            }
+          });
+          return nextLeaf(leaf.nextNodeNumber);
+        });
+      }
+      return nextLeaf(header.firstLeaf);
+    });
+    return gotCatalog.then(function() {
+      return true;
     });
   });
 };
