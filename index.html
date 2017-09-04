@@ -41,6 +41,9 @@
       .container:not(.open) {
         background: silver;
       }
+      .container.hidden > .title {
+        opacity: 0.5;
+      }
       .container:not(.open) > .children {
         display: none;
       }
@@ -120,6 +123,15 @@
             onentry: function(entry) {
               if ('path' in entry) {
                 var el = getElementForPath(entry.path);
+                if (entry.metadata.isInvisible) {
+                  entry.classList.add('hidden');
+                }
+                if (entry.metadata.isFolder) {
+                  entry.classList.add('folder');
+                }
+                else {
+                  entry.classList.add('file');
+                }
               }
               else {
                 console.dir(entry);
