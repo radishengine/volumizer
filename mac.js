@@ -1293,7 +1293,7 @@ mac.resourceFork = function resourceFork(id, cc, sectors) {
   var headerSectors = data.sectorize(sectors, 0, mac.ResourceHeaderBlock.byteLength);
   return Promise.resolve(cc.getBytes(headerSectors)).then(function(bytes) {
     var header = new mac.ResourceHeaderBlock(bytes.subarray(0, mac.ResourceHeaderBlock.byteLength));
-    var totalLength = data.totalSectorsLength(sectors);
+    var totalLength = data.sectorsTotalLength(sectors);
     var dataEnd = header.dataOffset + header.dataLength;
     var mapEnd = header.mapOffset + header.mapLength;
     if (Math.min(header.dataOffset, header.mapOffset) < mac.ResourceHeaderBlock.byteLength
