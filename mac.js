@@ -1342,3 +1342,101 @@ mac.resourceFork = function resourceFork(id, cc, sectors) {
     });
   });
 };
+
+map.XxxbleHeaderBlock = function XxxbleHeaderBlock() {
+  this._init.apply(this, arguments);
+};
+map.XxxbleHeaderBlock.prototype = Object.defineProperties({
+  get mode() {
+    switch (this.dv.getUint32(0)) {
+      case 0x00051600: return 'single';
+      case 0x00051607: return 'double';
+      default: return 'invalid';
+    }
+  },
+  get version() {
+    return this.dv.getUint32(4);
+  },
+  get entryCount() {
+    return this.dv.getUint16(24);
+  },
+}, data.struct_props);
+map.XxxbleHeaderBlock.byteLength = 26;
+
+map.XxxbleEntryBlock = function XxxbleEntryBlock() {
+  this._init.apply(this, arguments);
+};
+map.XxxbleEntryBlock.prototype = Object.defineProperties({
+  get id() {
+    return this.dv.getUint32(0);
+  },
+  get name() {
+    var id = this.id;
+    switch (id) {
+      case 1: return 'dataFork';
+      case 2: return 'resourceFork';
+      case 3: return 'name';
+      case 4: return 'comment';
+      case 5: return 'icon-1bpp';
+      case 6: return 'icon-color'; // ICN#, ics#, icl4, ics4, icl8, ics8
+      case 8: return 'dates';
+      case 9: return 'finder-info';
+      case 10: return 'mac-info';
+      case 11: return 'prodos-info';
+      case 12: return 'msdos-info';
+      case 13: return 'afp-name';
+      case 14: return 'afp-info';
+      case 15: return 'afp-id';
+      default:
+        if (id & 0x80000000) {
+          return 'custom' + (id & 0x7FFFFFFF);
+        }
+        return 'unknown' + id;
+    }
+  },
+  get offset() {
+    return this.dv.getUint32(4);
+  },
+  get length() {
+    return this.dv.getUint32(8);
+  },
+}, data.struct_props);
+map.XxxbleEntryBlock.byteLength = 12;
+
+mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
+  var headerSectors = data.sectorize(sectors, 0, mac.XxxbleHeaderBlock.byteLength);
+  return Promise.resolve(cc.getBytes(headerSectors)).then(function(bytes) {
+    var header = new mac.XxxbleHeaderBlock(bytes);
+    if (header.mode === 'invalid') return false;
+    var entrySectors = data.sectorize(sectors, header.byteLength, header.entryCount * mac.XxxbleEntryBlock.byteLength);
+    return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
+      var entries = new Array(header.entryCount);
+      for (var i = 0; i < entries.length; i++) {
+        entries[i] = new mac.XxxbleEntryBlock(bytes.sublen(i * mac.XxxbleEntryBlock.byteLength, mac.XxxbleEntryBlock.byteLength));
+      }
+      var secondary = {};
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        secondary[entry.type] = {sectors:data.sectorize(sectors, entry.offset, entry.length)};
+      }
+      var dataSectors;
+      if ('dataFork' in secondary) {
+        dataSectors = secondary.dataFork.sectors;
+        delete secondary.dataFork;
+      }
+      else dataSectors = [];
+      var metadata = {};
+      postMessage({
+        id: id,
+        headline: 'callback',
+        callback: 'onentry',
+        args: [{
+          metadata: metadata,
+          sectors: dataSectors,
+          secondary: secondary,
+        }],
+      });
+      return true;
+    });
+  });
+};
