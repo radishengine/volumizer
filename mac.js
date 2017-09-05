@@ -1190,16 +1190,16 @@ mac.mfs = function mfs(id, cc, sectors) {
       Math.ceil((mdb.allocChunkCount * 12) / 8));
     return Promise.resolve(cc.getBytes(mapSectors)).then(function(bytes) {
       var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-      var map = new Array(mdb.allocChunkCount);
+      var map = new Uint16Array(mdb.allocChunkCount);
       for (var i = 0; i < map.length; i++) {
         // aaaaaaaa
         // aaaabbbb
         // bbbbbbbb
-        if (i % 2) {
-          map[i] = dv.getUint16(Math.floor(i/2)*3+1, false) & 0xfff;
+        if (i & 1) {
+          map[i] = dv.getUint16((i >>> 1)*3 + 1) & 0xfff;
         }
         else {
-          map[i] = dv.getUint16(Math.floor(i/2)*3, false) >>> 4;
+          map[i] = dv.getUint16((i >>> 1)*3) >>> 4;
         }
       }
       function getExtentSectors(allocNumber) {
@@ -1231,13 +1231,30 @@ mac.mfs = function mfs(id, cc, sectors) {
           do {
             var fileInfo = new mac.MFSFileBlock(block.buffer, nextPos);
             if (!fileInfo.exists) break;
+            var dataSectors, resourceSectors;
+            if (fileInfo.dataLogicalLength === 0) {
+              dataSectors = [];
+            }
+            else {
+              dataSectors = data.sectorize(
+                getExtentSectors(fileInfo.firstDataChunk),
+                0, fileInfo.dataLogicalLength);
+            }
+            if (fileInfo.resourceLogicalLength === 0) {
+              resourceSectors = [];
+            }
+            else {
+              resourceSectors = data.sectorize(
+                getExtentSectors(fileInfo.firstResourceChunk),
+                0, fileInfo.resourceLogicalLength);
+            }
             postMessage({
               id: id,
               headline: 'callback',
               callback: 'onentry',
               args: [{
                 path: [mdb.name, fileInfo.name],
-                sectors: data.sectorize(getExtentSectors(fileInfo.firstDataChunk), 0, fileInfo.dataLogicalLength),
+                sectors: dataSectors,
                 metadata: {
                   modifiedAt: fileInfo.modifiedAt,
                   createdAt: fileInfo.createdAt,
@@ -1246,7 +1263,7 @@ mac.mfs = function mfs(id, cc, sectors) {
                 },
                 secondary: {
                   resourceFork: {
-                    sectors: data.sectorize(getExtentSectors(fileInfo.firstResourceChunk), 0, fileInfo.resourceLogicalLength),
+                    sectors: resourceSectors,
                   },
                 },
               }],
