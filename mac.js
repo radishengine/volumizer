@@ -892,6 +892,7 @@ mac.hfs = function hfs(id, cc, sectors) {
         }
         return bytes.then(function(leaf) {
           var leaf = new mac.HFSNodeBlock(leaf);
+          doLeaf(leaf);
           return nextLeaf(leaf.nextNodeNumber);
         });
       }
