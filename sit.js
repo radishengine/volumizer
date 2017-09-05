@@ -5,7 +5,7 @@ self.sit = {};
 
 sit.original = function original(id, cc, sectors) {
   return Promise.resolve(cc.getBytes(data.sectorize(sectors, 0, 14))).then(function(bytes) {
-    if (bytes.sublen(0, 4).toByteString() !== 'SIT!' || bytes.sublen(10, 4) !== 'rLau') {
+    if (bytes.sublen(0, 4).toByteString() !== 'SIT!' || bytes.sublen(10, 4).toByteString() !== 'rLau') {
       return false;
     }
     return true;
