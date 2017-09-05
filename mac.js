@@ -976,8 +976,8 @@ mac.hfs = function hfs(id, cc, sectors) {
               },
             },
           }],
-        });
-      }));
+        }));
+      });
     }
     var gotCatalog = cc.getBytes(data.sectorize(catalogSectors, 0, 512))
     .then(function(header) {
