@@ -28,10 +28,10 @@ sit.OriginalEntryBlock = function OriginalEntryBlock() {
 };
 sit.OriginalEntryBlock.prototype = Object.defineProperties({
   get resourceForkMode() {
-    return this.bytes[0] & 0xf;
+    return this.bytes[0];
   },
   get dataForkMode() {
-    return this.bytes[1] & 0xf;    
+    return this.bytes[1];    
   },
   get name() {
     return this.bytes.sublen(3, this.bytes[2]).toMacRoman();
