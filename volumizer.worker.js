@@ -255,7 +255,7 @@ onmessage.handlers = {
     var promise = Promise.resolve(false);
     var errors = [];
     function tryStructure(i) {
-      if (i > structure.length) {
+      if (i >= structure.length) {
         if (errors.length === 0) {
           return Promise.reject('file structure not recognized');
         }
@@ -278,13 +278,6 @@ onmessage.handlers = {
     }
     return tryStructure(0);
   },
-  /*
-  'open-blob': function(message) {
-    var cc = new data.ChunkCache;
-    cc.initBlob(message.blob);
-    return loaders['volume/mac-partitioned'](cc, message.id);
-  },
-  */
 };
 
 onmessage.promiseChain = Promise.resolve();
