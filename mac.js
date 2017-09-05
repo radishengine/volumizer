@@ -986,19 +986,23 @@ mac.hfs = function hfs(id, cc, sectors) {
       }
       header = header.records[0];
       var parentPaths = {0:'', 1:'', 2:'_EXTENTS:', 3:'_CATALOG:', 4:'_BADALLOC:'};
-      var pending = [];
+      var pending = Promise.resolve(null);
       function doLeaf(leaf) {
         if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
         leaf.records.forEach(function(record) {
           if (['folder', 'file'].indexOf(record.leafType) === -1) return;
           var parentPath = parentPaths[record.parentFolderID];
           var path = parentPath + record.name;
+          var p;
           if (record.leafType === 'folder') {
             parentPaths[record.asFolder.id] = path + ':';
-            pending.push(onFolder(path.split(/:/g), record.asFolder));
+            p = onFolder(path.split(/:/g), record.asFolder);
           }
           else {
-            pending.push(onFile(path.split(/:/g), record.asFile));
+            p = onFile(path.split(/:/g), record.asFile);
+          }
+          if (p && typeof p.then === 'function') {
+            pending = Promise.all([pending, p]);
           }
         });
       }
