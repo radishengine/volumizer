@@ -831,7 +831,8 @@ mac.partitioned = function(id, cc, sectors) {
     doPartition(first);
     doPartition(second);
     if (first.totalPartitionCount < 3) return true;
-    return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512))).then(function(rest) {
+    return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512)))
+    .then(function(rest) {
       for (var i = 0; i < rest.length; i += 512) {
         doPartition(new mac.PartitionBlock(rest, i, 512));
       }
@@ -1001,7 +1002,7 @@ mac.hfs = function hfs(id, cc, sectors) {
         if (i === 0) return Promise.all(pending);
         var bytes = cc.getBytes(data.sectorize(catalogSectors, 512 * i, 512));
         while (bytes instanceof Uint8Array) {
-          var leaf = new mac.HFSNodeBlock(leaf);
+          var leaf = new mac.HFSNodeBlock(bytes);
           doLeaf(new mac.HFSNodeBlock(bytes));
           i = leaf.nextNodeNumber;
           if (i === 0) return Promise.all(pending);
