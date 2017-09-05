@@ -852,7 +852,7 @@ mac.hfs = function hfs(id, cc, sectors) {
     }
     var overflowSectors = getExtentSectors(mdb.overflowFirstExtents);
     var catalogSectors = getExtentSectors(mdb.catalogFirstExtents);
-    cc.cacheHint(overflowSectors);
+    cc.cacheHint(catalogSectors);
     var gotOverflow = cc.getBytes(data.sectorize(overflowSectors, 0, 512))
     .then(function(header) {
       header = new mac.HFSNodeBlock(header);
