@@ -1214,7 +1214,7 @@ mac.mfs = function mfs(id, cc, sectors) {
           }
         }
         for (var i = 0; i < chain.length; i++) {
-          chain[i].offset *= chunkSize;
+          chain[i].offset = allocOffset + chain[i].offset * chunkSize;
           chain[i].length *= chunkSize;
         }
         return data.sectorize(sectors, chain);
