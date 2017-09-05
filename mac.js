@@ -1515,7 +1515,6 @@ mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
             metadata.hasCustomIcon = file.hasCustomIcon;
             metadata.isInvisible = file.isInvisible;
             metadata.isAlias = file.isAlias;
-            metadata.id = file.id;
             metadata.iconPosition = file.iconPosition;
             metadata.putAwayFolderID = file.putAwayFolderID;
           }),
