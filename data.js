@@ -274,30 +274,23 @@ data.ChunkCache.prototype = {
   },
   getBlob: function(sectors) {
     if (sectors.length === 0) {
-      return Promise.resolve(new Blob([]));
+      return new Blob([]);
     }
     if (sectors.length === 1 && (sectors[0].offset + sectors[0].length) <= this.blob.size) {
-      return Promise.resolve(this.blob.sublen(sectors[0].offset, sectors[0].length));
-    }
-    function concatBlob(blob) {
-      var slices = [];
-      for (var i = 0; i < sectors.length; i++) {
-        slices.push(blob.sublen(sectors[i].offset, sectors[i].length));
-      }
-      return new Blob(slices);
+      return this.blob.sublen(sectors[0].offset, sectors[0].length);
     }
     var lastEnd = 0;
     for (var i = 0; i < sectors.length; i++) {
       lastEnd = Math.max(lastEnd, sectors[i].offset + sectors[i].length);
     }
     if (lastEnd <= this.blob.size) {
-      return Promise.resolve(concatBlob(this.blob));
+      return this.blob.sectorize(sectors);
     }
     var self = this;
     return new Promise(function(resolve, reject) {
       self.addListener(function() {
         if (self.blob.size >= lastEnd) {
-          resolve(concatBlob(self.blob));
+          resolve(self.blob.sectorize(sectors));
           return true;
         }
         else if (self.complete) {
@@ -346,18 +339,22 @@ data.ChunkCache.prototype = {
     if (sectors.length === 1) {
       var s = sectors[0];
       var cached = this.getCached(s.offset, s.length);
-      if (cached) return Promise.resolve(cached);
+      if (cached) return cached;
       if ((s.offset + s.length) <= this.blob.size) {
         var blob = this.blob.sublen(sectors[0].offset, sectors[0].length);
-        return Promise.resolve(new Uint8Array(frs.readAsArrayBuffer(blob)));
+        return new Uint8Array(frs.readAsArrayBuffer(blob));
       }
     }
     var blob = this.blob;
     for (var i = 0; i < sectors.length; i++) {
       if (sectors[i].offset < blob.size) {
-        return this.getBlob(sectors).then(function(blob) {
-          return new Uint8Array(frs.readAsArrayBuffer(blob));
-        });
+        var blob = this.getBlob(sectors);
+        if (typeof blob.then === 'function') {
+          return blob.then(function(blob) {
+            return new Uint8Array(frs.readAsArrayBuffer(blob));
+          });
+        }
+        return new Uint8Array(frs.readAsArrayBuffer(blob));
       }
     }
     var totalLength = 0, copy = [];
