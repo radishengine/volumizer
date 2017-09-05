@@ -96,15 +96,7 @@
         return el;
       }
       
-      function onFile(file) {
-        var structure = [];
-        if (/\.(?:iso|dsk|img|image|toast|cdr)/i.test(file.name)) {
-          structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
-        }
-        if (structure.length === 0) {
-          alert('unrecognized file type');
-          return;
-        }
+      function loadFile(file, structure, sectors) {
         if (!blobVC) {
           blobVC = new VolumizerClient;
         }
@@ -116,7 +108,7 @@
           {
             headline: 'volumize',
             source: file,
-            sectors: [{offset:0, length:file.size}],
+            sectors: sectors,
             structure: structure,
           },
           {
@@ -136,6 +128,15 @@
                   document.getElementById('content').appendChild(el.parentNode.removeChild(el));
                 }
               }
+              else if (entry.as === 'mac/partitioned') {
+                var type = entry.type.toLowerCase();
+                if (type === 'apple_hfs') {
+                  loadFile(file, ['mac/hfs'], entry.sectors);
+                }
+                else if (type === 'apple_mfs') {
+                  loadFile(file, ['mac/mfs'], entry.sectors);
+                }
+              }
               else {
                 console.dir(entry);
               }
@@ -150,6 +151,18 @@
             document.body.classList.add('error');
           }
         );
+      }
+      
+      function onFile(file, sectors) {
+        var structure = [];
+        if (/\.(?:iso|dsk|img|image|toast|cdr)/i.test(file.name)) {
+          structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
+        }
+        if (structure.length === 0) {
+          alert('unrecognized file type');
+          return;
+        }
+        return loadFile(file, structure, [{offset:0, length:file.size}]);
       }
       
       document.body.dragEnterCount = 0;
