@@ -1403,6 +1403,80 @@ mac.XxxbleEntryBlock.prototype = Object.defineProperties({
 }, data.struct_props);
 mac.XxxbleEntryBlock.byteLength = 12;
 
+mac.XxxbleFileBlock = function XxxbleFileBlock() {
+  this._init.apply(this, arguments);
+};
+mac.XxxbleFileBlock.prototype = Object.defineProperties({
+  get type() {
+    return this.bytes.sublen(0, 4).toMacRoman();
+  },
+  get creator() {
+    return this.bytes.sublen(4, 4).toMacRoman();
+  },
+  get flags() {
+    return this.dv.getUint16(8);
+  },
+  get isOnDesk() {
+    return !!(0x0001 & this.flags);
+  },
+  get isColor() {
+    return !!(0x000E & this.flags);
+  },
+  get requireSwitchLaunch() {
+    return !!(0x0020 & this.flags);
+  },
+  get isShared() {
+    return !!(0x0040 & this.flags);
+  },
+  get hasNoINITs() {
+    return !!(0x0080 & this.flags);
+  },
+  get hasBeenInited() {
+    return !!(0x0100 & this.flags);
+  },
+  get hasCustomIcon() {
+    return !!(0x0400 & this.flags);
+  },
+  get isStationery() {
+    return !!(0x0800 & this.flags);
+  },
+  get isNameLocked() {
+    return !!(0x1000 & this.flags);
+  },
+  get hasBundle() {
+    return !!(0x2000 & this.flags);
+  },
+  get isInvisible() {
+    return !!(0x4000 & this.flags);
+  },
+  get isAlias() {
+    return !!(0x8000 & this.flags);
+  },
+  get iconPosition() {
+    var position = {
+      v: this.dv.getInt16(10),
+      h: this.dv.getInt16(12),
+    };
+    return !(position.v && position.h) ? 'default' : position;
+  },
+  get folderID() {
+    return this.dv.getUint16(14);
+  },
+  get iconID() {
+    return this.dv.getUint16(16);
+  },
+  get scriptFlags() {
+    return this.bytes[24];
+  },
+  get commentID() {
+    return this.dv.getUint16(26);
+  },
+  get putAwayFolderID() {
+    return this.dv.getUint32(28);
+  },
+}, data.struct_props);
+mac.XxxbleFileBlock.byteLength = 32;
+
 mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
   var headerSectors = data.sectorize(sectors, 0, mac.XxxbleHeaderBlock.byteLength);
   return Promise.resolve(cc.getBytes(headerSectors)).then(function(bytes) {
@@ -1433,7 +1507,7 @@ mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
         finished = Promise.all([
           finished,
           Promise.resolve(cc.getBytes(finderInfoSectors)).then(function(bytes) {
-            var file = new mac.HFSFileBlock(bytes);
+            var file = new mac.XxxbleFileBlock(bytes);
             metadata.type = file.type;
             metadata.creator = file.creator;
             metadata.isOnDesk = file.isOnDesk;
@@ -1443,9 +1517,6 @@ mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
             metadata.isAlias = file.isAlias;
             metadata.id = file.id;
             metadata.iconPosition = file.iconPosition;
-            metadata.createdAt = file.createdAt;
-            metadata.modifiedAt = file.modifiedAt;
-            metadata.backupAt = file.backupAt;
             metadata.putAwayFolderID = file.putAwayFolderID;
           }),
         ]);
