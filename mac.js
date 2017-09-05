@@ -1003,7 +1003,7 @@ mac.hfs = function hfs(id, cc, sectors) {
         var bytes = cc.getBytes(data.sectorize(catalogSectors, 512 * i, 512));
         while (bytes instanceof Uint8Array) {
           var leaf = new mac.HFSNodeBlock(bytes);
-          doLeaf(new mac.HFSNodeBlock(bytes));
+          doLeaf(leaf);
           i = leaf.nextNodeNumber;
           if (i === 0) return Promise.all(pending);
           bytes = cc.getBytes(data.sectorize(catalogSectors, 512 * i, 512));
