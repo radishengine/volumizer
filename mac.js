@@ -853,7 +853,7 @@ mac.hfs = function hfs(id, cc, sectors) {
     }
     var overflowSectors = getExtentSectors(mdb.overflowFirstExtents);
     var catalogSectors = getExtentSectors(mdb.catalogFirstExtents);
-    cc.cacheHint(catalogSectors);
+    cc.cacheHint(overflowSectors.concat(catalogSectors));
     var gotOverflow = Promise.resolve(cc.getBytes(data.sectorize(overflowSectors, 0, 512)))
     .then(function(header) {
       header = new mac.HFSNodeBlock(header);
@@ -862,27 +862,36 @@ mac.hfs = function hfs(id, cc, sectors) {
       }
       header = header.records[0];
       var result = {data:{}, resource:{}};
+      function doLeaf(leaf) {
+        if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
+        leaf.records.forEach(function(record) {
+          var id = record.overflowFileID;
+          if (id < 5) {
+            throw new Error('TODO: special overflow handling');
+          }
+          var sectors = getExtentSectors(record.overflowExtentDataRecord.extents);
+          switch (record.overflowForkType) {
+            case 'data':
+              result.data[id] = (result.data[id] || []).concat(sectors);
+              break;
+            case 'resource':
+              result.resource[id] = (result.resource[id] || []).concat(sectors);
+              break;
+          }
+        });
+      }
       function nextLeaf(i) {
         if (i === 0) return result;
-        return Promise.resolve(cc.getBytes(data.sectorize(overflowSectors, 512 * i, 512)))
-        .then(function(leaf) {
+        var bytes = cc.getBytes(data.sectorize(overflowSectors, 512 * i, 512));
+        while (bytes instanceof Uint8Array) {
+          var leaf = new mac.HFSNodeBlock(bytes);
+          doLeaf(leaf);
+          i = leaf.nextNodeNumber;
+          if (i === 0) return result;
+          bytes = cc.getBytes(data.sectorize(overflowSectors, 512 * i, 512));
+        }
+        return bytes.then(function(leaf) {
           var leaf = new mac.HFSNodeBlock(leaf);
-          if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
-          leaf.records.forEach(function(record) {
-            var id = record.overflowFileID;
-            if (id < 5) {
-              throw new Error('TODO: special overflow handling');
-            }
-            var sectors = getExtentSectors(record.overflowExtentDataRecord.extents);
-            switch (record.overflowForkType) {
-              case 'data':
-                result.data[id] = (result.data[id] || []).concat(sectors);
-                break;
-              case 'resource':
-                result.resource[id] = (result.resource[id] || []).concat(sectors);
-                break;
-            }
-          });
           return nextLeaf(leaf.nextNodeNumber);
         });
       }
