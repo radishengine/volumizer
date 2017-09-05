@@ -222,7 +222,7 @@ mac.MFSFileBlock.prototype = Object.defineProperties({
   get name() {
     return this.bytes.sublen(51, this.bytes[50]).toMacRoman();
   },
-  get byteLength() {
+  get usedByteLength() {
     var len = 51 + this.bytes[50];
     if (len & 1) len++;
     return len;
@@ -1251,7 +1251,7 @@ mac.mfs = function mfs(id, cc, sectors) {
                 },
               }],
             });
-            nextPos += fileInfo.byteLength;
+            nextPos += fileInfo.usedByteLength;
           } while (nextPos < endPos);
           return nextDirBlock(block_i + 1);
         });
