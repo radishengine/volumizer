@@ -1370,7 +1370,7 @@ mac.XxxbleEntryBlock.prototype = Object.defineProperties({
   get id() {
     return this.dv.getUint32(0);
   },
-  get name() {
+  get type() {
     var id = this.id;
     switch (id) {
       case 1: return 'dataFork';
