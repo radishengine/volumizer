@@ -34,7 +34,7 @@ sit.OriginalEntryBlock.prototype = Object.defineProperties({
     return this.bytes[1] & 0xf;    
   },
   get name() {
-    return this.bytes.sublen(3, this.bytes[2]).toByteString();
+    return this.bytes.sublen(3, this.bytes[2]).toMacRoman();
   },
   get nameChecksum() {
     return this.dv.getUint16(34);
@@ -121,6 +121,7 @@ sit.original = function original(id, cc, sectors) {
         var dataOffset = offset + entry.byteLength;
         var resourceOffset = dataOffset + entry.dataForkStoredSize;
         var nextOffset = resourceOffset + entry.resourceForkStoredSize;
+        var metadata = {};
         postMessage({
           id: id,
           headline: 'callback',
@@ -128,6 +129,7 @@ sit.original = function original(id, cc, sectors) {
           args: [{
             path: path.concat(entry.name),
             sectors: data.sectorize(sectors, dataOffset, entry.dataForkStoredSize),
+            metadata: metadata,
             secondary: {
               resourceFork: {
                 sectors: data.sectorize(sectors, resourceOffset, entry.resourceForkStoredSize),
