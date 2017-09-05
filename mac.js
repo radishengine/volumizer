@@ -822,6 +822,7 @@ mac.partitioned = function(id, cc, sectors) {
         headline: 'callback',
         callback: 'onentry',
         args: [{
+          as: 'mac/partitioned',
           metadata: metadata,
           sectors: mainSectors,
           secondary: secondary,
