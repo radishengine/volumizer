@@ -930,6 +930,7 @@ mac.hfs = function hfs(id, cc, sectors) {
         });
       }
       function onSectors(dataSectors, resourceSectors) {
+        /*
         postMessage(JSON.stringify({
           id: id,
           headline: 'callback',
@@ -959,6 +960,7 @@ mac.hfs = function hfs(id, cc, sectors) {
             },
           }],
         }));
+        */
       }
       var dataSectors = getForkSectors(
         getExtentSectors(metadata.dataForkFirstExtentRecord),
