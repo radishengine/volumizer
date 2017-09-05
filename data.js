@@ -314,7 +314,7 @@ data.ChunkCache.prototype = {
       }
     }
     sectors = this.cache = sectors.slice().sort(function(a, b) {
-      return b.offset - a.offset;
+      return a.offset - b.offset;
     });
     var raw = frs.readAsArrayBuffer(blob.sectorize(sectors));
     var offset = 0;
@@ -368,7 +368,7 @@ data.ChunkCache.prototype = {
       totalLength += length;
     }
     copy.sort(function(a, b) {
-      return b.blobPos - a.blobPos;
+      return a.blobPos - b.blobPos;
     });
     var self = this;
     return new Promise(function(resolve, reject) {
