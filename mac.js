@@ -963,9 +963,14 @@ mac.partitioned = function(id, cc, sectors) {
 };
 
 mac.hfs = function hfs(id, cc, sectors) {
-  return Promise.resolve(cc.getBytes(data.sectorize(sectors, 1024, 512))).then(function(mdb) {
-    mdb = new mac.HFSMasterDirectoryBlock(mdb);
-    if (!mdb.hasValidSignature) return false;
+  return Promise.resolve(cc.getBytes(data.sectorize(sectors, 1024, 512))).then(function(bytes) {
+    var mdb = new mac.HFSMasterDirectoryBlock(bytes);
+    if (!mdb.hasValidSignature) {
+      if (String.fromCharCode(bytes[84], bytes[85]) === 'BD') {
+        return mac.hfs(id, cc, sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
+      }
+      return false;
+    }
     const CHUNK_LENGTH = mdb.allocationChunkByteLength;
     var allocSectors = data.sectorize(sectors, mdb.firstAllocationBlock * 512, mdb.allocationChunkCount * CHUNK_LENGTH);
     function getExtentSectors(extents) {
@@ -1179,10 +1184,15 @@ mac.hfs = function hfs(id, cc, sectors) {
 };
 
 mac.mfs = function mfs(id, cc, sectors) {
-  var mdbSectors = data.sectorize(sectors, 1024, mac.MFSMasterDirectoryBlock.byteLength);
-  return Promise.resolve(cc.getBytes(mdbSectors)).then(function(mdb) {
-    mdb = new mac.MFSMasterDirectoryBlock(mdb);
-    if (!mdb.hasValidSignature) return false;
+  var mdbSectors = data.sectorize(sectors, 1024, 512);
+  return Promise.resolve(cc.getBytes(mdbSectors)).then(function(bytes) {
+    var mdb = new mac.MFSMasterDirectoryBlock(bytes.sublen(0, mac.MFSMasterDirectoryBlock.byteLength));
+    if (!mdb.hasValidSignature) {
+      if (bytes[84] === 0xD2 && bytes[85] === 0xD7) {
+        return mac.mfs(id, cc, sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
+      }
+      return false;
+    }
     var chunkSize = mdb.allocChunkSize;
     var allocOffset = mdb.firstAllocBlock * 512 - 2*mdb.allocChunkSize;
     var mapSectors = data.sectorize(sectors,
