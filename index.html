@@ -158,6 +158,9 @@
         if (/\.(?:iso|dsk|img|image|toast|cdr)$/i.test(file.name)) {
           structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
         }
+        if (/\.rsrc$/i.test(file.name)) {
+          structure.push('mac/resource-fork');
+        }
         if (structure.length === 0) {
           alert('unrecognized file type');
           return;
