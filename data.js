@@ -335,7 +335,7 @@ data.ChunkCache.prototype = {
     }
   },
   getBytes: function(sectors) {
-    if (sectors.length === 0) return Promise.resolve(new Uint8Array(0));
+    if (sectors.length === 0) return new Uint8Array(0);
     if (sectors.length === 1) {
       var s = sectors[0];
       var cached = this.getCached(s.offset, s.length);
