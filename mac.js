@@ -1179,7 +1179,7 @@ mac.hfs = function hfs(id, cc, sectors) {
 };
 
 mac.mfs = function mfs(id, cc, sectors) {
-  var mdbSectors = data.sectorize(sectors, 1024, 512);
+  var mdbSectors = data.sectorize(sectors, 1024, mac.MFSMasterDirectoryBlock.byteLength);
   return Promise.resolve(cc.getBytes(mdbSectors)).then(function(mdb) {
     mdb = new mac.MFSMasterDirectoryBlock(mdb);
     if (!mdb.hasValidSignature) return false;
