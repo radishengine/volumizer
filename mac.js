@@ -994,23 +994,42 @@ mac.hfs = function hfs(id, cc, sectors) {
       header = header.records[0];
       var parentPaths = {0:'', 1:'', 2:'_EXTENTS:', 3:'_CATALOG:', 4:'_BADALLOC:'};
       var pending = Promise.resolve(null);
+      var early;
+      function doRecord(record) {
+        if (!(record.parentFolderID in parentPaths)) {
+          if (!early) early = {};
+          if (!(record.parentFolderID in early)) {
+            early[record.parentFolderID] = [];
+          }
+          early[record.parentFolderID].push(record);
+          return;
+        }
+        var parentPath = parentPaths[record.parentFolderID];
+        var path = parentPath + record.name;
+        var p;
+        if (record.leafType === 'folder') {
+          parentPaths[record.asFolder.id] = path + ':';
+          p = onFolder(path.split(/:/g), record.asFolder);
+          if (early && (record.asFolder.id in early)) {
+            var earlyList = early[record.asFolder.id];
+            delete early[record.asFolder.id];
+            for (var i = 0; i < earlyList.length; i++) {
+              doRecord(earlyList[i]);
+            }
+          }
+        }
+        else {
+          p = onFile(path.split(/:/g), record.asFile);
+        }
+        if (p && typeof p.then === 'function') {
+          pending = Promise.all([pending, p]);
+        }
+      }
       function doLeaf(leaf) {
         if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
         leaf.records.forEach(function(record) {
           if (['folder', 'file'].indexOf(record.leafType) === -1) return;
-          var parentPath = parentPaths[record.parentFolderID];
-          var path = parentPath + record.name;
-          var p;
-          if (record.leafType === 'folder') {
-            parentPaths[record.asFolder.id] = path + ':';
-            p = onFolder(path.split(/:/g), record.asFolder);
-          }
-          else {
-            p = onFile(path.split(/:/g), record.asFile);
-          }
-          if (p && typeof p.then === 'function') {
-            pending = Promise.all([pending, p]);
-          }
+          doRecord(record);
         });
       }
       function nextLeaf(i) {
