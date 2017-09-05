@@ -790,7 +790,7 @@ mac.ReferenceBlock.prototype = Object.defineProperties({
 mac.ReferenceBlock.byteLength = 12;
 
 mac.partitioned = function(id, cc, sectors) {
-  return cc.getBytes(data.sectorize(sectors, 512, 1024)).then(function(first2) {
+  return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512, 1024))).then(function(first2) {
     var first = new mac.PartitionBlock(first2, 0, 512);
     var second = new mac.PartitionBlock(first2, 512, 512);
     if (!first.hasValidSignature || !second.hasValidSignature) return false;
@@ -831,7 +831,7 @@ mac.partitioned = function(id, cc, sectors) {
     doPartition(first);
     doPartition(second);
     if (first.totalPartitionCount < 3) return true;
-    return cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512)).then(function(rest) {
+    return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512))).then(function(rest) {
       for (var i = 0; i < rest.length; i += 512) {
         doPartition(new mac.PartitionBlock(rest, i, 512));
       }
@@ -840,7 +840,7 @@ mac.partitioned = function(id, cc, sectors) {
 };
 
 mac.hfs = function hfs(id, cc, sectors) {
-  return cc.getBytes(data.sectorize(sectors, 1024, 512)).then(function(mdb) {
+  return Promise.resolve(cc.getBytes(data.sectorize(sectors, 1024, 512))).then(function(mdb) {
     mdb = new mac.HFSMasterDirectoryBlock(mdb);
     if (!mdb.hasValidSignature) return false;
     const CHUNK_LENGTH = mdb.allocationChunkByteLength;
@@ -853,7 +853,7 @@ mac.hfs = function hfs(id, cc, sectors) {
     var overflowSectors = getExtentSectors(mdb.overflowFirstExtents);
     var catalogSectors = getExtentSectors(mdb.catalogFirstExtents);
     cc.cacheHint(catalogSectors);
-    var gotOverflow = cc.getBytes(data.sectorize(overflowSectors, 0, 512))
+    var gotOverflow = Promise.resolve(cc.getBytes(data.sectorize(overflowSectors, 0, 512)))
     .then(function(header) {
       header = new mac.HFSNodeBlock(header);
       if (header.type !== 'header') {
@@ -863,7 +863,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       var result = {data:{}, resource:{}};
       function nextLeaf(i) {
         if (i === 0) return result;
-        return cc.getBytes(data.sectorize(overflowSectors, 512 * i, 512))
+        return Promise.resolve(cc.getBytes(data.sectorize(overflowSectors, 512 * i, 512)))
         .then(function(leaf) {
           var leaf = new mac.HFSNodeBlock(leaf);
           if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
@@ -916,7 +916,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       function getForkSectors(extentSectors, byteLength, overflowType) {
         var covered = data.sectorsTotalLength(extentSectors);
         if (covered >= byteLength) {
-          return Promise.resolve(data.sectorize(extentSectors, 0, byteLength));
+          return data.sectorize(extentSectors, 0, byteLength);
         }
         else return gotOverflow.then(function(overflow) {
           var extra = overflow[overflowType][metadata.id];
@@ -926,29 +926,7 @@ mac.hfs = function hfs(id, cc, sectors) {
           return data.sectorize(extentSectors.concat(extra), 0, byteLength);
         });
       }
-      var gotDataSectors, gotResourceSectors;
-      if (metadata.dataForkInfo.logicalEOF === 0) {
-        gotDataSectors = Promise.resolve([]);
-      }
-      else {
-        gotDataSectors = getForkSectors(
-          getExtentSectors(metadata.dataForkFirstExtentRecord),
-          metadata.dataForkInfo.logicalEOF,
-          'data');
-      }
-      if (metadata.resourceForkInfo.logicalEOF === 0) {
-        gotResourceSectors = Promise.resolve([]);
-      }
-      else {
-        gotResourceSectors = getForkSectors(
-          getExtentSectors(metadata.resourceForkFirstExtentRecord),
-          metadata.resourceForkInfo.logicalEOF,
-          'resource');
-      }
-      return Promise.all([gotDataSectors, gotResourceSectors])
-      .then(function(values) {
-        var dataSectors = values[0], resourceSectors = values[1];
-        /*
+      function onSectors(dataSectors, resourceSectors) {
         postMessage(JSON.stringify({
           id: id,
           headline: 'callback',
@@ -978,10 +956,24 @@ mac.hfs = function hfs(id, cc, sectors) {
             },
           }],
         }));
-        */
-      });
+      }
+      var dataSectors = getForkSectors(
+        getExtentSectors(metadata.dataForkFirstExtentRecord),
+        metadata.dataForkInfo.logicalEOF,
+        'data');
+      var resourceSectors = getForkSectors(
+        getExtentSectors(metadata.resourceForkFirstExtentRecord),
+        metadata.resourceForkInfo.logicalEOF,
+        'resource');
+      if (typeof dataSectors.then === 'function' || typeof resourceSectors.then === 'function') {
+        return Promise.all([dataSectors, resourceSectors])
+        .then(function(values) {
+          onSectors(values[0], values[1]);
+        });
+      }
+      onSectors(dataSectors, resourceSectors);
     }
-    var gotCatalog = cc.getBytes(data.sectorize(catalogSectors, 0, 512))
+    var gotCatalog = Promise.resolve(cc.getBytes(data.sectorize(catalogSectors, 0, 512)))
     .then(function(header) {
       header = new mac.HFSNodeBlock(header);
       if (header.type !== 'header') {
@@ -990,24 +982,34 @@ mac.hfs = function hfs(id, cc, sectors) {
       header = header.records[0];
       var parentPaths = {0:'', 1:'', 2:'_EXTENTS:', 3:'_CATALOG:', 4:'_BADALLOC:'};
       var pending = [];
+      function doLeaf(leaf) {
+        if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
+        leaf.records.forEach(function(record) {
+          if (['folder', 'file'].indexOf(record.leafType) === -1) return;
+          var parentPath = parentPaths[record.parentFolderID];
+          var path = parentPath + record.name;
+          if (record.leafType === 'folder') {
+            parentPaths[record.asFolder.id] = path + ':';
+            pending.push(onFolder(path.split(/:/g), record.asFolder));
+          }
+          else {
+            pending.push(onFile(path.split(/:/g), record.asFile));
+          }
+        });
+      }
       function nextLeaf(i) {
         if (i === 0) return Promise.all(pending);
-        return cc.getBytes(data.sectorize(catalogSectors, 512 * i, 512))
-        .then(function(leaf) {
+        var bytes = cc.getBytes(data.sectorize(catalogSectors, 512 * i, 512));
+        while (bytes instanceof Uint8Array) {
           var leaf = new mac.HFSNodeBlock(leaf);
-          if (leaf.type !== 'leaf') throw new Error('non-leaf node in the leaf chain');
-          leaf.records.forEach(function(record) {
-            if (['folder', 'file'].indexOf(record.leafType) === -1) return;
-            var parentPath = parentPaths[record.parentFolderID];
-            var path = parentPath + record.name;
-            if (record.leafType === 'folder') {
-              parentPaths[record.asFolder.id] = path + ':';
-              pending.push(onFolder(path.split(/:/g), record.asFolder));
-            }
-            else {
-              pending.push(onFile(path.split(/:/g), record.asFile));
-            }
-          });
+          doLeaf(new mac.HFSNodeBlock(bytes));
+          i = leaf.nextNodeNumber;
+          if (i === 0) return Promise.all(pending);
+          bytes = cc.getBytes(data.sectorize(catalogSectors, 512 * i, 512));
+        }
+        return bytes.then(function(leaf) {
+          var leaf = new mac.HFSNodeBlock(leaf);
+          doLeaf(leaf);
           return nextLeaf(leaf.nextNodeNumber);
         });
       }
