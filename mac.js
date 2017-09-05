@@ -1343,10 +1343,10 @@ mac.resourceFork = function resourceFork(id, cc, sectors) {
   });
 };
 
-map.XxxbleHeaderBlock = function XxxbleHeaderBlock() {
+mac.XxxbleHeaderBlock = function XxxbleHeaderBlock() {
   this._init.apply(this, arguments);
 };
-map.XxxbleHeaderBlock.prototype = Object.defineProperties({
+mac.XxxbleHeaderBlock.prototype = Object.defineProperties({
   get mode() {
     switch (this.dv.getUint32(0)) {
       case 0x00051600: return 'single';
@@ -1361,12 +1361,12 @@ map.XxxbleHeaderBlock.prototype = Object.defineProperties({
     return this.dv.getUint16(24);
   },
 }, data.struct_props);
-map.XxxbleHeaderBlock.byteLength = 26;
+mac.XxxbleHeaderBlock.byteLength = 26;
 
-map.XxxbleEntryBlock = function XxxbleEntryBlock() {
+mac.XxxbleEntryBlock = function XxxbleEntryBlock() {
   this._init.apply(this, arguments);
 };
-map.XxxbleEntryBlock.prototype = Object.defineProperties({
+mac.XxxbleEntryBlock.prototype = Object.defineProperties({
   get id() {
     return this.dv.getUint32(0);
   },
@@ -1401,7 +1401,7 @@ map.XxxbleEntryBlock.prototype = Object.defineProperties({
     return this.dv.getUint32(8);
   },
 }, data.struct_props);
-map.XxxbleEntryBlock.byteLength = 12;
+mac.XxxbleEntryBlock.byteLength = 12;
 
 mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
   var headerSectors = data.sectorize(sectors, 0, mac.XxxbleHeaderBlock.byteLength);
