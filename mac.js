@@ -1188,7 +1188,7 @@ mac.mfs = function mfs(id, cc, sectors) {
     var mapSectors = data.sectorize(sectors,
       512 * 2 + mdb.byteLength,
       Math.ceil((mdb.allocChunkCount * 12) / 8));
-    return Promise.resolve(cc.getBytes(mapSectors).then(function(bytes) {
+    return Promise.resolve(cc.getBytes(mapSectors)).then(function(bytes) {
       var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
       var map = new Array(mdb.allocChunkCount);
       for (var i = 0; i < map.length; i++) {
