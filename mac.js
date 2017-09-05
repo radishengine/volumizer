@@ -1377,16 +1377,16 @@ mac.XxxbleEntryBlock.prototype = Object.defineProperties({
       case 2: return 'resourceFork';
       case 3: return 'name';
       case 4: return 'comment';
-      case 5: return 'icon-1bpp';
-      case 6: return 'icon-color'; // ICN#, ics#, icl4, ics4, icl8, ics8
+      case 5: return 'icon1bpp';
+      case 6: return 'iconColor'; // ICN#, ics#, icl4, ics4, icl8, ics8
       case 8: return 'dates';
-      case 9: return 'finder-info';
-      case 10: return 'mac-info';
-      case 11: return 'prodos-info';
-      case 12: return 'msdos-info';
-      case 13: return 'afp-name';
-      case 14: return 'afp-info';
-      case 15: return 'afp-id';
+      case 9: return 'finderInfo';
+      case 10: return 'macInfo';
+      case 11: return 'prodosInfo';
+      case 12: return 'msdosInfo';
+      case 13: return 'afpName';
+      case 14: return 'afpInfo';
+      case 15: return 'afpId';
       default:
         if (id & 0x80000000) {
           return 'custom' + (id & 0x7FFFFFFF);
@@ -1414,6 +1414,8 @@ mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
       for (var i = 0; i < entries.length; i++) {
         entries[i] = new mac.XxxbleEntryBlock(bytes.sublen(i * mac.XxxbleEntryBlock.byteLength, mac.XxxbleEntryBlock.byteLength));
       }
+      var finished = Promise.resolve();
+      var metadata = {};
       var secondary = {};
       for (var i = 0; i < entries.length; i++) {
         var entry = entries[i];
@@ -1425,18 +1427,42 @@ mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
         delete secondary.dataFork;
       }
       else dataSectors = [];
-      var metadata = {};
-      postMessage({
-        id: id,
-        headline: 'callback',
-        callback: 'onentry',
-        args: [{
-          metadata: metadata,
-          sectors: dataSectors,
-          secondary: secondary,
-        }],
+      if ('finderInfo' in secondary) {
+        var finderInfoSectors = secondary.finderInfo.sectors;
+        delete secondary.finderInfo;
+        finished = Promise.all([
+          finished,
+          Promise.resolve(cc.getBytes(finderInfoSectors)).then(function(bytes) {
+            var file = new mac.HFSFileBlock(bytes);
+            metadata.type = file.type;
+            metadata.creator = file.creator;
+            metadata.isOnDesk = file.isOnDesk;
+            metadata.isColor = file.isColor;
+            metadata.hasCustomIcon = file.hasCustomIcon;
+            metadata.isInvisible = file.isInvisible;
+            metadata.isAlias = file.isAlias;
+            metadata.id = file.id;
+            metadata.iconPosition = file.iconPosition;
+            metadata.createdAt = file.createdAt;
+            metadata.modifiedAt = file.modifiedAt;
+            metadata.backupAt = file.backupAt;
+            metadata.putAwayFolderID = file.putAwayFolderID;
+          }),
+        ]);
+      }
+      return finished.then(function() {
+        postMessage({
+          id: id,
+          headline: 'callback',
+          callback: 'onentry',
+          args: [{
+            metadata: metadata,
+            sectors: dataSectors,
+            secondary: secondary,
+          }],
+        });
+        return true;
       });
-      return true;
     });
   });
 };
