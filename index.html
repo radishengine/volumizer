@@ -161,6 +161,9 @@
         if (/\.rsrc$/i.test(file.name)) {
           structure.push('mac/single-or-double');
         }
+        if (/\.sit$/i.test(file.name)) {
+          structure.push('sit/v5', 'sit/original');
+        }
         if (structure.length === 0) {
           alert('unrecognized file type');
           return;
