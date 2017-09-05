@@ -263,7 +263,9 @@ onmessage.handlers = {
       }
       var parts = structure[i].match(/^([^\/]+)\/([^\/]+)/);
       var libName = parts[1];
-      var funcName = parts[2];
+      var funcName = parts[2].replace(/-(.)/, function(_, letter) {
+        return letter.toUpperCase();
+      });
       if (!(libName in self)) importScripts(libName + '.js');
       var lib = self[libName];
       return lib[funcName].call(lib, message.id, cc, sectors)
