@@ -108,6 +108,127 @@ mac.PartitionBlock.prototype = Object.defineProperties({
 }, data.struct_props);
 mac.PartitionBlock.byteLength = 512;
 
+mac.MFSMasterDirectoryBlock = function MFSMasterDirectoryBlock() {
+  this._init.apply(this, arguments);
+}
+mac.MFSMasterDirectoryBlock.prototype = Object.defineProperties({
+  get hasValidSignature() {
+    return this.bytes[0] === 0xD2 && this.bytes[1] === 0xD7;
+  },
+  get initializedAt() {
+    return this.dv.getMacDate(2);
+  },
+  get lastBackupAt() {
+    return this.dv.getMacDate(6);
+  },
+  get volumeAttributes() {
+    return this.dv.getUint16(10);
+  },
+  get isWriteProtected() {
+    return !!(this.volumeAttributes & (1 << 7));
+  },
+  get isLockedBySoftware() {
+    return !!(this.volumeAttributes & (1 << 15));
+  },
+  get isCopyProtected() {
+    return !!(this.volumeAttributes & (1 << 14));
+  },
+  get fileCount() {
+    return this.dv.getUint16(12);
+  },
+  get firstDirBlock() {
+    return this.dv.getUint16(14);
+  },
+  get dirBlockCount() {
+    return this.dv.getUint16(16);
+  },
+  get allocChunkCount() {
+    return this.dv.getUint16(18);
+  },
+  get allocChunkSize() {
+    return this.dv.getUint32(20);
+  },
+  get bytesToAllocate() {
+    return this.dv.getUint32(24);
+  },
+  get firstAllocBlock() {
+    return this.dv.getUint16(28);
+  },
+  get nextUnusedFile() {
+    return this.dv.getUint32(30);
+  },
+  get unusedAllocChunkCount() {
+    return this.dv.getUint16(34);
+  },
+  get name() {
+    return this.bytes.sublen(37, this.bytes[36]).toMacRoman();
+  },
+}, data.struct_props);
+mac.MFSMasterDirectoryBlock.byteLength = 64;
+
+mac.MFSFileBlock = function MFSFileBlock() {
+  this._init.apply(this, arguments);
+}
+mac.MFSFileBlock.prototype = Object.defineProperties({
+  get attributes() {
+    return this.bytes[0];
+  },
+  get exists() {
+    return !!this.attributes;
+  },
+  get isSoftwareLocked() {
+    return !(this.attributes & (1 << 7));
+  },
+  get isCopyProtected() {
+    return !!(this.attributes & (1 << 6));
+  },
+  get versionNumber() {
+    return this.bytes[1];
+  },
+  get type() {
+    return this.bytes.sublen(2, 4).toMacRoman();
+  },
+  get creator() {
+    return this.bytes.sublen(6, 4).toMacRoman();
+  },
+  // 8 bytes used by Finder
+  get fileNumber() {
+    return this.dv.getUint32(18);
+  },
+  get firstDataChunk() {
+    return this.dv.getUint16(22);
+  },
+  get dataLogicalLength() {
+    return this.dv.getUint32(24);
+  },
+  get dataPhysicalLength() {
+    return this.dv.getUint32(28);
+  },
+  get firstResourceChunk() {
+    return this.dv.getUint16(32);
+  },
+  get resourceLogicalLength() {
+    return this.dv.getUint32(34);
+  },
+  get resourcePhysicalLength() {
+    return this.dv.getUint32(38);
+  },
+  get createdAt() {
+    return this.dv.getMacDate(42);
+  },
+  get modifiedAt() {
+    return this.dv.getMacDate(46);
+  },
+  get name() {
+    return this.bytes.sublen(51, this.bytes[50]).toMacRoman();
+  },
+  get byteLength() {
+    var len = 51 + this.bytes[50];
+    if (len & 1) len++;
+    return len;
+  },
+}, data.struct_props);
+
 mac.HFSExtentsBlock = function HFSExtentsBlock() {
   this._init.apply(this, arguments);
 };
@@ -1053,6 +1174,89 @@ mac.hfs = function hfs(id, cc, sectors) {
     return gotCatalog.then(function() {
       cc.cacheHint(null);
       return true;
+    });
+  });
+};
+
+mac.mfs = function mfs(id, cc, sectors) {
+  var mdbSectors = data.sectorize(sectors, 1024, 512);
+  return Promise.resolve(cc.getBytes(mdbSectors)).then(function(mdb) {
+    mdb = new mac.MFSMasterDirectoryBlock(mdb);
+    if (!mdb.hasValidSignature) return false;
+    var chunkSize = mdb.allocChunkSize;
+    var allocOffset = mdb.firstAllocBlock * 512 - 2*mdb.allocChunkSize;
+    var mapSectors = data.sectorize(sectors,
+      512 * 2 + mdb.byteLength,
+      Math.ceil((mdb.allocChunkCount * 12) / 8));
+    return Promise.resolve(cc.getBytes(mapSectors).then(function(bytes) {
+      var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      var map = new Array(mdb.allocChunkCount);
+      for (var i = 0; i < map.length; i++) {
+        // aaaaaaaa
+        // aaaabbbb
+        // bbbbbbbb
+        if (i % 2) {
+          map[i] = dv.getUint16(Math.floor(i/2)*3+1, false) & 0xfff;
+        }
+        else {
+          map[i] = dv.getUint16(Math.floor(i/2)*3, false) >>> 4;
+        }
+      }
+      function getExtentSectors(allocNumber) {
+        var prev = {offset:allocNumber, length:1};
+        var chain = [prev];
+        for (var next = map[allocNumber-2]; next > 1; next = map[next-2]) {
+          if (prev.offset + prev.length === next) {
+            prev.length++;
+          }
+          else {
+            chain.push(prev = {offset:next, length:1});
+          }
+        }
+        for (var i = 0; i < chain.length; i++) {
+          chain[i].offset *= chunkSize;
+          chain[i].length *= chunkSize;
+        }
+        return data.sectorize(sectors, chain);
+      }
+      cc.cacheHint(data.sectorize(sectors, 512 * mdb.firstDirBlock, 512 * mdb.dirBlockCount));
+      function nextDirBlock(block_i) {
+        if (block_i >= mdb.dirBlockCount) {
+          return true;
+        }
+        var dirBlockSectors = data.sectorize(sectors, (mdb.firstDirBlock + block_i) * 512, 512);
+        return Promise.resolve(cc.getBytes(dirBlockSectors)).then(function(block) {
+          var nextPos = block.byteOffset;
+          var endPos = nextPos + block.byteLength;
+          do {
+            var fileInfo = new mac.MFSFileBlock(block.buffer, nextPos);
+            if (!fileInfo.exists) break;
+            postMessage({
+              id: id,
+              headline: 'callback',
+              callback: 'onentry',
+              args: [{
+                path: [mdb.name, fileInfo.name],
+                sectors: data.sectorize(getExtentSectors(fileInfo.firstDataChunk), 0, fileInfo.dataLogicalLength),
+                metadata: {
+                  modifiedAt: fileInfo.modifiedAt,
+                  createdAt: fileInfo.createdAt,
+                  type: fileInfo.type,
+                  creator: fileInfo.creator,
+                },
+                secondary: {
+                  resourceFork: {
+                    sectors: data.sectorize(getExtentSectors(fileInfo.firstResourceChunk), 0, fileInfo.resourceLogicalLength),
+                  },
+                },
+              }],
+            });
+            nextPos += fileInfo.byteLength;
+          } while (nextPos < endPos);
+          return nextDirBlock(block_i + 1);
+        });
+      }
+      return nextDirBlock(0);
     });
   });
 };
