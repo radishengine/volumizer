@@ -1320,7 +1320,7 @@ mac.resourceFork = function resourceFork(id, cc, sectors) {
         }
       }
       var allLengthSectors = [].concat(entryDataOffsets.map(function(offset) {
-        return data.sectorize(dataSectors, offset, 4));
+        return data.sectorize(dataSectors, offset, 4);
       }));
       return Promise.resolve(cc.getBytes(allLengthSectors).then(function(bytes) {
         var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
