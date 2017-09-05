@@ -1287,3 +1287,58 @@ mac.mfs = function mfs(id, cc, sectors) {
     });
   });
 };
+
+mac.resourceFork = function resourceFork(id, cc, sectors) {
+  cc.cacheHint(sectors);
+  var headerSectors = data.sectorize(sectors, 0, mac.ResourceHeaderBlock.byteLength);
+  return Promise.resolve(cc.getBytes(headerSectors)).then(function(bytes) {
+    var header = new mac.ResourceHeaderBlock(bytes.subarray(0, mac.ResourceHeaderBlock.byteLength));
+    var totalLength = data.totalSectorsLength(sectors);
+    var dataEnd = header.dataOffset + header.dataLength;
+    var mapEnd = header.mapOffset + header.mapLength;
+    if (Math.min(header.dataOffset, header.mapOffset) < mac.ResourceHeaderBlock.byteLength
+        || Math.max(dataEnd, mapEnd) > totalLength
+        || !(header.dataOffset >= mapEnd || header.mapOffset >= dataEnd)) {
+      return false;
+    }
+    var dataSectors = data.sectorize(sectors, header.dataOffset, header.dataLength);
+    var mapSectors = data.sectorize(sectors, header.mapOffset, header.mapLength);
+    return Promise.resolve(cc.getBytes(mapSectors)).then(function(bytes) {
+      var map = new mac.ResourceMapBlock(bytes);
+      var entryMetadata = [];
+      var entryDataOffsets = [];
+      for (var group_i = 0; group_i < map.groups.length; group_i++) {
+        var group = map.groups[group_i];
+        for (var resource_i = 0; resource_i < group.resources.length; resource_i++) {
+          var resource = group.resources[resource_i];
+          entryMetadata.push({
+            type: group.name,
+            id: resource.id,
+            name: resource.name,
+          });
+          entryDataOffsets.push(resource.dataOffset);
+        }
+      }
+      var allLengthSectors = [].concat(entryDataOffsets.map(function(offset) {
+        return data.sectorize(dataSectors, offset, 4));
+      }));
+      return Promise.resolve(cc.getBytes(allLengthSectors).then(function(bytes) {
+        var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        for (var entry_i = 0; entry_i < entryMetadata.length; entry_i++) {
+          postMessage({
+            id: id,
+            headline: 'callback',
+            callback: 'onentry',
+            args: [{
+              metadata: entryMetadata[entry_i],
+              sectors: data.sectorize(
+                dataSectors,
+                entryDataOffsets[entry_i] + 4,
+                dv.getUint32(entry_i * 4)),
+            }],
+          });
+        }
+      });
+    });
+  });
+};
