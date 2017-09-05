@@ -889,6 +889,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       return nextLeaf(header.firstLeaf);
     });
     function onFolder(path, metadata) {
+      /*
       postMessage(JSON.stringify({
         id: id,
         headline: 'callback',
@@ -912,6 +913,7 @@ mac.hfs = function hfs(id, cc, sectors) {
           },
         }],
       }));
+      */
     }
     function onFile(path, metadata) {
       function getForkSectors(extentSectors, byteLength, overflowType) {
