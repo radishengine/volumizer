@@ -948,6 +948,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       return Promise.all([gotDataSectors, gotResourceSectors])
       .then(function(values) {
         var dataSectors = values[0], resourceSectors = values[1];
+        /*
         postMessage(JSON.stringify({
           id: id,
           headline: 'callback',
@@ -977,6 +978,7 @@ mac.hfs = function hfs(id, cc, sectors) {
             },
           }],
         }));
+        */
       });
     }
     var gotCatalog = cc.getBytes(data.sectorize(catalogSectors, 0, 512))
