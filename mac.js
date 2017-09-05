@@ -888,7 +888,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       return nextLeaf(header.firstLeaf);
     });
     function onFolder(path, metadata) {
-      postMessage({
+      postMessage(JSON.stringify({
         id: id,
         headline: 'callback',
         callback: 'onentry',
@@ -910,7 +910,7 @@ mac.hfs = function hfs(id, cc, sectors) {
             scrollY: metadata.scrollY,
           },
         }],
-      });
+      }));
     }
     function onFile(path, metadata) {
       function getForkSectors(extentSectors, byteLength, overflowType) {
@@ -948,7 +948,7 @@ mac.hfs = function hfs(id, cc, sectors) {
       return Promise.all([gotDataSectors, gotResourceSectors])
       .then(function(values) {
         var dataSectors = values[0], resourceSectors = values[1];
-        postMessage({
+        postMessage(JSON.stringify({
           id: id,
           headline: 'callback',
           callback: 'onentry',
@@ -977,7 +977,7 @@ mac.hfs = function hfs(id, cc, sectors) {
             },
           }],
         });
-      });
+      }));
     }
     var gotCatalog = cc.getBytes(data.sectorize(catalogSectors, 0, 512))
     .then(function(header) {
