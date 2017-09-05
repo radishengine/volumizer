@@ -159,7 +159,7 @@
           structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
         }
         if (/\.rsrc$/i.test(file.name)) {
-          structure.push('mac/resource-fork');
+          structure.push('mac/single-or-double');
         }
         if (structure.length === 0) {
           alert('unrecognized file type');
