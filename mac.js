@@ -967,7 +967,7 @@ mac.hfs = function hfs(id, cc, sectors) {
     var mdb = new mac.HFSMasterDirectoryBlock(bytes);
     if (!mdb.hasValidSignature) {
       if (String.fromCharCode(bytes[84], bytes[85]) === 'BD') {
-        return mac.hfs(id, cc, sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
+        return mac.hfs(id, cc, data.sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
       }
       return false;
     }
@@ -1189,7 +1189,7 @@ mac.mfs = function mfs(id, cc, sectors) {
     var mdb = new mac.MFSMasterDirectoryBlock(bytes.sublen(0, mac.MFSMasterDirectoryBlock.byteLength));
     if (!mdb.hasValidSignature) {
       if (bytes[84] === 0xD2 && bytes[85] === 0xD7) {
-        return mac.mfs(id, cc, sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
+        return mac.mfs(id, cc, data.sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
       }
       return false;
     }
