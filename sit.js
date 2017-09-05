@@ -11,3 +11,12 @@ sit.original = function original(id, cc, sectors) {
     return true;
   });
 };
+
+sit.v5 = function v5(id, cc, sectors) {
+  return cc.getBytes(data.sectorize(sectors, 0, 80)).then(function(bytes) {
+    if (!/^StuffIt \(c\)1997-\d{4} Aladdin Systems, Inc\., http:\/\/www.aladdinsys.com\/StuffIt\/\r\n/.test(bytes.toByteString())) {
+      return false;
+    }
+    return true;
+  });
+};
