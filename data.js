@@ -332,18 +332,21 @@ data.ChunkCache.prototype = {
       offset += bytes.length;
     }
   },
+  getCached: function(offset, length) {
+    if (!this.cache) return null;
+    for (var i = 0; i < this.cache.length; i++) {
+      var c = this.cache[i];
+      if (offset < c.offset) return null;
+      if ((offset + length) > (c.offset + c.length)) continue;
+      return c.sublen(offset - c.offset, length);
+    }
+  },
   getBytes: function(sectors) {
     if (sectors.length === 0) return Promise.resolve(new Uint8Array(0));
     if (sectors.length === 1) {
       var s = sectors[0];
-      if (this.cache) {
-        for (var i = 0; i < this.cache.length; i++) {
-          var c = this.cache[i];
-          if (s.offset < c.offset) break;
-          if ((s.offset + s.length) > (c.offset + c.length)) continue;
-          return Promise.resolve(c.sublen(s.offset - c.offset, s.length));
-        }
-      }
+      var cached = this.getCached(s.offset, s.length);
+      if (cached) return Promise.resolve(cached);
       if ((s.offset + s.length) <= this.blob.size) {
         var blob = this.blob.sublen(sectors[0].offset, sectors[0].length);
         return Promise.resolve(new Uint8Array(frs.readAsArrayBuffer(blob)));
