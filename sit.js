@@ -144,11 +144,195 @@ sit.original = function original(id, cc, sectors) {
   });
 };
 
+sit.V5HeaderBlock = function V5HeaderBlock() {
+  this._init.apply(this, arguments);
+};
+sit.V5HeaderBlock.prototype = Object.defineProperties({
+  get signature() {
+    return this.bytes.subarray(0, 80);
+  },
+  get hasValidSignature() {
+    return /^StuffIt \(c\)1997-\d{4} Aladdin Systems, Inc\., http:\/\/www.aladdinsys.com\/StuffIt\/\r\n$/.test(this.signature);
+  },
+  get version() {
+    return this.bytes[82];
+  },
+  get flags() {
+    return this.bytes[83];
+  },
+  get totalSize() {
+    return this.dv.getUint32(84);
+  },
+  get rootEntryCount() {
+    return this.dv.getUint16(92);
+  },
+  get rootOffset() {
+    return this.dv.getUint32(94);
+  },
+  get checksum() {
+    return this.dv.getUint16(98);
+  },
+}, data.struct_props);
+sit.V5HeaderBlock.byteLength = 100;
+
+sit.V5EntryBlock = function V5EntryBlock() {
+  this._init.apply(this, arguments);
+};
+sit.V5EntryBlock.prototype = Object.defineProperties({
+  get signature() {
+    return this.dv.getUint32(0);
+  },
+  get version() {
+    return this.bytes[4];
+  },
+  get hasValidSignature() {
+    return this.signature === 0xA5A5A5A5;
+  },
+  get part1Length() {
+    return this.dv.getUint16(6);
+  },
+  get flags() {
+    return this.bytes[9];
+  },
+  get hasResourceFork() {
+    return !!(this.flags & 0x20);
+  },
+  get isEncrypted() {
+    return !!(this.flags & 0x20);
+  },
+  get isFolder() {
+    return !!(this.flags & 0x40);
+  },
+  get nextEntryOffset() {
+    return this.dv.getUint32(22);
+  },
+  get dataForkRealLength() {
+    return this.dv.getUint32(34);
+  },
+  get firstChildOffset() {
+    return this.dv.getUint32(34);
+  },
+  get dataForkStoredLength() {
+    return this.dv.getUint32(38);
+  },
+  get dataForkMode() {
+    return this.bytes[46];
+  },
+  get childCount() {
+    return this.dv.getUint16(46);
+  },
+  get password() {
+    return this.isFolder ? '' : this.bytes.sublen(48, this.bytes[47]).toByteString();
+  },
+  get name() {
+    return this.bytes.subarray(48 + this.password.length, this.dv.getUint16(30)).toMacRoman();
+  },
+  get filePartLength() {
+    if (this.isFolder) return 0;
+    return 32 + (this.version === 3 ? 0 : 4) + (this.hasResourceFork ? 13 : 0);
+  },
+}, data.struct_props);
+sit.V5EntryBlock.minByteLength = 48;
+
+sit.V5FileBlock = function V5FileBlock() {
+  this._init.apply(this, arguments);
+  if (this.byteLength === 32+4+13) {
+    this.resourceOffset = 32+4;
+  }
+};
+sit.V5FileBlock.prototype = Object.defineProperties({
+  get type() {
+    return this.bytes.sublen(4, 4);
+  },
+  get creator() {
+    return this.bytes.sublen(8, 4);
+  },
+  get finderFlags() {
+    return this.dv.getUint16(12);
+  },
+  resourceOffset: 32,
+  get resourceForkRealLength() {
+    return this.dv.getUint32(this.resourceOffset);
+  },
+  get resourceForkStoredLength() {
+    return this.dv.getUint32(this.resourceOffset + 4);
+  },
+  get resourceForkChecksum() {
+    return this.dv.getUint16(this.resourceOffset + 8);
+  },
+  get resourceForkMode() {
+    return this.bytes[48];
+  },
+}, data.struct_props);
+
 sit.v5 = function v5(id, cc, sectors) {
-  return Promise.resolve(cc.getBytes(data.sectorize(sectors, 0, 80))).then(function(bytes) {
-    if (!/^StuffIt \(c\)1997-\d{4} Aladdin Systems, Inc\., http:\/\/www.aladdinsys.com\/StuffIt\/\r\n/.test(bytes.toByteString())) {
-      return false;
+  var headerSectors = data.sectorize(sectors, 0, sit.V5HeaderBlock.byteLength);
+  return Promise.resolve(cc.getBytes(headerSectors)).then(function(bytes) {
+    var header = new sit.V5HeaderBlock(bytes);
+    if (!header.hasValidSignature || header.version !== 5) return false;
+    function nextEntry(path, offset, count) {
+      if (count === 0) return true;
+      var entrySectors = data.sectorize(sectors, offset, sit.V5EntryBlock.minByteLength);
+      return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
+        var entry = new sit.V5EntryBlock(bytes);
+        var fullLength = entry.part1Length;
+        if (entry.fullSize > entry.byteLength) {
+          entrySectors = data.sectorize(sectors, offset, entry.fullSize);
+          return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
+            return new sit.V5EntryBlock(bytes);
+          });
+        }
+        return entry;
+      })
+      .then(function(entry) {
+        var entryPath = path.concat(entry.name);
+        if (entry.isFolder) {
+          postMessage({
+            id: id,
+            headline: 'callback',
+            callback: 'onentry',
+            args: [{
+              path: entryPath,
+              metadata: {
+                isFolder: true,
+              },
+            }],
+          });
+          return nextEntry(path.concat(entry.name), entry.firstChildOffset, entry.childCount)
+          .then(function() {
+            return nextEntry(path, entry.nextEntryOffset, count-1);
+          });
+        }
+        var fileInfoOffset = offset + entry.byteLength;
+        var fileInfoSectors = data.sectorize(sectors, fileInfoOffset, entry.filePartLength);
+        return Promise.resolve(cc.getBytes(fileInfoSectors)).then(function(bytes) {
+          var fileInfo = new sit.V5FileBlock(bytes);
+          var resourceForkOffset = fileInfoOffset + fileInfo.byteLength;
+          var resourceForkSectors = data.sectorize(sectors, resourceForkOffset, fileInfo.resourceForkStoredLength);
+          var dataForkOffset = resourceForkOffset + fileInfo.resourceForkStoredLength;
+          var dataForkSectors = data.sectorize(sectors, dataForkOffset, entry.dataForkStoredLength);
+          postMessage({
+            id: id,
+            headline: 'callback',
+            callback: 'onentry',
+            args: [{
+              path: entryPath,
+              metadata: {
+                type: fileInfo.type,
+                creator: fileInfo.creator,
+              },
+              sectors: dataForkSectors,
+              secondary: {
+                resourceFork: {
+                  sectors: resourceForkSectors,
+                },
+              },
+            }],
+          });
+          return nextEntry(path, entry.nextEntryOffset, count-1);
+        });
+      });
     }
-    return true;
+    return nextEntry([], header.rootOffset, header.rootEntryCount);
   });
 };
