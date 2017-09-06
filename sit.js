@@ -276,8 +276,8 @@ sit.v5 = function v5(id, cc, sectors) {
       return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
         var entry = new sit.V5EntryBlock(bytes);
         var fullLength = entry.part1Length;
-        if (entry.fullSize > entry.byteLength) {
-          entrySectors = data.sectorize(sectors, offset, entry.fullSize);
+        if (fullLength > entry.byteLength) {
+          entrySectors = data.sectorize(sectors, offset, fullLength);
           return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
             return new sit.V5EntryBlock(bytes);
           });
