@@ -149,7 +149,7 @@ sit.V5HeaderBlock = function V5HeaderBlock() {
 };
 sit.V5HeaderBlock.prototype = Object.defineProperties({
   get signature() {
-    return this.bytes.subarray(0, 80);
+    return this.bytes.subarray(0, 80).toByteString();
   },
   get hasValidSignature() {
     return /^StuffIt \(c\)1997-\d{4} Aladdin Systems, Inc\., http:\/\/www.aladdinsys.com\/StuffIt\/\r\n$/.test(this.signature);
