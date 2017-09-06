@@ -225,7 +225,7 @@ sit.V5EntryBlock.prototype = Object.defineProperties({
     return this.isFolder ? '' : this.bytes.sublen(48, this.bytes[47]).toByteString();
   },
   get name() {
-    return this.bytes.subarray(48 + this.password.length, this.dv.getUint16(30)).toMacRoman();
+    return this.bytes.sublen(48 + this.password.length, this.dv.getUint16(30)).toMacRoman();
   },
   get filePartLength() {
     if (this.isFolder) return 0;
