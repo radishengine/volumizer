@@ -35,17 +35,28 @@
       .container.folder > .title::after {
         content: '/';
       }
-      .container.open {
-        background: white;
-      }
-      .container:not(.open) {
-        background: silver;
-      }
       .container.hidden > .title {
         opacity: 0.5;
       }
       .container:not(.open) > .children {
         display: none;
+      }
+      .toggler {
+        width: 1em;
+        background: none;
+        border: none;
+        outline: none;
+        padding: 0;
+        margin: 0;
+      }
+      .container:not(.open) > .toggler::before {
+        content: '\25b6';
+      }
+      .container.open > .toggler::before {
+        content: '\25BC';
+      }
+      .container.empty > .toggler {
+        visibility: hidden;
       }
     </style>
   </head>
@@ -55,6 +66,7 @@
     </div>
     <div id='templates' style='display:none'>
       <div class='container'>
+        <button class='toggler'></button>
         <span class='title'></span>
         <div class='children'>
         </div>
@@ -85,12 +97,15 @@
           el.titleElement = el.querySelector('.title');
           el.titleElement.innerText = path[path.length-1];
           el.childrenElement = el.querySelector('.children');
+          el.classList.add('empty');
           if (path.length === 1) {
             document.getElementById('content').appendChild(el);
             el.classList.add('open');
           }
           else {
-            getElementForPath(path.slice(0, -1)).childrenElement.appendChild(el);
+            var parentEl = getElementForPath(path.slice(0, -1));
+            parentEl.classList.remove('empty');
+            parentEl.childrenElement.appendChild(el);
           }
         }
         return el;
