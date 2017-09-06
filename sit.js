@@ -194,9 +194,6 @@ sit.V5EntryBlock.prototype = Object.defineProperties({
   get flags() {
     return this.bytes[9];
   },
-  get hasResourceFork() {
-    return !!(this.flags & 0x20);
-  },
   get isEncrypted() {
     return !!(this.flags & 0x20);
   },
@@ -227,20 +224,19 @@ sit.V5EntryBlock.prototype = Object.defineProperties({
   get name() {
     return this.bytes.sublen(48 + this.password.length, this.dv.getUint16(30)).toMacRoman();
   },
-  get filePartLength() {
-    if (this.isFolder) return 0;
-    return 32 + (this.version === 3 ? 0 : 4) + (this.hasResourceFork ? 13 : 0);
+  get fileBlockLength() {
+    return 32 + (this.version === 3 ? 0 : 4);
   },
 }, data.struct_props);
 sit.V5EntryBlock.minByteLength = 48;
 
 sit.V5FileBlock = function V5FileBlock() {
   this._init.apply(this, arguments);
-  if (this.byteLength === 32+4+13) {
-    this.resourceOffset = 32+4;
-  }
 };
 sit.V5FileBlock.prototype = Object.defineProperties({
+  get hasResourceFork() {
+    return !!(this.bytes[1] & 1);
+  },
   get type() {
     return this.bytes.sublen(4, 4);
   },
@@ -250,20 +246,26 @@ sit.V5FileBlock.prototype = Object.defineProperties({
   get finderFlags() {
     return this.dv.getUint16(12);
   },
-  resourceOffset: 32,
-  get resourceForkRealLength() {
-    return this.dv.getUint32(this.resourceOffset);
+}, data.struct_props);
+
+sit.V5ResourceForkBlock = function V5ResourceBlock() {
+  this._init.apply(this, arguments);
+};
+sit.V5ResourceForkBlock.prototype = Object.defineProperties({
+  get realLength() {
+    return this.dv.getUint32(0);
   },
-  get resourceForkStoredLength() {
-    return this.dv.getUint32(this.resourceOffset + 4);
+  get storedLength() {
+    return this.dv.getUint32(4);
   },
-  get resourceForkChecksum() {
-    return this.dv.getUint16(this.resourceOffset + 8);
+  get checksum() {
+    return this.dv.getUint16(8);
   },
-  get resourceForkMode() {
-    return this.bytes[48];
+  get mode() {
+    return this.bytes[12];
   },
 }, data.struct_props);
+sit.V5ResourceForkBlock.byteLength = 13;
 
 sit.v5 = function v5(id, cc, sectors) {
   var headerSectors = data.sectorize(sectors, 0, sit.V5HeaderBlock.byteLength);
@@ -307,29 +309,43 @@ sit.v5 = function v5(id, cc, sectors) {
         var fileInfoSectors = data.sectorize(sectors, fileInfoOffset, entry.filePartLength);
         return Promise.resolve(cc.getBytes(fileInfoSectors)).then(function(bytes) {
           var fileInfo = new sit.V5FileBlock(bytes);
-          var resourceForkOffset = fileInfoOffset + fileInfo.byteLength;
-          var resourceForkSectors = data.sectorize(sectors, resourceForkOffset, fileInfo.resourceForkStoredLength);
-          var dataForkOffset = resourceForkOffset + fileInfo.resourceForkStoredLength;
-          var dataForkSectors = data.sectorize(sectors, dataForkOffset, entry.dataForkStoredLength);
-          postMessage({
-            id: id,
-            headline: 'callback',
-            callback: 'onentry',
-            args: [{
-              path: entryPath,
-              metadata: {
-                type: fileInfo.type,
-                creator: fileInfo.creator,
-              },
-              sectors: dataForkSectors,
-              secondary: {
-                resourceFork: {
-                  sectors: resourceForkSectors,
+          var gotResourceForkInfo;
+          var dataOffset;
+          if (fileInfo.hasResourceFork) {
+            var resInfoOffset = fileInfoOffset + fileInfo.byteLength;
+            var resInfoSectors = data.sectorize(sectors, resInfoOffset, sit.V5ResourceForkBlock.byteLength);
+            gotResourceForkInfo = Promise.resolve(cc.getBytes(resInfoSectors)).then(function(bytes) {
+              var resInfo = new v5.V5ResourceForkBlock(bytes);
+              var resForkOffset = resInfoOffset + resInfo.byteLength;
+              dataOffset = resInfoOffset + resInfo.storedLength;
+              var resForkSectors = data.sectorize(sectors, resForkOffset, resInfo.storedLength);
+              return {sectors:resForkSectors};
+            });
+          }
+          else {
+            dataOffset = fileInfoOffset + fileInfo.byteLength;
+            gotResourceForkInfo = Promise.resolve({sectors:[]});
+          }
+          return gotResourceForkInfo.then(function(resForkInfo) {
+            var dataForkSectors = data.sectorize(sectors, dataOffset, entry.dataForkStoredLength);
+            postMessage({
+              id: id,
+              headline: 'callback',
+              callback: 'onentry',
+              args: [{
+                path: entryPath,
+                metadata: {
+                  type: fileInfo.type,
+                  creator: fileInfo.creator,
                 },
-              },
-            }],
+                sectors: dataForkSectors,
+                secondary: {
+                  resourceFork: resForkInfo,
+                },
+              }],
+            });
+            return nextEntry(path, entry.nextEntryOffset, count-1);
           });
-          return nextEntry(path, entry.nextEntryOffset, count-1);
         });
       });
     }
