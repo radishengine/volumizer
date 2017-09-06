@@ -306,7 +306,7 @@ sit.v5 = function v5(id, cc, sectors) {
           });
         }
         var fileInfoOffset = offset + entry.byteLength;
-        var fileInfoSectors = data.sectorize(sectors, fileInfoOffset, entry.filePartLength);
+        var fileInfoSectors = data.sectorize(sectors, fileInfoOffset, entry.fileBlockLength);
         return Promise.resolve(cc.getBytes(fileInfoSectors)).then(function(bytes) {
           var fileInfo = new sit.V5FileBlock(bytes);
           var gotResourceForkInfo;
