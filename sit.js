@@ -97,7 +97,7 @@ sit.OriginalEntryBlock.prototype = Object.defineProperties({
     return this.dv.getUint16(110);
   },
 }, data.struct_props);
-sit.OriginalEntryBlock.byteLength = 122;
+sit.OriginalEntryBlock.byteLength = 112;
 
 sit.original = function original(id, cc, sectors) {
   var headerSectors = data.sectorize(sectors, 0, sit.OriginalHeaderBlock.byteLength);
