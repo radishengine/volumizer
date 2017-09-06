@@ -300,7 +300,7 @@ sit.v5 = function v5(id, cc, sectors) {
               },
             }],
           });
-          return nextEntry(path.concat(entry.name), entry.firstChildOffset, entry.childCount)
+          return nextEntry(entryPath, entry.firstChildOffset, entry.childCount)
           .then(function() {
             return nextEntry(path, entry.nextEntryOffset, count-1);
           });
