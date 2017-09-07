@@ -79,6 +79,12 @@
       .container.open.loading > .toggler::before {
         content: '\231B';
       }
+      .container.open.loading {
+        cursor: progress;
+      }
+      .container.open.loading > .children {
+        cursor: auto;
+      }
     </style>
   </head>
   <body>
