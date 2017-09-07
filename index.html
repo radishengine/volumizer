@@ -27,7 +27,7 @@
         display: block;
       }
       .container > .children {
-        padding-left: 5px;
+        padding-left: 1em;
       }
       .container > .title {
         white-space: pre-wrap;
@@ -58,6 +58,15 @@
       .container.empty > .toggler {
         visibility: hidden;
       }
+      .container > .symbol {
+        width: 1em;
+      }
+      .container > .symbol::before {
+        content: '\1F4C4';
+      }
+      .container.folder > .symbol::before {
+        content: '\1F4C2';
+      }
     </style>
   </head>
   <body>
@@ -67,6 +76,7 @@
     <div id='templates' style='display:none'>
       <div class='container'>
         <button class='toggler'></button>
+        <span class='symbol'></span>
         <span class='title'></span>
         <div class='children'>
         </div>
