@@ -164,6 +164,12 @@
                   el.dataset.sectors = entry.sectors.map(function(sector) {
                     return sector.offset + ',' + sector.length;
                   }).join(';');
+                  if (entry.metadata.type === 'STAK') {
+                    var stackEl = getElementForPath(entry.path.concat('[stack]'));
+                    stackEl.dataset.kind = 'hypercard/stack';
+                    stackEl.classList.add('hidden');
+                    stackEl.dataset.sectors = el.dataset.sectors;
+                  }
                 }
                 if (entry.secondary
                     && entry.secondary.resourceFork
