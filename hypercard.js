@@ -23,7 +23,7 @@ hypercard.stack = function(id, cc, sectors) {
             type: name,
             id: id,
           },
-          sectors: data.sectorize(sectors, offset + 12, len),
+          sectors: data.sectorize(sectors, offset, len),
         }],
       });
       if (name === 'TAIL') return true;
