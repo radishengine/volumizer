@@ -63,6 +63,42 @@ sit.OriginalEntryBlock.prototype = Object.defineProperties({
   get flags() {
     return this.dv.getUint16(74);
   },
+  get isOnDesk() {
+    return !!(0x0001 & this.flags);
+  },
+  get isColor() {
+    return !!(0x000E & this.flags);
+  },
+  get requireSwitchLaunch() {
+    return !!(0x0020 & this.flags);
+  },
+  get isShared() {
+    return !!(0x0040 & this.flags);
+  },
+  get hasNoINITs() {
+    return !!(0x0080 & this.flags);
+  },
+  get hasBeenInited() {
+    return !!(0x0100 & this.flags);
+  },
+  get hasCustomIcon() {
+    return !!(0x0400 & this.flags);
+  },
+  get isStationery() {
+    return !!(0x0800 & this.flags);
+  },
+  get isNameLocked() {
+    return !!(0x1000 & this.flags);
+  },
+  get hasBundle() {
+    return !!(0x2000 & this.flags);
+  },
+  get isInvisible() {
+    return !!(0x4000 & this.flags);
+  },
+  get isAlias() {
+    return !!(0x8000 & this.flags);
+  },  
   get createdAt() {
     return this.dv.getMacDate(76);
   },
@@ -121,7 +157,9 @@ sit.original = function original(id, cc, sectors) {
         var dataOffset = offset + entry.byteLength;
         var resourceOffset = dataOffset + entry.dataForkStoredSize;
         var nextOffset = resourceOffset + entry.resourceForkStoredSize;
-        var metadata = {};
+        var metadata = {
+          isInvisible: entry.isInvisible,
+        };
         postMessage({
           id: id,
           headline: 'callback',
@@ -246,6 +284,42 @@ sit.V5FileBlock.prototype = Object.defineProperties({
   get finderFlags() {
     return this.dv.getUint16(12);
   },
+  get isOnDesk() {
+    return !!(0x0001 & this.finderFlags);
+  },
+  get isColor() {
+    return !!(0x000E & this.finderFlags);
+  },
+  get requireSwitchLaunch() {
+    return !!(0x0020 & this.finderFlags);
+  },
+  get isShared() {
+    return !!(0x0040 & this.finderFlags);
+  },
+  get hasNoINITs() {
+    return !!(0x0080 & this.finderFlags);
+  },
+  get hasBeenInited() {
+    return !!(0x0100 & this.finderFlags);
+  },
+  get hasCustomIcon() {
+    return !!(0x0400 & this.finderFlags);
+  },
+  get isStationery() {
+    return !!(0x0800 & this.finderFlags);
+  },
+  get isNameLocked() {
+    return !!(0x1000 & this.finderFlags);
+  },
+  get hasBundle() {
+    return !!(0x2000 & this.finderFlags);
+  },
+  get isInvisible() {
+    return !!(0x4000 & this.finderFlags);
+  },
+  get isAlias() {
+    return !!(0x8000 & this.finderFlags);
+  },
 }, data.struct_props);
 
 sit.V5ResourceForkBlock = function V5ResourceBlock() {
@@ -337,6 +411,7 @@ sit.v5 = function v5(id, cc, sectors) {
                 metadata: {
                   type: fileInfo.type,
                   creator: fileInfo.creator,
+                  isInvisible: fileInfo.isInvisible,
                 },
                 sectors: dataForkSectors,
                 secondary: {
