@@ -225,32 +225,36 @@ var loaders = {
   },
 };
 
-var routing = [];
 var urls = {};
 
+function getSource(source) {
+  var cc;
+  if (source instanceof Blob) {
+    cc = new data.ChunkCache;
+    cc.initBlob(source);
+  }
+  else if (typeof source !== 'string') {
+    return Promise.reject('source must be Blob or URL string');
+  }
+  else if (source in urls) {
+    cc = urls[source];
+  }
+  else {
+    cc = new data.ChunkCache;
+    cc.initURL(source);
+    urls[source] = cc;
+  }
+  return cc;
+}
+
 onmessage.handlers = {
-  'routing': function(message) {
-    routing.push.apply(routing, message.routing);
+  'get-blob': function(message) {
+    return getSource(message.source).getBlob(message.sectors);
   },
   'volumize': function(message) {
     var sectors = message.sectors;
     var structure = message.structure;
-    var cc;
-    if (message.source instanceof Blob) {
-      cc = new data.ChunkCache;
-      cc.initBlob(message.source);
-    }
-    else if (typeof message.source !== 'string') {
-      return Promise.reject('source must be Blob or URL string');
-    }
-    else if (message.source in urls) {
-      cc = urls[message.source];
-    }
-    else {
-      cc = new data.ChunkCache;
-      cc.initURL(message.source);
-      urls[message.source] = cc;
-    }
+    var cc = getSource(message.source);
     if (typeof structure === 'string') structure = [structure];
     var promise = Promise.resolve(false);
     var errors = [];
