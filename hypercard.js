@@ -27,7 +27,7 @@ hypercard.stack = function(id, cc, sectors) {
         }],
       });
       if (name === 'TAIL') return true;
-      return nextChunk(offset + 12 + len);
+      return nextChunk(offset + len);
     });
   }
   return nextChunk(0);
