@@ -194,12 +194,14 @@
                 })
                 .then(function() {
                   el.classList.remove('loading');
+                  el.classList.add('loaded');
                   if (!el.childrenElement.firstElementChild) {
                     el.classList.add('empty');
                   }
                 })
                 .catch(function() {
                   el.classList.remove('loading');
+                  el.classList.add('loaded');
                   el.classList.add('error');
                 });
                 break;
