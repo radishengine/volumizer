@@ -108,6 +108,58 @@ mac.PartitionBlock.prototype = Object.defineProperties({
 }, data.struct_props);
 mac.PartitionBlock.byteLength = 512;
 
+mac.partitioned = function(id, cc, sectors) {
+  return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512, 1024))).then(function(first2) {
+    var first = new mac.PartitionBlock(first2, 0, 512);
+    var second = new mac.PartitionBlock(first2, 512, 512);
+    if (!first.hasValidSignature || !second.hasValidSignature) return false;
+    function doPartition(partition) {
+      var mainSectors = data.sectorize(sectors, partition.firstSector * 512, partition.sectorCount * 512);
+      var metadata = {
+        name: partition.name,
+        type: partition.type,
+        flags: partition.flags,
+        processorType: partition.processorType,
+      };
+      var dataSectors = data.sectorize(mainSectors, partition.firstDataSector * 512, partition.dataSectorCount * 512);
+      var bootSectors = data.sectorize(mainSectors, partition.firstBootCodeSector * 512, partition.bootCodeByteLength);
+      var secondary = {
+        data: {
+          sectors: dataSectors,
+        },
+        bootCode: {
+          sectors: bootSectors,
+          metadata: {
+            entryPoint: partition.bootCodeEntryPoint,
+            checksum: partition.bootCodeChecksum,
+            loaderAddress: partition.bootLoaderAddress,
+          }
+        },
+      };
+      postMessage({
+        id: id,
+        headline: 'callback',
+        callback: 'onentry',
+        args: [{
+          as: 'mac/partitioned',
+          metadata: metadata,
+          sectors: mainSectors,
+          secondary: secondary,
+        }],
+      });
+    }
+    doPartition(first);
+    doPartition(second);
+    if (first.totalPartitionCount < 3) return true;
+    return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512)))
+    .then(function(rest) {
+      for (var i = 0; i < rest.length; i += 512) {
+        doPartition(new mac.PartitionBlock(rest, i, 512));
+      }
+    });
+  });
+};
+
 mac.MFSMasterDirectoryBlock = function MFSMasterDirectoryBlock() {
   this._init.apply(this, arguments);
 }
@@ -228,6 +280,111 @@ mac.MFSFileBlock.prototype = Object.defineProperties({
     return len;
   },
 }, data.struct_props);
+
+mac.mfs = function mfs(id, cc, sectors) {
+  var mdbSectors = data.sectorize(sectors, 1024, 512);
+  return Promise.resolve(cc.getBytes(mdbSectors)).then(function(bytes) {
+    var mdb = new mac.MFSMasterDirectoryBlock(bytes.sublen(0, mac.MFSMasterDirectoryBlock.byteLength));
+    if (!mdb.hasValidSignature) {
+      if (bytes[84] === 0xD2 && bytes[85] === 0xD7) {
+        return mac.mfs(id, cc, data.sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
+      }
+      return false;
+    }
+    var chunkSize = mdb.allocChunkSize;
+    var allocOffset = mdb.firstAllocBlock * 512 - 2*mdb.allocChunkSize;
+    var mapSectors = data.sectorize(sectors,
+      512 * 2 + mdb.byteLength,
+      Math.ceil((mdb.allocChunkCount * 12) / 8));
+    return Promise.resolve(cc.getBytes(mapSectors)).then(function(bytes) {
+      var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      var map = new Uint16Array(mdb.allocChunkCount);
+      for (var i = 0; i < map.length; i++) {
+        // aaaaaaaa
+        // aaaabbbb
+        // bbbbbbbb
+        if (i & 1) {
+          map[i] = dv.getUint16((i >>> 1)*3 + 1) & 0xfff;
+        }
+        else {
+          map[i] = dv.getUint16((i >>> 1)*3) >>> 4;
+        }
+      }
+      function getExtentSectors(allocNumber) {
+        var prev = {offset:allocNumber, length:1};
+        var chain = [prev];
+        for (var next = map[allocNumber-2]; next > 1; next = map[next-2]) {
+          if (prev.offset + prev.length === next) {
+            prev.length++;
+          }
+          else {
+            chain.push(prev = {offset:next, length:1});
+          }
+        }
+        for (var i = 0; i < chain.length; i++) {
+          chain[i].offset = allocOffset + chain[i].offset * chunkSize;
+          chain[i].length *= chunkSize;
+        }
+        return data.sectorize(sectors, chain);
+      }
+      cc.cacheHint(data.sectorize(sectors, 512 * mdb.firstDirBlock, 512 * mdb.dirBlockCount));
+      function nextDirBlock(block_i) {
+        if (block_i >= mdb.dirBlockCount) {
+          return true;
+        }
+        var dirBlockSectors = data.sectorize(sectors, (mdb.firstDirBlock + block_i) * 512, 512);
+        return Promise.resolve(cc.getBytes(dirBlockSectors)).then(function(block) {
+          var nextPos = block.byteOffset;
+          var endPos = nextPos + block.byteLength;
+          do {
+            var fileInfo = new mac.MFSFileBlock(block.buffer, nextPos);
+            if (!fileInfo.exists) break;
+            var dataSectors, resourceSectors;
+            if (fileInfo.dataLogicalLength === 0) {
+              dataSectors = [];
+            }
+            else {
+              dataSectors = data.sectorize(
+                getExtentSectors(fileInfo.firstDataChunk),
+                0, fileInfo.dataLogicalLength);
+            }
+            if (fileInfo.resourceLogicalLength === 0) {
+              resourceSectors = [];
+            }
+            else {
+              resourceSectors = data.sectorize(
+                getExtentSectors(fileInfo.firstResourceChunk),
+                0, fileInfo.resourceLogicalLength);
+            }
+            postMessage({
+              id: id,
+              headline: 'callback',
+              callback: 'onentry',
+              args: [{
+                path: [mdb.name, fileInfo.name],
+                sectors: dataSectors,
+                metadata: {
+                  modifiedAt: fileInfo.modifiedAt,
+                  createdAt: fileInfo.createdAt,
+                  type: fileInfo.type,
+                  creator: fileInfo.creator,
+                },
+                secondary: {
+                  resourceFork: {
+                    sectors: resourceSectors,
+                  },
+                },
+              }],
+            });
+            nextPos += fileInfo.usedByteLength;
+          } while (nextPos < endPos);
+          return nextDirBlock(block_i + 1);
+        });
+      }
+      return nextDirBlock(0);
+    });
+  });
+};
 
 mac.HFSExtentsBlock = function HFSExtentsBlock() {
   this._init.apply(this, arguments);
@@ -783,185 +940,6 @@ mac.HFSThreadBlock.prototype = Object.defineProperties({
   },
 }, data.struct_props);
 
-mac.ResourceHeaderBlock = function ResourceHeaderBlock() {
-  this._init.apply(this, arguments);
-};
-mac.ResourceHeaderBlock.prototype = Object.defineProperties({
-  get dataOffset() {
-    return this.dv.getUint32(0);
-  },
-  get mapOffset() {
-    return this.dv.getUint32(4);
-  },
-  get dataLength() {
-    return this.dv.getUint32(8);
-  },
-  get mapLength() {
-    return this.dv.getUint32(12);
-  },
-}, data.struct_props);
-mac.ResourceHeaderBlock.byteLength = 16;
-
-mac.ResourceMapBlock = function ResourceMapBlock() {
-  this._init.apply(this, arguments);
-};
-mac.ResourceMapBlock.prototype = Object.defineProperties({
-  get isReadOnly() {
-    return !!(this.dv.getUint16(22) & 0x0080);
-  },
-  get typeListOffset() {
-    return this.dv.getUint16(24);
-  },
-  get nameListOffset() {
-    return this.dv.getUint16(26);
-  },
-  get groupCount() {
-    return this.dv.getInt16(this.typeListOffset) + 1;
-  },
-  getGroupHeader: function(i) {
-    return new mac.ResourceGroupBlock(this.bytes.sublen(
-      this.typeListOffset + 2 + mac.ResourceGroupBlock.byteLength * i,
-      mac.ResourceGroupBlock.byteLength));
-  },
-  getReferenceList: function(offset, count) {
-    var byteOffset = this.typeListOffset + offset;
-    var byteLength = mac.ReferenceBlock.byteLength;
-    var list = new Array(count);
-    for (var i = 0; i < list.length; i++) {
-      list[i] = new mac.ReferenceBlock(this.bytes.sublen(byteOffset, byteLength));
-      byteOffset += byteLength;
-    }
-    return list;
-  },
-  getName: function(offset) {
-    if (offset < 0) return null;
-    offset += this.nameListOffset;
-    return this.bytes.sublen(offset + 1, this.bytes[offset]).toMacRoman();
-  },
-  get groups() {
-    var list = new Array(this.groupCount);
-    for (var i = 0; i < list.length; i++) {
-      var header = this.getGroupHeader(i);
-      var group = list[i] = {name:header.name, resources:[]};
-      var refs = this.getReferenceList(
-        header.referenceListOffset,
-        header.resourceCount);
-      for (var j = 0; j < refs.length; j++) {
-        var ref = refs[j];
-        ref.name = this.getName(ref.nameOffset);
-        group.resources.push(ref);
-      }
-    }
-    Object.defineProperty(this, 'groups', {value:list});
-    return list;
-  },
-}, data.struct_props);
-
-mac.ResourceGroupBlock = function ResourceGroupBlock() {
-  this._init.apply(this, arguments);
-};
-mac.ResourceGroupBlock.prototype = Object.defineProperties({
-  get name() {
-    return this.bytes.subarray(0, 4).toMacRoman();
-  },
-  get resourceCount() {
-    return this.dv.getInt16(4) + 1;
-  },
-  get referenceListOffset() {
-    return this.dv.getUint16(6);
-  },
-}, data.struct_props);
-mac.ResourceGroupBlock.byteLength = 8;
-
-mac.ReferenceBlock = function ReferenceBlock() {
-  this._init.apply(this, arguments);
-};
-mac.ReferenceBlock.prototype = Object.defineProperties({
-  get id() {
-    return this.dv.getInt16(0);
-  },
-  get nameOffset() {
-    return this.dv.getInt16(2);
-  },
-  get hasName() {
-    return this.nameOffset >= 0;
-  },
-  get isLoadedInSystemHeap() {
-    return !!(this.bytes[4] & 0x40);
-  },
-  get mayBePagedOutOfMemory() {
-    return !!(this.bytes[4] & 0x20);
-  },
-  get doNotMoveInMemory() {
-    return !!(this.bytes[4] & 0x10);
-  },
-  get isReadOnly() {
-    return !!(this.bytes[4] & 0x08);
-  },
-  get isPreloaded() {
-    return !!(this.bytes[4] & 0x04);
-  },
-  get isCompressed() {
-    return !!(this.bytes[4] & 0x01);
-  },
-  get dataOffset() {
-    return this.dv.getUint32(4) & 0xffffff;
-  },
-}, data.struct_props);
-mac.ReferenceBlock.byteLength = 12;
-
-mac.partitioned = function(id, cc, sectors) {
-  return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512, 1024))).then(function(first2) {
-    var first = new mac.PartitionBlock(first2, 0, 512);
-    var second = new mac.PartitionBlock(first2, 512, 512);
-    if (!first.hasValidSignature || !second.hasValidSignature) return false;
-    function doPartition(partition) {
-      var mainSectors = data.sectorize(sectors, partition.firstSector * 512, partition.sectorCount * 512);
-      var metadata = {
-        name: partition.name,
-        type: partition.type,
-        flags: partition.flags,
-        processorType: partition.processorType,
-      };
-      var dataSectors = data.sectorize(mainSectors, partition.firstDataSector * 512, partition.dataSectorCount * 512);
-      var bootSectors = data.sectorize(mainSectors, partition.firstBootCodeSector * 512, partition.bootCodeByteLength);
-      var secondary = {
-        data: {
-          sectors: dataSectors,
-        },
-        bootCode: {
-          sectors: bootSectors,
-          metadata: {
-            entryPoint: partition.bootCodeEntryPoint,
-            checksum: partition.bootCodeChecksum,
-            loaderAddress: partition.bootLoaderAddress,
-          }
-        },
-      };
-      postMessage({
-        id: id,
-        headline: 'callback',
-        callback: 'onentry',
-        args: [{
-          as: 'mac/partitioned',
-          metadata: metadata,
-          sectors: mainSectors,
-          secondary: secondary,
-        }],
-      });
-    }
-    doPartition(first);
-    doPartition(second);
-    if (first.totalPartitionCount < 3) return true;
-    return Promise.resolve(cc.getBytes(data.sectorize(sectors, 512 + 1024, (first.totalPartitionCount - 2) * 512)))
-    .then(function(rest) {
-      for (var i = 0; i < rest.length; i += 512) {
-        doPartition(new mac.PartitionBlock(rest, i, 512));
-      }
-    });
-  });
-};
-
 mac.hfs = function hfs(id, cc, sectors) {
   return Promise.resolve(cc.getBytes(data.sectorize(sectors, 1024, 512))).then(function(bytes) {
     var mdb = new mac.HFSMasterDirectoryBlock(bytes);
@@ -1183,110 +1161,132 @@ mac.hfs = function hfs(id, cc, sectors) {
   });
 };
 
-mac.mfs = function mfs(id, cc, sectors) {
-  var mdbSectors = data.sectorize(sectors, 1024, 512);
-  return Promise.resolve(cc.getBytes(mdbSectors)).then(function(bytes) {
-    var mdb = new mac.MFSMasterDirectoryBlock(bytes.sublen(0, mac.MFSMasterDirectoryBlock.byteLength));
-    if (!mdb.hasValidSignature) {
-      if (bytes[84] === 0xD2 && bytes[85] === 0xD7) {
-        return mac.mfs(id, cc, data.sectorize(sectors, 84, data.sectorsTotalLength(sectors) - 84));
-      }
-      return false;
-    }
-    var chunkSize = mdb.allocChunkSize;
-    var allocOffset = mdb.firstAllocBlock * 512 - 2*mdb.allocChunkSize;
-    var mapSectors = data.sectorize(sectors,
-      512 * 2 + mdb.byteLength,
-      Math.ceil((mdb.allocChunkCount * 12) / 8));
-    return Promise.resolve(cc.getBytes(mapSectors)).then(function(bytes) {
-      var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-      var map = new Uint16Array(mdb.allocChunkCount);
-      for (var i = 0; i < map.length; i++) {
-        // aaaaaaaa
-        // aaaabbbb
-        // bbbbbbbb
-        if (i & 1) {
-          map[i] = dv.getUint16((i >>> 1)*3 + 1) & 0xfff;
-        }
-        else {
-          map[i] = dv.getUint16((i >>> 1)*3) >>> 4;
-        }
-      }
-      function getExtentSectors(allocNumber) {
-        var prev = {offset:allocNumber, length:1};
-        var chain = [prev];
-        for (var next = map[allocNumber-2]; next > 1; next = map[next-2]) {
-          if (prev.offset + prev.length === next) {
-            prev.length++;
-          }
-          else {
-            chain.push(prev = {offset:next, length:1});
-          }
-        }
-        for (var i = 0; i < chain.length; i++) {
-          chain[i].offset = allocOffset + chain[i].offset * chunkSize;
-          chain[i].length *= chunkSize;
-        }
-        return data.sectorize(sectors, chain);
-      }
-      cc.cacheHint(data.sectorize(sectors, 512 * mdb.firstDirBlock, 512 * mdb.dirBlockCount));
-      function nextDirBlock(block_i) {
-        if (block_i >= mdb.dirBlockCount) {
-          return true;
-        }
-        var dirBlockSectors = data.sectorize(sectors, (mdb.firstDirBlock + block_i) * 512, 512);
-        return Promise.resolve(cc.getBytes(dirBlockSectors)).then(function(block) {
-          var nextPos = block.byteOffset;
-          var endPos = nextPos + block.byteLength;
-          do {
-            var fileInfo = new mac.MFSFileBlock(block.buffer, nextPos);
-            if (!fileInfo.exists) break;
-            var dataSectors, resourceSectors;
-            if (fileInfo.dataLogicalLength === 0) {
-              dataSectors = [];
-            }
-            else {
-              dataSectors = data.sectorize(
-                getExtentSectors(fileInfo.firstDataChunk),
-                0, fileInfo.dataLogicalLength);
-            }
-            if (fileInfo.resourceLogicalLength === 0) {
-              resourceSectors = [];
-            }
-            else {
-              resourceSectors = data.sectorize(
-                getExtentSectors(fileInfo.firstResourceChunk),
-                0, fileInfo.resourceLogicalLength);
-            }
-            postMessage({
-              id: id,
-              headline: 'callback',
-              callback: 'onentry',
-              args: [{
-                path: [mdb.name, fileInfo.name],
-                sectors: dataSectors,
-                metadata: {
-                  modifiedAt: fileInfo.modifiedAt,
-                  createdAt: fileInfo.createdAt,
-                  type: fileInfo.type,
-                  creator: fileInfo.creator,
-                },
-                secondary: {
-                  resourceFork: {
-                    sectors: resourceSectors,
-                  },
-                },
-              }],
-            });
-            nextPos += fileInfo.usedByteLength;
-          } while (nextPos < endPos);
-          return nextDirBlock(block_i + 1);
-        });
-      }
-      return nextDirBlock(0);
-    });
-  });
+mac.ResourceHeaderBlock = function ResourceHeaderBlock() {
+  this._init.apply(this, arguments);
 };
+mac.ResourceHeaderBlock.prototype = Object.defineProperties({
+  get dataOffset() {
+    return this.dv.getUint32(0);
+  },
+  get mapOffset() {
+    return this.dv.getUint32(4);
+  },
+  get dataLength() {
+    return this.dv.getUint32(8);
+  },
+  get mapLength() {
+    return this.dv.getUint32(12);
+  },
+}, data.struct_props);
+mac.ResourceHeaderBlock.byteLength = 16;
+
+mac.ResourceMapBlock = function ResourceMapBlock() {
+  this._init.apply(this, arguments);
+};
+mac.ResourceMapBlock.prototype = Object.defineProperties({
+  get isReadOnly() {
+    return !!(this.dv.getUint16(22) & 0x0080);
+  },
+  get typeListOffset() {
+    return this.dv.getUint16(24);
+  },
+  get nameListOffset() {
+    return this.dv.getUint16(26);
+  },
+  get groupCount() {
+    return this.dv.getInt16(this.typeListOffset) + 1;
+  },
+  getGroupHeader: function(i) {
+    return new mac.ResourceGroupBlock(this.bytes.sublen(
+      this.typeListOffset + 2 + mac.ResourceGroupBlock.byteLength * i,
+      mac.ResourceGroupBlock.byteLength));
+  },
+  getReferenceList: function(offset, count) {
+    var byteOffset = this.typeListOffset + offset;
+    var byteLength = mac.ReferenceBlock.byteLength;
+    var list = new Array(count);
+    for (var i = 0; i < list.length; i++) {
+      list[i] = new mac.ReferenceBlock(this.bytes.sublen(byteOffset, byteLength));
+      byteOffset += byteLength;
+    }
+    return list;
+  },
+  getName: function(offset) {
+    if (offset < 0) return null;
+    offset += this.nameListOffset;
+    return this.bytes.sublen(offset + 1, this.bytes[offset]).toMacRoman();
+  },
+  get groups() {
+    var list = new Array(this.groupCount);
+    for (var i = 0; i < list.length; i++) {
+      var header = this.getGroupHeader(i);
+      var group = list[i] = {name:header.name, resources:[]};
+      var refs = this.getReferenceList(
+        header.referenceListOffset,
+        header.resourceCount);
+      for (var j = 0; j < refs.length; j++) {
+        var ref = refs[j];
+        ref.name = this.getName(ref.nameOffset);
+        group.resources.push(ref);
+      }
+    }
+    Object.defineProperty(this, 'groups', {value:list});
+    return list;
+  },
+}, data.struct_props);
+
+mac.ResourceGroupBlock = function ResourceGroupBlock() {
+  this._init.apply(this, arguments);
+};
+mac.ResourceGroupBlock.prototype = Object.defineProperties({
+  get name() {
+    return this.bytes.subarray(0, 4).toMacRoman();
+  },
+  get resourceCount() {
+    return this.dv.getInt16(4) + 1;
+  },
+  get referenceListOffset() {
+    return this.dv.getUint16(6);
+  },
+}, data.struct_props);
+mac.ResourceGroupBlock.byteLength = 8;
+
+mac.ReferenceBlock = function ReferenceBlock() {
+  this._init.apply(this, arguments);
+};
+mac.ReferenceBlock.prototype = Object.defineProperties({
+  get id() {
+    return this.dv.getInt16(0);
+  },
+  get nameOffset() {
+    return this.dv.getInt16(2);
+  },
+  get hasName() {
+    return this.nameOffset >= 0;
+  },
+  get isLoadedInSystemHeap() {
+    return !!(this.bytes[4] & 0x40);
+  },
+  get mayBePagedOutOfMemory() {
+    return !!(this.bytes[4] & 0x20);
+  },
+  get doNotMoveInMemory() {
+    return !!(this.bytes[4] & 0x10);
+  },
+  get isReadOnly() {
+    return !!(this.bytes[4] & 0x08);
+  },
+  get isPreloaded() {
+    return !!(this.bytes[4] & 0x04);
+  },
+  get isCompressed() {
+    return !!(this.bytes[4] & 0x01);
+  },
+  get dataOffset() {
+    return this.dv.getUint32(4) & 0xffffff;
+  },
+}, data.struct_props);
+mac.ReferenceBlock.byteLength = 12;
 
 mac.resourceFork = function resourceFork(id, cc, sectors) {
   cc.cacheHint(sectors);
