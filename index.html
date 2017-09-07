@@ -114,6 +114,7 @@
         var el = document.querySelector('#templates > .container').cloneNode(true);
         el.titleElement = el.querySelector('.title');
         el.childrenElement = el.querySelector('.children');
+        el.classList.add('empty');
         return el;
       }
       
@@ -133,7 +134,6 @@
           el = createItemElement();
           el.dataset.path = encoded;
           el.titleElement.innerText = path[path.length-1];
-          el.classList.add('empty');
           if (path.length === 1) {
             pathRoot.childrenElement.appendChild(el);
           }
