@@ -181,12 +181,12 @@
                 },
                 {
                   onentry: function(entry) {
-                    var folder = getElementForPath(el, [entry.type]);
+                    var folder = getElementForPath(el, [entry.metadata.type]);
                     folder.classList.add('folder');
                     var entryEl = createItemElement();
-                    entryEl.titleElement.innerText = '[' + entry.id + ']';
-                    if (entry.name) {
-                      entryEl.titleElement.innerText += ' ' + entry.name;
+                    entryEl.titleElement.innerText = '[' + entry.metadata.id + ']';
+                    if (entry.metadata.name) {
+                      entryEl.titleElement.innerText += ' ' + entry.metadata.name;
                     }
                     if (entry.sectors && entry.sectors.length > 0) {
                       entryEl.dataset.sectors = encodeSectors(entry.sectors);
