@@ -107,7 +107,54 @@
     </div>
     <script>
       
+      var vc = null;
       var blobVC = new VolumizerClient;
+      
+      function createItemElement() {
+        var el = document.querySelector('#templates > .container').cloneNode(true);
+        el.titleElement = el.querySelector('.title');
+        el.childrenElement = el.querySelector('.children');
+        return el;
+      }
+      
+      function getElementForPath(pathRoot, path) {
+        if (path.length === 0) return pathRoot;
+        var encoded = path.map(encodeURIComponent).join('/');
+        var els = pathRoot.querySelectorAll('[data-path="' + encoded.replace('/', '\\/') + '"]');
+        var el;
+        finding: for (var i = 0; i < els.length; i++) {
+          for (var ancestor = els[i].parentNode; ancestor !== pathRoot; ancestor = ancestor.parentNode) {
+            if (ancestor.classList.contains('path-root')) continue finding;
+          }
+          el = els[i];
+          break;
+        }
+        if (!el) {
+          el = createItemElement();
+          el.dataset.path = encoded;
+          el.titleElement.innerText = path[path.length-1];
+          el.classList.add('empty');
+          if (path.length === 1) {
+            pathRoot.appendChild(el);
+            el.classList.add('open');
+            if (pathRoot.classList.contains('loading')) {
+              el.classList.add('loading');
+            }
+          }
+          else {
+            var parentEl = getElementForPath(pathRoot, path.slice(0, -1));
+            parentEl.classList.remove('empty');
+            parentEl.childrenElement.appendChild(el);
+          }
+        }
+        return el;
+      }
+      
+      function encodeSectors(sectors) {
+        return sectors.map(function(sector) {
+          return sector.offset + ',' + sector.length;
+        }).join(';');
+      }
       
       document.getElementById('content').addEventListener('click', function(e) {
         for (var el = e.target; el !== this; el = el.parentNode) {
@@ -134,7 +181,17 @@
                 },
                 {
                   onentry: function(entry) {
-                    console.log(entry);
+                    var folder = getElementForPath(el, [entry.type]);
+                    folder.classList.add('folder');
+                    var entryEl = createItemElement();
+                    entryEl.titleElement.innerText = '[' + entry.id + ']';
+                    if (entry.name) {
+                      entryEl.titleElement.innerText += ' ' + entry.name;
+                    }
+                    if (entry.sectors && entry.sectors.length > 0) {
+                      entryEl.dataset.sectors = encodeSectors(entry.sectors);
+                    }
+                    folder.childrenElement.appendChild(entryEl);
                   },
                 })
                 .then(function() {
@@ -194,41 +251,12 @@
         }
       });
       
-      var vc = null;
-      
-      function getElementForPath(path) {
-        var id = path.map(encodeURIComponent).join('/');
-        var el = document.getElementById(id);
-        if (!el) {
-          var el = document.querySelector('#templates > .container').cloneNode(true);
-          el.setAttribute('id', id);
-          el.titleElement = el.querySelector('.title');
-          el.titleElement.innerText = path[path.length-1];
-          el.childrenElement = el.querySelector('.children');
-          el.classList.add('empty');
-          if (path.length === 1) {
-            var root = document.getElementById('content');
-            root.appendChild(el);
-            el.classList.add('open');
-            if (root.classList.contains('loading')) {
-              el.classList.add('loading');
-            }
-          }
-          else {
-            var parentEl = getElementForPath(path.slice(0, -1));
-            parentEl.classList.remove('empty');
-            parentEl.childrenElement.appendChild(el);
-          }
-        }
-        return el;
-      }
-      
       function loadFile(file, structure, sectors) {
         var vc = blobVC;
         document.body.classList.remove('cancelled', 'error');
         document.body.classList.add('loading');
         var root = document.getElementById('content');
-        root.classList.add('source', 'loading');
+        root.classList.add('source', 'loading', 'path-root');
         root.innerHTML = '';
         root.source = file;
         vc.task(
@@ -241,7 +269,7 @@
           {
             onentry: function(entry) {
               if ('path' in entry) {
-                var el = getElementForPath(entry.path);
+                var el = getElementForPath(root, entry.path);
                 if (entry.metadata.isInvisible) {
                   el.classList.add('hidden');
                 }
@@ -258,10 +286,10 @@
                     return sector.offset + ',' + sector.length;
                   }).join(';');
                   if (entry.metadata.type === 'STAK') {
-                    var stackEl = getElementForPath(entry.path.concat('[stack]'));
+                    var stackEl = getElementForPath(root, entry.path.concat('[stack]'));
                     stackEl.dataset.filename = filename + '.stak';
                     stackEl.dataset.kind = 'hypercard/stack';
-                    stackEl.classList.add('hidden');
+                    stackEl.classList.add('hidden', 'path-root');
                     stackEl.classList.remove('empty');
                     stackEl.dataset.sectors = el.dataset.sectors;
                   }
@@ -270,10 +298,10 @@
                     && entry.secondary.resourceFork
                     && entry.secondary.resourceFork.sectors
                     && entry.secondary.resourceFork.sectors.length > 0) {
-                  el = getElementForPath(entry.path.concat('[resources]'));
+                  el = getElementForPath(root, entry.path.concat('[resources]'));
                   el.dataset.filename = filename + '.rsrc';
                   el.dataset.kind = 'mac/resource-fork';
-                  el.classList.add('hidden');
+                  el.classList.add('hidden', 'path-root');
                   el.classList.remove('empty');
                   el.dataset.sectors = entry.secondary.resourceFork.sectors.map(function(sector) {
                     return sector.offset + ',' + sector.length;
