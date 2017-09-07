@@ -130,7 +130,7 @@
           if (el.classList.contains('symbol')) {
             var symbolEl = el;
             if (symbolEl.classList.contains('loading')) {
-              break;
+              return;
             }
             for (var containerEl = symbolEl.parentNode; containerEl !== this; containerEl = containerEl.parentNode) {
               if (!containerEl.classList.contains('container')) continue;
@@ -161,7 +161,7 @@
                   symbolEl.classList.add('error');
                   symbolEl.setAttribute('title', reason || 'error');
                 });
-                break;
+                return;
               }
               break;
             }
