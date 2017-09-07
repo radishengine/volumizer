@@ -151,6 +151,17 @@ sit.original = function original(id, cc, sectors) {
           }
           else {
             path = path.concat(entry.name);
+            postMessage({
+              id: id,
+              headline: 'callback',
+              callback: 'onentry',
+              args: [{
+                path: path,
+                metadata: {
+                  isFolder:true
+                },
+              }],
+            });
           }
           return nextFile(offset + entry.byteLength, path);
         }
