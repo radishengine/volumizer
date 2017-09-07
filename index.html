@@ -82,6 +82,9 @@
       .container.open.loading > .toggler {
         cursor: progress;
       }
+      .symbol.error::before !!important {
+        content: '\26A0';
+      }
     </style>
   </head>
   <body>
@@ -100,6 +103,8 @@
     </div>
     <script>
       
+      var blobVC = new VolumizerClient;
+      
       document.getElementById('content').addEventListener('click', function(e) {
         for (var el = e.target; el !== this; el = el.parentNode) {
           if (el.classList.contains('container')) {
@@ -115,10 +120,51 @@
             }
             break;
           }
+          if (el.classList.contains('symbol')) {
+            var symbolEl = el;
+            if (symbolEl.classList.contains('loading')) {
+              break;
+            }
+            for (el = el.parentNode; el !== this; el = el.parentNode) {
+              if (el.classList.contains('container')) {
+                if ('sectors' in el.dataset) {
+                  var sectors = el.dataset.sectors.split(';').map(function(sector) {
+                    sector = sector.split(',');
+                    return {offset:+sector[0], length:+sector[1]};
+                  });
+                  for (el = el.parentNode; el !== this; el = el.parentNode) {
+                    if (el.classList.contains('source')) {
+                      symbolEl.classList.add('loading');
+                      blobVC.task({
+                        headline: 'get-blob',
+                        source: el.source,
+                        sectors: sectors,
+                      })
+                      .then(function(blob) {
+                        symbolEl.classList.remove('loading');
+                        var a = document.createElement('A');
+                        a.setAttribute('href', URL.createObjectURL(blob));
+                        a.setAttribute('download', el.dataset.filename);
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      })
+                      .catch(function(reason) {
+                        symbolEl.classList.remove('loading');
+                        symbolEl.classList.add('error');
+                        symbolEl.setAttribute('title', reason || 'error');
+                      });
+                      break;
+                    }
+                  }
+                }
+                break;
+              }
+            }
+          }
         }
       });
       
-      var blobVC = null;
       var vc = null;
       
       function getElementForPath(path) {
@@ -145,9 +191,6 @@
       }
       
       function loadFile(file, structure, sectors) {
-        if (!blobVC) {
-          blobVC = new VolumizerClient;
-        }
         var vc = blobVC;
         document.body.classList.remove('cancelled', 'error');
         document.body.classList.add('loading');
@@ -175,12 +218,15 @@
                 if (entry.metadata.isOnDesk) {
                   document.getElementById('content').appendChild(el.parentNode.removeChild(el));
                 }
+                var filename = entry.path.slice(-1)[0];
                 if (entry.sectors && entry.sectors.length > 0) {
+                  el.dataset.filename = filename;
                   el.dataset.sectors = entry.sectors.map(function(sector) {
                     return sector.offset + ',' + sector.length;
                   }).join(';');
                   if (entry.metadata.type === 'STAK') {
                     var stackEl = getElementForPath(entry.path.concat('[stack]'));
+                    stackEl.dataset.filename = filename + '.stak';
                     stackEl.dataset.kind = 'hypercard/stack';
                     stackEl.classList.add('hidden');
                     stackEl.classList.remove('empty');
@@ -192,6 +238,7 @@
                     && entry.secondary.resourceFork.sectors
                     && entry.secondary.resourceFork.sectors.length > 0) {
                   el = getElementForPath(entry.path.concat('[resources]'));
+                  el.dataset.filename = filename + '.rsrc';
                   el.dataset.kind = 'mac/resource-fork';
                   el.classList.add('hidden');
                   el.classList.remove('empty');
