@@ -100,7 +100,11 @@
       document.getElementById('content').addEventListener('click', function(e) {
         for (var el = e.target; el !== this; el = el.parentNode) {
           if (el.classList.contains('container')) {
-            if (el.classList.toggle('open')
+            if (el.classList.contains('empty')) {
+              break;
+            }
+            var nowOpen = el.classList.toggle('open');
+            if (nowOpen
                 && 'kind' in el.dataset
                 && !el.classList.contains('loading')
                 && !el.classList.contains('source')) {
@@ -176,6 +180,7 @@
                     var stackEl = getElementForPath(entry.path.concat('[stack]'));
                     stackEl.dataset.kind = 'hypercard/stack';
                     stackEl.classList.add('hidden');
+                    stackEl.classList.remove('empty');
                     stackEl.dataset.sectors = el.dataset.sectors;
                   }
                 }
@@ -186,6 +191,7 @@
                   el = getElementForPath(entry.path.concat('[resources]'));
                   el.dataset.kind = 'mac/resource-fork';
                   el.classList.add('hidden');
+                  el.classList.remove('empty');
                   el.dataset.sectors = entry.secondary.resourceFork.sectors.map(function(sector) {
                     return sector.offset + ',' + sector.length;
                   }).join(';');
