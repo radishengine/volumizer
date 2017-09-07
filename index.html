@@ -133,6 +133,7 @@
                     return {offset:+sector[0], length:+sector[1]};
                   }),
                   source: sourceEl.source,
+                  structure: el.dataset.kind.split(' '),
                 },
                 {
                   onentry: function(entry) {
