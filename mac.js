@@ -291,6 +291,17 @@ mac.mfs = function mfs(id, cc, sectors) {
       }
       return false;
     }
+    postMessage({
+      id: id,
+      headline: 'callback',
+      callback: 'onentry',
+      args: [{
+        path: [mdb.name],
+        metadata: {
+          isFolder: true,
+        },
+      }],
+    });
     var chunkSize = mdb.allocChunkSize;
     var allocOffset = mdb.firstAllocBlock * 512 - 2*mdb.allocChunkSize;
     var mapSectors = data.sectorize(sectors,
