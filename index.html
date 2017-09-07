@@ -346,6 +346,9 @@
         if (/\.rsrc$/i.test(file.name)) {
           structure.push('mac/single-or-double');
         }
+        if (/\.stak$/i.test(file.name)) {
+          structure.push('hypercard/stack');
+        }
         if (/\.sit$/i.test(file.name)) {
           structure.push('sit/v5', 'sit/original');
         }
