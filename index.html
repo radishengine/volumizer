@@ -127,8 +127,8 @@
             }
             for (var containerEl = symbolEl.parentNode; containerEl !== this; containerEl = containerEl.parentNode) {
               if (!containerEl.classList.contains('container')) continue;
-              if (!('sectors' in el.dataset)) break;
-              var sectors = el.dataset.sectors.split(';').map(function(sector) {
+              if (!('sectors' in containerEl.dataset)) break;
+              var sectors = containerEl.dataset.sectors.split(';').map(function(sector) {
                 sector = sector.split(',');
                 return {offset:+sector[0], length:+sector[1]};
               });
@@ -144,7 +144,7 @@
                   symbolEl.classList.remove('loading');
                   var a = document.createElement('A');
                   a.setAttribute('href', URL.createObjectURL(blob));
-                  a.setAttribute('download', el.dataset.filename);
+                  a.setAttribute('download', containerEl.dataset.filename);
                   document.body.appendChild(a);
                   a.click();
                   document.body.removeChild(a);
