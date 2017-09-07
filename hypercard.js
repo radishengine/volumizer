@@ -12,7 +12,7 @@ hypercard.stack = function(id, cc, sectors) {
       var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
       var len = dv.getUint32(0);
       var name = bytes.sublen(4, 4).toByteString();
-      var id = dv.getInt32(8);
+      var chunkId = dv.getInt32(8);
       if (offset === 0 && name !== 'STAK') return false;
       postMessage({
         id: id,
@@ -21,7 +21,7 @@ hypercard.stack = function(id, cc, sectors) {
         args: [{
           metadata: {
             type: name,
-            id: id,
+            id: chunkId,
           },
           sectors: data.sectorize(sectors, offset, len),
         }],
