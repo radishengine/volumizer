@@ -122,8 +122,35 @@
             if (nowOpen
                 && 'kind' in el.dataset
                 && !el.classList.contains('loading')
-                && !el.classList.contains('source')) {
-              el.classList.add('loading');
+                && !el.classList.contains('loaded')) {
+              for (var sourceEl = el; sourceEl; sourceEl = sourceEl.parentNode) {
+                if (!sourceEl.classList.contains('source')) continue;
+                el.classList.add('loading');
+                blobVC.task({
+                  headline: 'volumize',
+                  sectors: el.dataset.sectors.split(';').map(function(sector) {
+                    sector = sector.split(',');
+                    return {offset:+sector[0], length:+sector[1]};
+                  }),
+                  source: sourceEl.source,
+                },
+                {
+                  onentry: function(entry) {
+                    console.log(entry);
+                  },
+                })
+                .then(function() {
+                  el.classList.remove('loading');
+                  if (!el.childrenElement.firstElementChild) {
+                    el.classList.add('empty');
+                  }
+                })
+                .catch(function() {
+                  el.classList.remove('loading');
+                  el.classList.add('error');
+                });
+                break;
+              }
             }
             break;
           }
