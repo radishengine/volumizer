@@ -182,8 +182,12 @@
           el.childrenElement = el.querySelector('.children');
           el.classList.add('empty');
           if (path.length === 1) {
-            document.getElementById('content').appendChild(el);
+            var root = document.getElementById('content');
+            root.appendChild(el);
             el.classList.add('open');
+            if (root.classList.contains('loading')) {
+              el.classList.add('loading');
+            }
           }
           else {
             var parentEl = getElementForPath(path.slice(0, -1));
@@ -221,9 +225,6 @@
                 }
                 else {
                   el.classList.add('file');
-                }
-                if (entry.metadata.isOnDesk) {
-                  document.getElementById('content').appendChild(el.parentNode.removeChild(el));
                 }
                 var filename = entry.path.slice(-1)[0];
                 if (entry.sectors && entry.sectors.length > 0) {
@@ -269,11 +270,15 @@
             },
           }
         ).then(function() {
-          root.classList.remove('loading');
+          for (var el = root.firstElementChild; el; el = el.nextElementSibling) {
+            el.classList.remove('loading');
+          }
         })
         .catch(function(reason) {
-          root.classList.remove('loading');
-          root.classList.add('error');
+          for (var el = root.firstElementChild; el; el = el.nextElementSibling) {
+            el.classList.remove('loading');
+            el.classList.add('error');
+          }
         });
       }
       
