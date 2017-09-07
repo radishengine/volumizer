@@ -1349,6 +1349,7 @@ mac.resourceFork = function resourceFork(id, cc, sectors) {
             }],
           });
         }
+        return true;
       });
     });
   });
