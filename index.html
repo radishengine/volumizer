@@ -136,7 +136,6 @@
           el.classList.add('empty');
           if (path.length === 1) {
             pathRoot.childrenElement.appendChild(el);
-            el.classList.add('open');
           }
           else {
             var parentEl = getElementForPath(pathRoot, path.slice(0, -1));
@@ -272,7 +271,7 @@
               if ('path' in entry) {
                 var el = getElementForPath(root, entry.path);
                 if (entry.path.length === 1) {
-                  el.classList.add('loading');
+                  el.classList.add('loading', 'open');
                 }
                 if (entry.metadata.isInvisible) {
                   el.classList.add('hidden');
