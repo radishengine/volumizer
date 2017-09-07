@@ -1,6 +1,6 @@
 
 if (!('data' in self)) importScripts('data.js');
-if (!('mac' in self)) importScripts('data.js');
+if (!('mac' in self)) importScripts('mac.js');
 
 self.hypercard = {};
 
