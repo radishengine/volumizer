@@ -132,7 +132,7 @@
                 sector = sector.split(',');
                 return {offset:+sector[0], length:+sector[1]};
               });
-              for (var sourceEl = containerEl.parentNode; sourceEl !== this; sourceEl = sourceEl.parentNode) {
+              for (var sourceEl = containerEl; sourceEl !== this.parentNode; sourceEl = sourceEl.parentNode) {
                 if (!(sourceEl.classList.contains('source'))) continue;
                 symbolEl.classList.add('loading');
                 blobVC.task({
