@@ -137,9 +137,6 @@
           if (path.length === 1) {
             pathRoot.childrenElement.appendChild(el);
             el.classList.add('open');
-            if (pathRoot.classList.contains('loading')) {
-              el.classList.add('loading');
-            }
           }
           else {
             var parentEl = getElementForPath(pathRoot, path.slice(0, -1));
@@ -272,6 +269,9 @@
             onentry: function(entry) {
               if ('path' in entry) {
                 var el = getElementForPath(root, entry.path);
+                if (entry.path.length === 1) {
+                  el.classList.add('loading');
+                }
                 if (entry.metadata.isInvisible) {
                   el.classList.add('hidden');
                 }
