@@ -199,7 +199,7 @@
         document.body.classList.remove('cancelled', 'error');
         document.body.classList.add('loading');
         var root = document.getElementById('content');
-        root.classList.add('source');
+        root.classList.add('source', 'loading');
         root.innerHTML = '';
         root.source = file;
         vc.task(
@@ -268,15 +268,13 @@
               }
             },
           }
-        ).then(
-          function() {
-            document.body.classList.remove('loading');
-          },
-          function() {
-            document.body.classList.remove('loading');
-            document.body.classList.add('error');
-          }
-        );
+        ).then(function() {
+          root.classList.remove('loading');
+        })
+        .catch(function(reason) {
+          root.classList.remove('loading');
+          root.classList.add('error');
+        });
       }
       
       function onFile(file, sectors) {
