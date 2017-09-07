@@ -183,6 +183,7 @@
                   onentry: function(entry) {
                     var folder = getElementForPath(el, [entry.metadata.type]);
                     folder.classList.add('folder');
+                    folder.classList.remove('empty');
                     var entryEl = createItemElement();
                     entryEl.titleElement.innerText = '[' + entry.metadata.id + ']';
                     if (entry.metadata.name) {
