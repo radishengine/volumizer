@@ -8,7 +8,7 @@ self.onmessage = function onmessage(e) {
     var message = e.data;
     var handled;
     if (message.headline in onmessage.handlers) {
-      handled = onmessage.handlers[message.headline](message);
+      handled = Promise.resolve(onmessage.handlers[message.headline](message));
     }
     else {
       handled = Promise.reject('unrecognized message headline: ' + message.headline);
