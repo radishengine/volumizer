@@ -76,6 +76,9 @@
       .container.folder > .symbol::before {
         content: '\1F4C2';
       }
+      .container.open.loading > .toggler::before {
+        content: '\231B';
+      }
     </style>
   </head>
   <body>
@@ -97,7 +100,12 @@
       document.getElementById('content').addEventListener('click', function(e) {
         for (var el = e.target; el !== this; el = el.parentNode) {
           if (el.classList.contains('container')) {
-            el.classList.toggle('open');
+            if (el.classList.toggle('open')
+                && 'kind' in el.dataset
+                && !el.classList.contains('loading')
+                && !el.classList.contains('source')) {
+              el.classList.add('loading');
+            }
             break;
           }
         }
