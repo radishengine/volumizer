@@ -125,41 +125,38 @@
             if (symbolEl.classList.contains('loading')) {
               break;
             }
-            for (el = el.parentNode; el !== this; el = el.parentNode) {
-              if (el.classList.contains('container')) {
-                if ('sectors' in el.dataset) {
-                  var sectors = el.dataset.sectors.split(';').map(function(sector) {
-                    sector = sector.split(',');
-                    return {offset:+sector[0], length:+sector[1]};
-                  });
-                  for (el = el.parentNode; el !== this; el = el.parentNode) {
-                    if (el.classList.contains('source')) {
-                      symbolEl.classList.add('loading');
-                      blobVC.task({
-                        headline: 'get-blob',
-                        source: el.source,
-                        sectors: sectors,
-                      })
-                      .then(function(blob) {
-                        symbolEl.classList.remove('loading');
-                        var a = document.createElement('A');
-                        a.setAttribute('href', URL.createObjectURL(blob));
-                        a.setAttribute('download', el.dataset.filename);
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      })
-                      .catch(function(reason) {
-                        symbolEl.classList.remove('loading');
-                        symbolEl.classList.add('error');
-                        symbolEl.setAttribute('title', reason || 'error');
-                      });
-                      break;
-                    }
-                  }
-                }
+            for (var containerEl = symbolEl.parentNode; containerEl !== this; containerEl = containerEl.parentNode) {
+              if (containerEl.classList.contains('container')) continue;
+              if (!('sectors' in el.dataset)) break;
+              var sectors = el.dataset.sectors.split(';').map(function(sector) {
+                sector = sector.split(',');
+                return {offset:+sector[0], length:+sector[1]};
+              });
+              for (var sourceEl = containerEl.parentNode; sourceEl !== this; sourceEl = sourceEl.parentNode) {
+                if (!(sourceEl.classList.contains('source'))) continue;
+                symbolEl.classList.add('loading');
+                blobVC.task({
+                  headline: 'get-blob',
+                  source: sourceEl.source,
+                  sectors: sectors,
+                })
+                .then(function(blob) {
+                  symbolEl.classList.remove('loading');
+                  var a = document.createElement('A');
+                  a.setAttribute('href', URL.createObjectURL(blob));
+                  a.setAttribute('download', el.dataset.filename);
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                })
+                .catch(function(reason) {
+                  symbolEl.classList.remove('loading');
+                  symbolEl.classList.add('error');
+                  symbolEl.setAttribute('title', reason || 'error');
+                });
                 break;
               }
+              break;
             }
           }
         }
@@ -194,7 +191,10 @@
         var vc = blobVC;
         document.body.classList.remove('cancelled', 'error');
         document.body.classList.add('loading');
-        document.getElementById('content').innerHTML = '';
+        var root = document.getElementById('content');
+        root.classList.add('source');
+        root.innerHTML = '';
+        root.source = file;
         vc.task(
           {
             headline: 'volumize',
