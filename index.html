@@ -171,6 +171,7 @@
                     && entry.secondary.resourceFork.sectors.length > 0) {
                   el = getElementForPath(entry.path.concat('[resources]'));
                   el.dataset.kind = 'mac/resource-fork';
+                  el.classList.add('hidden');
                   el.dataset.sectors = entry.secondary.resourceFork.sectors.map(function(sector) {
                     return sector.offset + ',' + sector.length;
                   }).join(';');
