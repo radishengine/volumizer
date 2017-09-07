@@ -135,7 +135,7 @@
           el.titleElement.innerText = path[path.length-1];
           el.classList.add('empty');
           if (path.length === 1) {
-            pathRoot.appendChild(el);
+            pathRoot.childrenElement.appendChild(el);
             el.classList.add('open');
             if (pathRoot.classList.contains('loading')) {
               el.classList.add('loading');
@@ -256,6 +256,7 @@
         document.body.classList.remove('cancelled', 'error');
         document.body.classList.add('loading');
         var root = document.getElementById('content');
+        root.childrenElement = root;
         root.classList.add('source', 'loading', 'path-root');
         root.innerHTML = '';
         root.source = file;
