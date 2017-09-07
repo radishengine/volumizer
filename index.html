@@ -162,6 +162,15 @@
                     return sector.offset + ',' + sector.length;
                   }).join(';');
                 }
+                if (entry.secondary
+                    && entry.secondary.resourceFork
+                    && entry.secondary.resourceFork.sectors
+                    && entry.secondary.resourceFork.sectors.length > 0) {
+                  el = getElementForPath(entry.path.concat('resources'));
+                  el.dataset.sectors = entry.secondary.resourceFork.sectors.map(function(sector) {
+                    return sector.offset + ',' + sector.length;
+                  }).join(';');
+                }
               }
               else if (entry.as === 'mac/partitioned') {
                 var type = entry.metadata.type.toLowerCase();
