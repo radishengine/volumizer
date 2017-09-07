@@ -126,7 +126,7 @@
               break;
             }
             for (var containerEl = symbolEl.parentNode; containerEl !== this; containerEl = containerEl.parentNode) {
-              if (containerEl.classList.contains('container')) continue;
+              if (!containerEl.classList.contains('container')) continue;
               if (!('sectors' in el.dataset)) break;
               var sectors = el.dataset.sectors.split(';').map(function(sector) {
                 sector = sector.split(',');
