@@ -67,6 +67,9 @@
         content: '\1F4BE';
         cursor: pointer;
       }
+      .container[data-kind] > .symbol::before {
+        content: '\1F4E6';
+      }
       .container > .symbol::before {
         content: '\1F4C4';
       }
@@ -166,7 +169,8 @@
                     && entry.secondary.resourceFork
                     && entry.secondary.resourceFork.sectors
                     && entry.secondary.resourceFork.sectors.length > 0) {
-                  el = getElementForPath(entry.path.concat('resources'));
+                  el = getElementForPath(entry.path.concat('[resources]'));
+                  el.dataset.kind = 'mac/resource-fork';
                   el.dataset.sectors = entry.secondary.resourceFork.sectors.map(function(sector) {
                     return sector.offset + ',' + sector.length;
                   }).join(';');
