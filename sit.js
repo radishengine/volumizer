@@ -178,10 +178,12 @@ sit.original = function original(id, cc, sectors) {
           args: [{
             path: path.concat(entry.name),
             sectors: data.sectorize(sectors, dataOffset, entry.dataForkStoredSize),
+            encoding: 'sit/mode' + entry.dataForkMode,
             metadata: metadata,
             secondary: {
               resourceFork: {
                 sectors: data.sectorize(sectors, resourceOffset, entry.resourceForkStoredSize),
+                encoding: 'sit/mode' + entry.resourceForkMode,
               },
             },
           }],
@@ -438,3 +440,70 @@ sit.v5 = function v5(id, cc, sectors) {
     return nextEntry([], header.rootOffset, header.rootEntryCount);
   });
 };
+
+function decode_mode2(id, cc, sectors, outputLength) {
+  return cc.getBytes(sectors).then(function(input) {
+    var output = new Uint8Array(outputLength);
+    var input_i = 0, output_i = 0, copy_i = 0;
+    
+    var symbolSize = 9;
+    var symbolMask = (1 << symbolSize) - 1;
+    var bitBuf = 0, bitCount = 0;
+    var bytes = new Uint8Array(256);
+    var dict = new Array(256 + 1);
+    for (var i = 0; i < 256; i++) {
+      bytes[i] = i;
+      dict[i] = bytes.subarray(i, i+1);
+    }
+
+    while (input_i < input.length) {
+      while (bitCount < symbolSize) {
+        bitBuf |= input[input_i++] << bitCount;
+      }
+      var symbol = bitBuf & symbolMask;
+      bitBuf >>>= symbolSize;
+      if (symbol === 256) {
+        // clear
+        symbolSize = 9;
+        symbolMask = (1 << symbolSize) - 1;
+        dict.splice(257, dict.length - 257);
+        continue;
+      }
+      if (symbol === symbolMask) {
+        if (++symbolSize === 14) {
+          throw new Error('invalid input');
+        }
+        symbolMask = (1 << symbolSize) - 1;
+      }
+      if (symbol < dict.length) {
+        var part = dict[symbol];
+        output.set(part, output_i);
+        dict.push(output.subarray(copy_i, output_i + 1));
+        copy_i = output_i;
+        output_i += part.length;
+      }
+      else if (symbol === dict.length) {
+        output[output_i++] = output[copy_i];
+        dict.push(output.subarray(copy_i, output_i));
+      }
+      else {
+        throw new Error('invalid input');
+      }
+    }
+    
+    if (output_i !== output.length) {
+      throw new Error('data length mismatch');
+    }
+    
+    postMessage({
+      id: id,
+      headline: 'callback',
+      callback: 'onsource',
+      args: [{
+        source: new Blob([output]),
+        sectors: [{offset:0, length:output.length}],
+      }],
+    });
+    
+  });
+}
