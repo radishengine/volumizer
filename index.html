@@ -298,9 +298,11 @@
       
       function loadFile(file, structure, encoding, sectors) {
         var item = createItemElement();
+        item.source = file;
         item.titleElement.innerText = file.name;
         item.dataset.filename = file.name;
         item.classList.add('source', 'path-root');
+        item.classList.remove('empty');
         item.dataset.kind = structure.join(' ');
         item.dataset.sectors = encodeSectors(sectors);
         document.getElementById('content').appendChild(item);
