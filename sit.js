@@ -466,7 +466,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
         var byteAlign = (symbolSize - byteCount % symbolSize) % symbolSize;
         input_i += byteAlign;
         symbolSize_base_i = input_i;
-			  bitBuf = bitCount = 0;
+        bitBuf = bitCount = 0;
         // reset
         dict.length = 257;
         symbolSize = 9;
