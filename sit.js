@@ -543,6 +543,19 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
     
     var tree = readBranch();
     
+    while (output_i < output.length) {
+      var branch = tree;
+      while (typeof branch !== 'number') {
+        if (bitCount === 0) {
+          bitBuf |= input[input_i++] << bitCount;
+          bitCount += 8;
+        }
+        branch = branch[bitBuf & 1];
+        bitBuf >>= 1; bitCount -= 1;
+      }
+      output[output_i++] = branch;
+    }
+    
     return new Blob([output]);
   });
 };
