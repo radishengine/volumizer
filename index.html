@@ -152,6 +152,52 @@
         }).join(';');
       }
       
+      function decodeSectors(sectorString) {
+        return sectorString.split(';').map(function(sector) {
+          sector = sector.split(',');
+          return {offset:+sector[0], length:+sector[1]};
+        });
+      }
+      
+      function decodeEl(encodedEl, sourceEl) {
+        return blobVC.task({
+          headline: 'decode',
+          source: sourceEl.source,
+          sectors: decodeSectors(encodedEl.dataset.sectors),
+        })
+        .then(function(result) {
+          encodedEl.source = result;
+          delete encodedEl.dataset.encoding;
+          encodedEl.dataset.sectors = '0,' + result.size;
+          encodedEl.classList.add('source');
+        });
+      }
+      
+      function volumizeEl(volumeEl, sourceEl) {
+        return blobVC.task({
+          headline: 'volumize',
+          sectors: decodeSectors(volumeEl.dataset.sectors),
+          source: sourceEl.source,
+          structure: volumeEl.dataset.kind.split(' '),
+        },
+        {
+          onentry: function(entry) {
+            var folder = getElementForPath(volumeEl, [entry.metadata.type]);
+            folder.classList.add('folder');
+            folder.classList.remove('empty');
+            var entryEl = createItemElement();
+            entryEl.titleElement.innerText = '[' + entry.metadata.id + ']';
+            if (entry.metadata.name) {
+              entryEl.titleElement.innerText += ' ' + entry.metadata.name;
+            }
+            if (entry.sectors && entry.sectors.length > 0) {
+              entryEl.dataset.sectors = encodeSectors(entry.sectors);
+            }
+            folder.childrenElement.appendChild(entryEl);
+          },
+        });
+      }
+      
       document.getElementById('content').addEventListener('click', function(e) {
         for (var el = e.target; el !== this; el = el.parentNode) {
           if (el.classList.contains('container')) {
@@ -166,32 +212,16 @@
               for (var sourceEl = el; sourceEl; sourceEl = sourceEl.parentNode) {
                 if (!sourceEl.classList.contains('source')) continue;
                 el.classList.add('loading');
-                blobVC.task({
-                  headline: 'volumize',
-                  sectors: el.dataset.sectors.split(';').map(function(sector) {
-                    sector = sector.split(',');
-                    return {offset:+sector[0], length:+sector[1]};
-                  }),
-                  source: sourceEl.source,
-                  structure: el.dataset.kind.split(' '),
-                },
-                {
-                  onentry: function(entry) {
-                    var folder = getElementForPath(el, [entry.metadata.type]);
-                    folder.classList.add('folder');
-                    folder.classList.remove('empty');
-                    var entryEl = createItemElement();
-                    entryEl.titleElement.innerText = '[' + entry.metadata.id + ']';
-                    if (entry.metadata.name) {
-                      entryEl.titleElement.innerText += ' ' + entry.metadata.name;
-                    }
-                    if (entry.sectors && entry.sectors.length > 0) {
-                      entryEl.dataset.sectors = encodeSectors(entry.sectors);
-                    }
-                    folder.childrenElement.appendChild(entryEl);
-                  },
-                })
-                .then(function() {
+                var promise;
+                if ('encoding' in el.dataset) {
+                  promise = decodeEl(el, sourceEl).then(function() {
+                    return volumizeEl(el, sourceEl);
+                  });
+                }
+                else {
+                  promise = volumizeEl(el, sourceEl);
+                }
+                promise.then(function() {
                   el.classList.remove('loading');
                   el.classList.add('loaded');
                   if (!el.childrenElement.firstElementChild) {
