@@ -454,15 +454,6 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
     var bytes = new Uint8Array(256);
     var dict = [];
     
-    do {
-      bitBuf |= input[input_i++] << bitCount;
-      bitCount += 8;
-    } while (bitCount < symbolSize);
-    if ((output[output_i++] = bitBuf & symbolMask) >= 256) {
-      throw new Error('invalid input');
-    }
-    bitBuf >>>= symbolSize;
-
     while (input_i < input.length) {
       while (bitCount < symbolSize) {
         bitBuf |= input[input_i++] << bitCount;
@@ -471,9 +462,10 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
       var symbol = bitBuf & symbolMask;
       bitBuf >>>= symbolSize;
       if (symbol < 256) {
-        copy_i = output_i;
-        output[output_i++] = symbol;
-        dict.push(output.subarray(copy_i, output_i));
+        if (output_i !== copy_i) {
+          dict.push(output.subarray(copy_i, output_i+1));
+        }
+        output[copy_i = output_i++] = symbol;
       }
       else if (symbol === 256) {
         // round up to 8 * symbol size boundary
@@ -489,6 +481,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
         dict.length = 0;
         symbolSize = 9;
         symbolMask = (1 << symbolSize) - 1;
+        copy_i = output_i;
       }
       else if (symbol === symbolMask) {
         if (++symbolSize === 14) {
