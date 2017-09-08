@@ -512,3 +512,37 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
     
   });
 };
+
+sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
+  return Promise.resolve(cc.getBytes(sectors)).then(function(input) {
+    var output = new Uint8Array(outputLength);
+    var input_i = 0, output_i = 0;
+    var bitBuf = 0, bitCount = 0;
+    
+    function readBranch() {
+      if (bitCount === 0) {
+        bitBuf |= input[input_i++] << bitCount;
+        bitCount += 8;
+      }
+      var isLeaf = bitBuf & 1;
+      bitBuf >>= 1; bitCount -= 1;
+      if (isLeaf) {
+        if (bitCount < 8) {
+          bitBuf |= input[input_i++] << bitCount;
+          bitCount += 8;
+        }
+        var leafValue = bitBuf & 0xff;
+        bitBuf >>>= 8; bitCount -= 8;
+        return leafValue;
+      }
+      var branches = [];
+      branches.push(readBranch());
+      branches.push(readBranch());
+      return branches;
+    }
+    
+    var tree = readBranch();
+    
+    return new Blob([output]);
+  });
+};
