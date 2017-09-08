@@ -1560,7 +1560,7 @@ const HQX_LOOKUP = (function(b) {
 mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
   return Promise.resolve(cc.getBytes(sectors)).then(function(bytes) {
     var text = bytes.toByteString();
-    var start = text.match(/(^|\r|\n)\(This file must be converted with BinHex[^\r\n]*[\r\n]+:[/);
+    var start = text.match(/(^|\r|\n)\(This file must be converted with BinHex[^\r\n]*[\r\n]+:/);
     if (!start) throw new Error('invalid hqx');
     start = start.index + start[0].length;
     var end = text.indexOf(':', start);
