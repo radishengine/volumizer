@@ -453,10 +453,20 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
     var bitBuf = 0, bitCount = 0;
     var bytes = new Uint8Array(256);
     var dict = [];
+    
+    do {
+      bitBuf |= input[input_i++] << bitCount;
+      bitCount += 8;
+    } while (bitCount < symbolSize);
+    if ((output[output_i++] = bitBuf & symbolMask) >= 256) {
+      throw new Error('invalid input');
+    }
+    bitBuf >>>= symbolSize;
 
     while (input_i < input.length) {
       while (bitCount < symbolSize) {
         bitBuf |= input[input_i++] << bitCount;
+        bitCount += 8;
       }
       var symbol = bitBuf & symbolMask;
       bitBuf >>>= symbolSize;
