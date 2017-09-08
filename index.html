@@ -304,6 +304,7 @@
         item.classList.add('source', 'path-root');
         item.classList.remove('empty');
         item.dataset.kind = structure.join(' ');
+        if (encoding) item.dataset.encoding = encoding;
         item.dataset.sectors = encodeSectors(sectors);
         document.getElementById('content').appendChild(item);
         /*
