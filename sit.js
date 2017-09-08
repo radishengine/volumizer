@@ -451,7 +451,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
     var symbolSize = 9;
     var symbolMask = (1 << symbolSize) - 1;
     var bitBuf = 0, bitCount = 0;
-    var dict = [];
+    var dict = new Array(257);
     
     while (input_i < input.length) {
       while (bitCount < symbolSize) {
@@ -460,13 +460,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
       }
       var symbol = bitBuf & symbolMask;
       bitBuf >>>= symbolSize; bitCount -= symbolSize;
-      if (symbol < 256) {
-        if (output_i !== copy_i) {
-          dict.push(output.subarray(copy_i, output_i+1));
-        }
-        output[copy_i = output_i++] = symbol;
-      }
-      else if (symbol === 256) {
+      if (symbol === 256) {
         // round up to 8 * symbol size boundary
         var skip = ((8 - dict.length) & 7) * symbolSize;
         while (skip > bitCount) {
@@ -476,33 +470,34 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
         }
         bitBuf >>>= skip; bitCount -= skip;
         // reset
-        dict.length = 0;
+        dict.length = 257;
         symbolSize = 9;
         symbolMask = (1 << symbolSize) - 1;
         copy_i = output_i;
+        continue;
       }
-      else if (symbol === symbolMask) {
-        if (++symbolSize === 14) {
-          throw new Error('invalid input');
+      if (output_i !== copy_i) {
+        if (dict.push(output.subarray(copy_i, output_i+1)) > symbolMask) {
+          if (++symbolSize === 14) {
+            throw new Error('invalid input');
+          }
+          symbolMask = (1 << symbolSize) - 1;
         }
-        symbolMask = (1 << symbolSize) - 1;
+      }
+      if (symbol < 256) {
+        output[copy_i = output_i++] = symbol;
+      }
+      else if (symbol < dict.length) {
+        var part = dict[symbol];
+        output.set(part, output_i);
+        copy_i = output_i;
+        output_i += part.length;
+      }
+      else if (symbol === dict.length) {
+        output[output_i++] = output[copy_i];
       }
       else {
-        symbol -= 257;
-        if (symbol < dict.length) {
-          var part = dict[symbol];
-          output.set(part, output_i);
-          dict.push(output.subarray(copy_i, output_i + 1));
-          copy_i = output_i;
-          output_i += part.length;
-        }
-        else if (symbol === dict.length) {
-          output[output_i++] = output[copy_i];
-          dict.push(output.subarray(copy_i, output_i));
-        }
-        else {
-          throw new Error('invalid input');
-        }
+        throw new Error('invalid input');
       }
     }
     
