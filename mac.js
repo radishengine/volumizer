@@ -1641,18 +1641,20 @@ mac.hqx = function hqx(id, cc, sectors) {
       id: id,
       headline: 'callback',
       callback: 'onentry',
-      sectors: data.sectorize(sectors, dataStart, dataLen),
-      path: [name],
-      metadata: {
-        type: type,
-        creator: creator,
-        isInvisible: !!(flags & 0x4000),
-      },
-      secondary: {
-        resourceFork: {
-          sectors: data.sectorize(sectors, resourceStart, resourceLen),
+      args: [{
+        sectors: data.sectorize(sectors, dataStart, dataLen),
+        path: [name],
+        metadata: {
+          type: type,
+          creator: creator,
+          isInvisible: !!(flags & 0x4000),
         },
-      },
+        secondary: {
+          resourceFork: {
+            sectors: data.sectorize(sectors, resourceStart, resourceLen),
+          },
+        },
+      }],
     });
     return true;
   });
