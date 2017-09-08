@@ -206,7 +206,10 @@
             item.classList.remove('empty');
             if (entry.sectors && entry.sectors.length > 0) {
               item.dataset.sectors = encodeSectors(entry.sectors);
-              if ('encoding' in entry) item.dataset.encoding = entry.encoding;
+              if ('encoding' in entry) {
+                item.dataset.encoding = entry.encoding;
+                item.dataset.decodedLength = entry.decodedLength;
+              }
             }
             if (entry.secondary
                 && entry.secondary.resourceFork
@@ -218,6 +221,7 @@
               resItem.dataset.sectors = encodeSectors(entry.secondary.resourceFork.sectors);
               if ('encoding' in entry.secondary.resourceFork) {
                 resItem.dataset.encoding = entry.secondary.resourceFork.encoding;
+                resItem.dataset.decodedLength = entry.secondary.resourceFork.decodedLength;
               }
               resItem.classList.remove('empty');
               resItem.classList.add('hidden');
