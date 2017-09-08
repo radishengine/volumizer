@@ -16,6 +16,7 @@ data.sectorsTotalLength = function(sectors) {
 
 data.sectorize = function(outSectors, inSectors) {
   if (typeof inSectors === 'number') {
+    if (arguments[2] === 0) return [];
     inSectors = [{offset:arguments[1], length:arguments[2]}];
   }
   if (outSectors.length === 1 && outSectors[0].offset === 0) {
