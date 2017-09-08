@@ -478,7 +478,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
       }
       if (output_i !== copy_i) {
         if (dict.push(output.subarray(copy_i, output_i+1)) > symbolMask) {
-          if (++symbolSize === 14) {
+          if (++symbolSize > 14) {
             throw new Error('invalid input');
           }
           symbolMask = (1 << symbolSize) - 1;
