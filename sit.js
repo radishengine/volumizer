@@ -444,7 +444,7 @@ sit.v5 = function v5(id, cc, sectors) {
 };
 
 sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
-  return cc.getBytes(sectors).then(function(input) {
+  return Promise.resolve(cc.getBytes(sectors)).then(function(input) {
     var output = new Uint8Array(outputLength);
     var input_i = 0, output_i = 0, copy_i = 0;
     
