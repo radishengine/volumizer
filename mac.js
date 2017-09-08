@@ -1626,8 +1626,8 @@ mac.hqx = function hqx(id, cc, sectors) {
   return Promise.resolve(cc.getBytes(sectors)).then(function(bytes) {
     var name = bytes.sublen(1, bytes[0]).toMacRoman();
     var headerStart = 1 + bytes[0] + 1;
-    var type = data.sublen(headerStart, 4).toByteString();
-    var creator = data.sublen(headerStart + 4, 4).toByteString();
+    var type = bytes.sublen(headerStart, 4).toByteString();
+    var creator = bytes.sublen(headerStart + 4, 4).toByteString();
     var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     var flags = dv.getUint16(headerStart + 8);
     var dataLen = dv.getUint32(headerStart + 10);
