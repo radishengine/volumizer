@@ -163,6 +163,7 @@
       function decodeEl(encodedEl, sourceEl) {
         return blobVC.task({
           headline: 'decode',
+          encoding: encodedEl.dataset.encoding,
           source: sourceEl.source,
           sectors: decodeSectors(encodedEl.dataset.sectors),
         })
