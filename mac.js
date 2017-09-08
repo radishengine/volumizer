@@ -1336,12 +1336,14 @@ mac.resourceFork = function resourceFork(id, cc, sectors) {
       return Promise.resolve(cc.getBytes(allLengthSectors)).then(function(bytes) {
         var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
         for (var entry_i = 0; entry_i < entryMetadata.length; entry_i++) {
+          var metadata = entryMetadata[entry_i];
           postMessage({
             id: id,
             headline: 'callback',
             callback: 'onentry',
             args: [{
-              metadata: entryMetadata[entry_i],
+              metadata: metadata,
+              path: [metadata.type, '[' + metadata.id + (metadata.name ? '] ' + metadata.name : ']')],
               sectors: data.sectorize(
                 dataSectors,
                 entryDataOffsets[entry_i] + 4,
