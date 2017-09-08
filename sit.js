@@ -179,11 +179,13 @@ sit.original = function original(id, cc, sectors) {
             path: path.concat(entry.name),
             sectors: data.sectorize(sectors, dataOffset, entry.dataForkStoredSize),
             encoding: 'sit/mode' + entry.dataForkMode,
+            decodedLength: entry.dataForkRealSize,
             metadata: metadata,
             secondary: {
               resourceFork: {
                 sectors: data.sectorize(sectors, resourceOffset, entry.resourceForkStoredSize),
                 encoding: 'sit/mode' + entry.resourceForkMode,
+                decodedLength: entry.resourceForkRealSize,
               },
             },
           }],
