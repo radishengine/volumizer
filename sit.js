@@ -526,7 +526,7 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
     
     function getBits(n) {
       if (bitCount < n) pullByte();
-      var val = (bitBuf >>> (bitCount - n)) & ((1 << bitCount) - 1);
+      var val = (bitBuf >>> (bitCount - n)) & ((1 << n) - 1);
       bitCount -= n;
       return val;
     }
