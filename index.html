@@ -204,8 +204,10 @@
           onentry: function(entry) {
             var item = getElementForPath(volumeEl, entry.path);
             item.classList.remove('empty');
-            if (entry.sectors && entry.sectors.length > 0) item.dataset.sectors = encodeSectors(entry.sectors);
-            if ('encoding' in entry) item.dataset.encoding = entry.encoding;
+            if (entry.sectors && entry.sectors.length > 0) {
+              item.dataset.sectors = encodeSectors(entry.sectors);
+              if ('encoding' in entry) item.dataset.encoding = entry.encoding;
+            }
             if (entry.secondary
                 && entry.secondary.resourceFork
                 && entry.secondary.resourceFork.sectors
@@ -214,6 +216,9 @@
               resItem.titleElement.innerText = '[resources]';
               resItem.dataset.kind = 'mac/resource-fork';
               resItem.dataset.sectors = encodeSectors(entry.secondary.resourceFork.sectors);
+              if ('encoding' in entry.secondary.resourceFork) {
+                resItem.dataset.encoding = entry.secondary.resourceFork.encoding;
+              }
               resItem.classList.remove('empty');
               resItem.classList.add('hidden');
               item.childrenElement.appendChild(resItem);
