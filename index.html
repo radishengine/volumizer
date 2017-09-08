@@ -282,6 +282,9 @@
                 else {
                   el.classList.add('file');
                 }
+                if ('encoding' in entry) {
+                  el.dataset.encoding = entry.encoding;
+                }
                 var filename = entry.path.slice(-1)[0];
                 if (entry.sectors && entry.sectors.length > 0) {
                   el.dataset.filename = filename;
