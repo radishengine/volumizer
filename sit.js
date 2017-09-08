@@ -459,7 +459,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
         bitCount += 8;
       }
       var symbol = bitBuf & symbolMask;
-      bitBuf >>>= symbolSize;
+      bitBuf >>>= symbolSize; bitCount -= symbolSize;
       if (symbol < 256) {
         if (output_i !== copy_i) {
           dict.push(output.subarray(copy_i, output_i+1));
@@ -474,8 +474,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
           bitBuf = input[input_i++];
           bitCount = 8;
         }
-        bitBuf >>>= skip;
-        bitCount -= skip;
+        bitBuf >>>= skip; bitCount -= skip;
         // reset
         dict.length = 0;
         symbolSize = 9;
