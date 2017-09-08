@@ -204,6 +204,8 @@
           onentry: function(entry) {
             var item = getElementForPath(volumeEl, entry.path);
             item.classList.remove('empty');
+            if (entry.metadata.isFolder) item.classList.add('folder');
+            if (entry.metadata.isInvisible) item.classList.add('hidden');
             if (entry.sectors && entry.sectors.length > 0) {
               item.dataset.sectors = encodeSectors(entry.sectors);
               if ('encoding' in entry) {
