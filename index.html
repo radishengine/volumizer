@@ -361,6 +361,12 @@
                   el.dataset.sectors = entry.secondary.resourceFork.sectors.map(function(sector) {
                     return sector.offset + ',' + sector.length;
                   }).join(';');
+                  if ('encoding' in entry.secondary.resourceFork) {
+                    el.dataset.encoding = entry.secondary.resourceFork.encoding;
+                    if ('decodedLength' in entry.secondary.resourceFork) {
+                      el.dataset.decodedLength = ''+entry.secondary.resourceFork.decodedLength;
+                    }
+                  }                  
                 }
               }
               else if (entry.as === 'mac/partitioned') {
