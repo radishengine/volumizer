@@ -296,11 +296,16 @@
         }
       });
       
-      function loadFile(file, structure, sectors) {
-        var vc = blobVC;
-        document.body.classList.remove('cancelled', 'error');
-        document.body.classList.add('loading');
-        var root = document.getElementById('content');
+      function loadFile(file, structure, encoding, sectors) {
+        var item = createItemElement();
+        item.titleElement.innerText = file.name;
+        item.dataset.filename = file.name;
+        item.classList.add('source', 'path-root');
+        item.dataset.kind = structure.join(' ');
+        item.dataset.sectors = encodeSectors(sectors);
+        document.getElementById('content').appendChild(item);
+        /*
+        if (encoding) item.dataset.encoding = encoding;
         root.childrenElement = root;
         root.classList.add('source', 'loading', 'path-root');
         root.innerHTML = '';
@@ -372,10 +377,10 @@
               else if (entry.as === 'mac/partitioned') {
                 var type = entry.metadata.type.toLowerCase();
                 if (type === 'apple_hfs') {
-                  loadFile(file, ['mac/hfs'], entry.sectors);
+                  loadFile(file, ['mac/hfs'], null, entry.sectors);
                 }
                 else if (type === 'apple_mfs') {
-                  loadFile(file, ['mac/mfs'], entry.sectors);
+                  loadFile(file, ['mac/mfs'], null, entry.sectors);
                 }
               }
               else {
@@ -394,10 +399,12 @@
             el.classList.add('error');
           }
         });
+        */
       }
       
       function onFile(file, sectors) {
         var structure = [];
+        var encoding = null;
         if (/\.(?:iso|dsk|img|image|toast|cdr)$/i.test(file.name)) {
           structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
         }
@@ -410,11 +417,15 @@
         if (/\.sit$/i.test(file.name)) {
           structure.push('sit/v5', 'sit/original');
         }
+        if (/\.hqx$/i.test(file.name)) {
+          structure.push('mac/hqx');
+          encoding = 'mac/hqx';
+        }
         if (structure.length === 0) {
           alert('unrecognized file type');
           return;
         }
-        return loadFile(file, structure, [{offset:0, length:file.size}]);
+        return loadFile(file, structure, encoding, [{offset:0, length:file.size}]);
       }
       
       document.body.dragEnterCount = 0;
@@ -464,7 +475,6 @@
           if (vc) {
             vc.close();
             vc = null;
-            document.body.classList.add('cancelled');
           }
         }
       };
