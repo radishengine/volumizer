@@ -202,8 +202,9 @@
         },
         {
           onentry: function(entry) {
-            var folder = getElementForPath(volumeEl, [entry.metadata.type]);
-            folder.classList.add('folder');
+            var path = ('path' in entry) ? entry.path : [entry.metadata.type];
+            var folder = getElementForPath(volumeEl, path);
+            if (entry.metadata.isFolder || !('path' in entry)) folder.classList.add('folder');
             folder.classList.remove('empty');
             var entryEl = createItemElement();
             entryEl.titleElement.innerText = '[' + entry.metadata.id + ']';
