@@ -1320,6 +1320,15 @@ mac.resourceFork = function resourceFork(id, cc, sectors) {
       var entryDataOffsets = [];
       for (var group_i = 0; group_i < map.groups.length; group_i++) {
         var group = map.groups[group_i];
+        postMessage({
+          id: id,
+          headline: 'callback',
+          callback: 'onentry',
+          args: [{
+            metadata: {isFolder:true},
+            path: [group.name],
+          }],
+        });        
         for (var resource_i = 0; resource_i < group.resources.length; resource_i++) {
           var resource = group.resources[resource_i];
           entryMetadata.push({
