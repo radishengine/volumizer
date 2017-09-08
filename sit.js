@@ -448,7 +448,7 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
     var output = new Uint8Array(outputLength);
     var input_i = 0, output_i = 0, copy_i = 0;
     
-    var symbolSize = 9;
+    var symbolSize = 9, symbolSize_base_i = 0;
     var symbolMask = (1 << symbolSize) - 1;
     var bitBuf = 0, bitCount = 0;
     var dict = new Array(257);
@@ -461,14 +461,12 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
       var symbol = bitBuf & symbolMask;
       bitBuf >>>= symbolSize; bitCount -= symbolSize;
       if (symbol === 256) {
-        // round up to 8 * symbol size boundary
-        var skip = ((8 - dict.length) & 7) * symbolSize;
-        while (skip > bitCount) {
-          skip -= bitCount;
-          bitBuf = input[input_i++];
-          bitCount = 8;
-        }
-        bitBuf >>>= skip; bitCount -= skip;
+        // align to (symbolSize)-byte boundary
+        var byteCount = input_i - symbolSize_base_i;
+        var byteAlign = (symbolSize - byteCount % symbolSize) % symbolSize;
+        input_i += byteAlign;
+        symbolSize_base_i = input_i;
+			  bitBuf = bitCount = 0;
         // reset
         dict.length = 257;
         symbolSize = 9;
@@ -477,11 +475,16 @@ sit.decode_mode2 = function decode_mode2(id, cc, sectors, outputLength) {
         continue;
       }
       if (output_i !== copy_i) {
-        if (dict.push(output.subarray(copy_i, output_i+1)) > symbolMask) {
-          if (++symbolSize > 14) {
-            throw new Error('invalid input');
+        if (dict.length < 16384) {
+          if (dict.push(output.subarray(copy_i, output_i+1)) > symbolMask) {
+            if (dict.length < 16384) {
+              if (++symbolSize > 14) {
+                throw new Error('invalid input');
+              }
+              symbolMask = (1 << symbolSize) - 1;
+              symbolSize_base_i = input_i;
+            }
           }
-          symbolMask = (1 << symbolSize) - 1;
         }
       }
       if (symbol < 256) {
