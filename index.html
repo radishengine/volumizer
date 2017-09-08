@@ -164,12 +164,14 @@
         return blobVC.task({
           headline: 'decode',
           encoding: encodedEl.dataset.encoding,
+          decodedLength: +encodedEl.dataset.decodedLength,
           source: sourceEl.source,
           sectors: decodeSectors(encodedEl.dataset.sectors),
         })
         .then(function(result) {
           encodedEl.source = result;
           delete encodedEl.dataset.encoding;
+          delete encodedEl.dataset.decodedLength;
           encodedEl.dataset.sectors = '0,' + result.size;
           encodedEl.classList.add('source');
         });
@@ -328,6 +330,9 @@
                 }
                 if ('encoding' in entry) {
                   el.dataset.encoding = entry.encoding;
+                  if ('decodedLength' in entry) {
+                    el.dataset.decodedLength = ''+entry.decodedLength;
+                  }
                 }
                 var filename = entry.path.slice(-1)[0];
                 if (entry.sectors && entry.sectors.length > 0) {
