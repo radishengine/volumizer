@@ -1548,3 +1548,112 @@ mac.singleOrDouble = function singleOrDouble(id, cc, sectors) {
     });
   });
 };
+
+const HQX_LOOKUP = (function(b) {
+  var chars = '!"#$%&\'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr';
+  for (var i = 0; i < chars.length; i++) {
+    b[chars.charCodeAt(i)] = i;
+  }
+  return b;
+})(new Uint8Array(256));
+
+mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
+  return Promise.resolve(cc.getBytes(sectors)).then(function(bytes) {
+    var text = bytes.toByteString();
+    var start = text.match(/(^|\r|\n)\(This file must be converted with BinHex[^\r\n]*[\r\n]+:[/);
+    if (!start) throw new Error('invalid hqx');
+    start = start.index + start[0].length;
+    var end = text.indexOf(':', start);
+    if (end === -1) throw new Error('unterminated hqx');
+    text = text.slice(start, end).replace(/\s+/g, '');
+    if (text.length % 4) {
+      text += '!!!!'.slice(text.length % 4);
+    }
+    var chunks = [];
+    var buf = new Uint8Array((text.length/4) * 3);
+    
+    var phase = 'data';
+    
+    var buf_i = 0;
+    function byte(b) {
+      if (phase === 'rle') {
+        phase = 'data';
+        if (b === 0) {
+          buf[buf_i++] = 0x90;
+          return;
+        }
+        if (--b === 0) return;
+        var copy = buf[buf_i-1];
+        buf[buf_i++] = copy;
+        if (--b === 0) return;
+        buf[buf_i++] = copy;
+        if (--b === 0) return;
+        chunks.push(buf.subarray(0, buf_i));
+        buf = buf.subarray(buf_i);
+        buf_i = 0;
+        var rep = new Uint8Array(b);
+        if (copy !== 0) for (var i = 0; i < b; i++) {
+          rep[i] = b;
+        }
+        chunks.push(rep);
+      }
+      else if (b === 0x90 && buf_i > 0) {
+        phase = 'rle';
+      }
+      else {
+        buf[buf_i++] = b;
+      }
+    }
+    for (var i = 0; i < text.length; i += 4) {
+      var c1 = HQX_LOOKUP[text.charCodeAt(i)];
+      var c2 = HQX_LOOKUP[text.charCodeAt(i+1)];
+      var c3 = HQX_LOOKUP[text.charCodeAt(i+2)];
+      var c4 = HQX_LOOKUP[text.charCodeAt(i+3)];
+      
+      byte((c1 << 2) | (c2 >> 4));
+      byte(((c2 << 4) | (c3 >> 2)) & 0xff);
+      byte(((c3 << 6) | c4) & 0xff);
+    }
+    if (buf_i > 0) {
+      chunks.push(buf.subarray(0, buf_i));
+    }
+    
+    return new Blob(chunks);
+  });
+};
+
+mac.hqx = function hqx(id, cc, sectors) {
+  return Promise.resolve(cc.getBytes(sectors)).then(function(bytes) {
+    var name = bytes.sublen(1, bytes[0]).toMacRoman();
+    var headerStart = 1 + bytes[0] + 1;
+    var type = data.sublen(headerStart, 4).toByteString();
+    var creator = data.sublen(headerStart + 4, 4).toByteString();
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var flags = dv.getUint16(headerStart + 8);
+    var dataLen = dv.getUint32(headerStart + 10);
+    var resourceLen = dv.getUint32(headerStart + 14);
+    var headerChecksum = dv.getUint16(headerStart + 18);
+    var dataStart = headerStart + 20;
+    var dataChecksum = dv.getUint16(dataStart + dataLen);
+    var resourceStart = dataStart + dataLen + 2;
+    var resourceChecksum = dv.getUint16(resourceStart + resourceLen);
+    postMessage({
+      id: id,
+      headline: 'callback',
+      callback: 'onentry',
+      sectors: data.sectorize(sectors, dataStart, dataLen),
+      path: [name],
+      metadata: {
+        type: type,
+        creator: creator,
+        isInvisible: !!(flags & 0x4000),
+      },
+      secondary: {
+        resourceFork: {
+          sectors: data.sectorize(sectors, resourceStart, resourceLen),
+        },
+      },
+    });
+    return true;
+  });
+};
