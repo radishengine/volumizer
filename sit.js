@@ -495,15 +495,7 @@ function decode_mode2(id, cc, sectors, outputLength) {
       throw new Error('data length mismatch');
     }
     
-    postMessage({
-      id: id,
-      headline: 'callback',
-      callback: 'onsource',
-      args: [{
-        source: new Blob([output]),
-        sectors: [{offset:0, length:output.length}],
-      }],
-    });
+    return new Blob([output]);
     
   });
 }
