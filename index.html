@@ -202,6 +202,10 @@
         },
         {
           onentry: function(entry) {
+            var item = getElementForPath(volumeEl, entry.path);
+            item.classList.remove('empty');
+            item.dataset.sectors = encodeSectors(entry.sectors);
+            /*
             var path = ('path' in entry) ? entry.path : [entry.metadata.type];
             var folder = getElementForPath(volumeEl, path);
             if (entry.metadata.isFolder || !('path' in entry)) folder.classList.add('folder');
@@ -215,6 +219,7 @@
               entryEl.dataset.sectors = encodeSectors(entry.sectors);
             }
             folder.childrenElement.appendChild(entryEl);
+            */
           },
         });
       }
