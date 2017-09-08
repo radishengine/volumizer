@@ -463,10 +463,20 @@ function decode_mode2(id, cc, sectors, outputLength) {
       var symbol = bitBuf & symbolMask;
       bitBuf >>>= symbolSize;
       if (symbol === 256) {
-        // clear
+        var symbolCount = dict.length - 257;
+        // round up to 8 * symbol size boundary
+        var skip = ((8 - symbolCount) & 7) * symbolSize;
+        while (skip > bitCount) {
+          skip -= bitCount;
+          bitBuf = input[input_i++];
+          bitCount = 8;
+        }
+        bitBuf >>>= skip;
+        bitCount -= skip;
+        // reset
+        dict.splice(257, symbolCount);
         symbolSize = 9;
         symbolMask = (1 << symbolSize) - 1;
-        dict.splice(257, dict.length - 257);
         continue;
       }
       if (symbol === symbolMask) {
