@@ -114,6 +114,7 @@
         var el = document.querySelector('#templates > .container').cloneNode(true);
         el.titleElement = el.querySelector('.title');
         el.childrenElement = el.querySelector('.children');
+        el.symbolElement = el.querySelector('.symbol');
         el.classList.add('empty');
         return el;
       }
@@ -173,6 +174,22 @@
         });
       }
       
+      function downloadEl(el, sourceEl) {
+        return blobVC.task({
+          headline: 'get-blob',
+          source: sourceEl.source,
+          sectors: decodeSectors(el.dataset.sectors),
+        })
+        .then(function(blob) {
+          var a = document.createElement('A');
+          a.setAttribute('href', URL.createObjectURL(blob));
+          a.setAttribute('download', el.dataset.filename);
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
+      }
+      
       function volumizeEl(volumeEl, sourceEl) {
         return blobVC.task({
           headline: 'volumize',
@@ -214,9 +231,8 @@
                 el.classList.add('loading');
                 var promise;
                 if ('encoding' in el.dataset) {
-                  promise = decodeEl(el, sourceEl).then(function() {
-                    return volumizeEl(el, sourceEl);
-                  });
+                  promise = decodeEl(el, sourceEl)
+                  .then(volumizeEl.bind(null, el, el));
                 }
                 else {
                   promise = volumizeEl(el, sourceEl);
@@ -253,19 +269,16 @@
               for (var sourceEl = containerEl; sourceEl !== this.parentNode; sourceEl = sourceEl.parentNode) {
                 if (!(sourceEl.classList.contains('source'))) continue;
                 symbolEl.classList.add('loading');
-                blobVC.task({
-                  headline: 'get-blob',
-                  source: sourceEl.source,
-                  sectors: sectors,
-                })
-                .then(function(blob) {
+                var promise;
+                if ('encoding' in containerEl.dataset) {
+                  promise = decodeEl(containerEl, sourceEl)
+                  .then(downloadEl.bind(null, containerEl, containerEl));
+                }
+                else {
+                  promise = downloadEl(containerEl, sourceEl);
+                }
+                promise.then(function() {
                   symbolEl.classList.remove('loading');
-                  var a = document.createElement('A');
-                  a.setAttribute('href', URL.createObjectURL(blob));
-                  a.setAttribute('download', containerEl.dataset.filename);
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
                 })
                 .catch(function(reason) {
                   symbolEl.classList.remove('loading');
