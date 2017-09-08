@@ -521,14 +521,14 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
     
     function readBranch() {
       if (bitCount === 0) {
-        bitBuf |= input[input_i++] << bitCount;
+        bitBuf = (bitBuf << 8) | input[input_i++];
         bitCount += 8;
       }
       var isLeaf = bitBuf & 1;
       bitBuf >>>= 1; bitCount -= 1;
       if (isLeaf) {
         if (bitCount < 8) {
-          bitBuf |= input[input_i++] << bitCount;
+          bitBuf = (bitBuf << 8) | input[input_i++];
           bitCount += 8;
         }
         var leafValue = bitBuf & 0xff;
@@ -547,7 +547,7 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
       var branch = tree;
       while (typeof branch !== 'number') {
         if (bitCount === 0) {
-          bitBuf |= input[input_i++] << bitCount;
+          bitBuf = (bitBuf << 8) | input[input_i++];
           bitCount += 8;
         }
         branch = branch[bitBuf & 1];
