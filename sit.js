@@ -525,7 +525,7 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
         bitCount += 8;
       }
       var isLeaf = bitBuf & 1;
-      bitBuf >>= 1; bitCount -= 1;
+      bitBuf >>>= 1; bitCount -= 1;
       if (isLeaf) {
         if (bitCount < 8) {
           bitBuf |= input[input_i++] << bitCount;
@@ -551,7 +551,7 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
           bitCount += 8;
         }
         branch = branch[bitBuf & 1];
-        bitBuf >>= 1; bitCount -= 1;
+        bitBuf >>>= 1; bitCount -= 1;
       }
       output[output_i++] = branch;
     }
