@@ -1577,6 +1577,9 @@ mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
     var end = text.indexOf(':', start);
     if (end === -1) throw new Error('unterminated hqx');
     text = text.slice(start, end).replace(/\s+/g, '');
+    if (/[^!"#\$%&'\(\)\*\+,\-0-9@A-Z\[`a-r]/.test(text)) {
+      throw new Error('invalid characters');
+    }
     if (text.length % 4) {
       text += '!!!!'.slice(text.length % 4);
     }
