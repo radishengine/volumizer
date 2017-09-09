@@ -1589,33 +1589,34 @@ mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
     var phase = 'data';
     
     var buf_i = 0;
+    var copy = -1;
     function byte(b) {
       if (phase === 'rle') {
         phase = 'data';
         if (b === 0) {
-          buf[buf_i++] = 0x90;
+          copy = buf[buf_i++] = 0x90;
           return;
         }
-        if (--b === 0) return;
-        var copy = buf[buf_i-1];
+        if (--b === 0) { copy = -1; return; }
         buf[buf_i++] = copy;
-        if (--b === 0) return;
+        if (--b === 0) { copy = -1; return; }
         buf[buf_i++] = copy;
-        if (--b === 0) return;
+        if (--b === 0) { copy = -1; return; }
         chunks.push(buf.subarray(0, buf_i));
         buf = buf.subarray(buf_i);
         buf_i = 0;
         var rep = new Uint8Array(b);
         if (copy !== 0) for (var i = 0; i < b; i++) {
-          rep[i] = b;
+          rep[i] = copy;
         }
         chunks.push(rep);
+        copy = -1;
       }
-      else if (b === 0x90 && buf_i > 0) {
+      else if (b === 0x90 && copy !== -1) {
         phase = 'rle';
       }
       else {
-        buf[buf_i++] = b;
+        copy = buf[buf_i++] = b;
       }
     }
     for (var i = 0; i < text.length; i += 4) {
