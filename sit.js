@@ -555,7 +555,8 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
     while (output_i < output.length) {
       var branch = tree;
       while (typeof branch !== 'number') {
-        branch = branch[getBit()];
+        var leftOrRight = getBit();
+        branch = branch[leftOrRight];
       }
       output[output_i++] = branch;
     }
