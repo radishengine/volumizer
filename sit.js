@@ -1048,7 +1048,6 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
     var input_i = 0, output_i = 0;
     var code = input[input_i++];
     console.log(code);
-    throw new Error('NYI');
-    //return new Blob([output]);
+    return new Blob([input]);
   });
 };
