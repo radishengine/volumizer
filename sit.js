@@ -564,3 +564,14 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
     return new Blob([output]);
   });
 };
+
+sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
+  return Promise.resolve(cc.getBytes(sectors)).then(function(input) {
+    var output = new Uint8Array(outputLength);
+    var input_i = 0, output_i = 0;
+    var code = input[input_i++];
+    console.log(code);
+    throw new Error('NYI');
+    //return new Blob([output]);
+  });
+};
