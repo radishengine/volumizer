@@ -1597,11 +1597,11 @@ mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
           copy = buf[buf_i++] = 0x90;
           return;
         }
-        if (--b === 0) { copy = -1; return; }
+        if (--b === 0) return;
         buf[buf_i++] = copy;
-        if (--b === 0) { copy = -1; return; }
+        if (--b === 0) return;
         buf[buf_i++] = copy;
-        if (--b === 0) { copy = -1; return; }
+        if (--b === 0) return;
         chunks.push(buf.subarray(0, buf_i));
         buf = buf.subarray(buf_i);
         buf_i = 0;
@@ -1610,7 +1610,6 @@ mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
           rep[i] = copy;
         }
         chunks.push(rep);
-        copy = -1;
       }
       else if (b === 0x90 && copy !== -1) {
         phase = 'rle';
