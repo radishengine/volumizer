@@ -1589,7 +1589,7 @@ mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
     var phase = 'data';
     
     var buf_i = 0;
-    var copy = -1;
+    var copy = 0;
     function byte(b) {
       if (phase === 'rle') {
         phase = 'data';
@@ -1611,7 +1611,7 @@ mac.decode_hqx = function decode_hqx(id, cc, sectors, outputLength) {
         }
         chunks.push(rep);
       }
-      else if (b === 0x90 && copy !== -1) {
+      else if (b === 0x90) {
         phase = 'rle';
       }
       else {
