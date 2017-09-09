@@ -531,8 +531,17 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
       return val;
     }
     
+    function getBit() {
+      if (bitCount === 0) {
+        bitBuf = input[input_i++];
+        bitCount = 7;
+        return (bitBuf >>> 7) & 1;
+      }
+      return (bitBuf >>> --bitCount) & 1;
+    }
+    
     function readBranch() {
-      if (getBits(1)) {
+      if (getBit()) {
         return getBits(8);
       }
       var branches = [];
@@ -546,7 +555,7 @@ sit.decode_mode3 = function decode_mode3(id, cc, sectors, outputLength) {
     while (output_i < output.length) {
       var branch = tree;
       while (typeof branch !== 'number') {
-        branch = branch[getBits(1)];
+        branch = branch[getBit()];
       }
       output[output_i++] = branch;
     }
