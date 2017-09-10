@@ -409,7 +409,7 @@ sit.v5 = function v5(id, cc, sectors) {
               var resForkOffset = resInfoOffset + resInfo.byteLength;
               dataOffset = resInfoOffset + resInfo.storedLength;
               var resForkSectors = data.sectorize(sectors, resForkOffset, resInfo.storedLength);
-              return {sectors:resForkSectors};
+              return {sectors:resForkSectors, encoding:'sit/mode' + resInfo.mode};
             });
           }
           else {
@@ -424,6 +424,7 @@ sit.v5 = function v5(id, cc, sectors) {
               callback: 'onentry',
               args: [{
                 path: entryPath,
+                encoding: 'sit/mode' + entry.dataForkMode,
                 metadata: {
                   type: fileInfo.type,
                   creator: fileInfo.creator,
