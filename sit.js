@@ -409,7 +409,7 @@ sit.v5 = function v5(id, cc, sectors) {
               var resForkOffset = resInfoOffset + resInfo.byteLength;
               dataOffset = resInfoOffset + resInfo.storedLength;
               var resForkSectors = data.sectorize(sectors, resForkOffset, resInfo.storedLength);
-              return {sectors:resForkSectors, encoding:'sit/mode' + resInfo.mode};
+              return {sectors:resForkSectors, encoding:'sit/mode' + resInfo.mode, decodedLength:resInfo.realLength};
             });
           }
           else {
