@@ -11,9 +11,6 @@ sit.OriginalHeaderBlock.prototype = Object.defineProperties({
   get signature1() {
     return this.bytes.sublen(0, 4).toByteString();
   },
-  get rootEntryCount() {
-    return this.dv.getUint16(4);
-  },
   get totalSize() {
     return this.dv.getUint32(6);
   },
@@ -22,9 +19,6 @@ sit.OriginalHeaderBlock.prototype = Object.defineProperties({
   },
   get hasValidSignatures() {
     return this.signature1 === 'SIT!' && this.signature2 === 'rLau';
-  },
-  get rootOffset() {
-    return this.dv.getUint32(16) || 22;
   },
 }, data.struct_props);
 sit.OriginalHeaderBlock.byteLength = 22;
@@ -200,7 +194,7 @@ sit.original = function original(id, cc, sectors) {
         return nextEntry(path, nextOffset);
       });
     }
-    return nextEntry([], header.rootOffset);
+    return nextEntry([], 22);
   });
 };
 
