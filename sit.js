@@ -39,6 +39,9 @@ sit.OriginalEntryBlock.prototype = Object.defineProperties({
   get dataForkMode() {
     return this.bytes[1];    
   },
+  get isFolder() {
+    return !!(this.bytes[0] & 0x20);
+  },
   get name() {
     return this.bytes.sublen(3, this.bytes[2]).toMacRoman();
   },
@@ -152,7 +155,7 @@ sit.original = function original(id, cc, sectors) {
       return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
         var entry = new sit.OriginalEntryBlock(bytes);
         var entryPath = path.concat(entry.name);
-        if (entry.firstChildEntryOffset > 0) {
+        if (entry.isFolder) {
           postMessage({
             id: id,
             headline: 'callback',
