@@ -150,7 +150,7 @@ sit.original = function original(id, cc, sectors) {
     var header = new sit.OriginalHeaderBlock(bytes);
     if (!header.hasValidSignatures) return false;
     function nextEntry(path, offset, count) {
-      if (count === 0) return true;
+      if (count === 0) return Promise.resolve(true);
       var entrySectors = data.sectorize(sectors, offset, sit.OriginalEntryBlock.byteLength);
       return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
         var entry = new sit.OriginalEntryBlock(bytes);
@@ -368,7 +368,7 @@ sit.v5 = function v5(id, cc, sectors) {
     var header = new sit.V5HeaderBlock(bytes);
     if (!header.hasValidSignature || header.version !== 5) return false;
     function nextEntry(path, offset, count) {
-      if (count === 0) return true;
+      if (count === 0) return Promise.resolve(true);
       var entrySectors = data.sectorize(sectors, offset, sit.V5EntryBlock.minByteLength);
       return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
         var entry = new sit.V5EntryBlock(bytes);
