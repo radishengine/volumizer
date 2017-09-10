@@ -1046,8 +1046,77 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
   return Promise.resolve(cc.getBytes(sectors)).then(function(input) {
     var output = new Uint8Array(outputLength);
     var input_i = 0, output_i = 0;
-    var code = input[input_i++];
-    console.log(code);
-    return new Blob([input]);
+    var bitBuf = 0, bitCount = 0;
+    var tables;
+    var mode = input[input_i++];
+    var preset = mode >> 4;
+    if (preset !== 0) {
+      tables = sit.mode13_presets[preset];
+      if (!tables) {
+        throw new Error('unknown preset: ' + preset);
+      }
+    }
+    else {
+      console.warn('NYI: non-preset tables');
+      return new Blob([input]);
+    }
+    function bit() {
+      if (bitCount === 0) {
+        bitBuf = input[input_i++];
+        bitCount = 8;
+      }
+      var bit = bitBuf & 1;
+      bitBuf >>>= 1;
+      bitCount--;
+      return bit;
+    }
+    function bits(n) {
+      while (bitCount < n) {
+        bitBuf |= input[input_i++] << bitCount;
+        bitCount += 8;
+      }
+      var v = bitBuf & ((1 << n) - 1);
+      bitBuf >>>= n;
+      bitCount -= n;
+      return v;
+    }
+    function traverse(branch) {
+      do {
+        branch = branch[bit()];
+      } while (typeof branch !== 'number');
+      return branch;
+    }
+    var table = tables.len1;
+    while (output_i < output.length) {
+      var op = traverse(table);
+      if (op & 0x100) {
+        table = tables.len2;
+        if (op & 0x40) {
+          break;
+        }
+        var length, offset;
+        switch (op &= 0xff) {
+          case 0x3F: length = 65 + bits(15); break;
+          case 0x3E: length = 65 + bits(10); break;
+          default: length = 3 + op; break;
+        }
+        op = traverse(tables.offset);
+        if (op < 2) {
+          offset = 2 + op;
+        }
+        else {
+          op--;
+          offset = (1 << op) + bits(op) + 1;
+        }
+        var copy = output.subarray(output_i - offset, output_i + length - offset);
+        output.set(copy, output_i);
+        output_i += length;
+      }
+      else {
+        table = tables.len1;
+        output[output_i++] = op;
+      }
+    }
+    return new Blob([output]);
   });
 };
