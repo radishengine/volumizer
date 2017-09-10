@@ -425,6 +425,7 @@ sit.v5 = function v5(id, cc, sectors) {
               args: [{
                 path: entryPath,
                 encoding: 'sit/mode' + entry.dataForkMode,
+                decodedLength: entry.dataForkRealLength,
                 metadata: {
                   type: fileInfo.type,
                   creator: fileInfo.creator,
