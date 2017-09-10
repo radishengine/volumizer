@@ -1172,7 +1172,7 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
         }
         op = traverse(tables.offset);
         if (op < 2) {
-          offset = 2 + op;
+          offset = 1 + op;
         }
         else {
           op--;
