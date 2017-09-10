@@ -292,10 +292,10 @@ sit.V5FileBlock.prototype = Object.defineProperties({
     return !!(this.bytes[1] & 1);
   },
   get type() {
-    return this.bytes.sublen(4, 4);
+    return this.bytes.sublen(4, 4).toByteString();
   },
   get creator() {
-    return this.bytes.sublen(8, 4);
+    return this.bytes.sublen(8, 4).toByteString();
   },
   get finderFlags() {
     return this.dv.getUint16(12);
