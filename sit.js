@@ -149,13 +149,16 @@ sit.original = function original(id, cc, sectors) {
   return Promise.resolve(cc.getBytes(headerSectors)).then(function(bytes) {
     var header = new sit.OriginalHeaderBlock(bytes);
     if (!header.hasValidSignatures) return false;
-    function nextEntry(path, offset, count) {
-      if (count === 0) return Promise.resolve(true);
+    function nextEntry(path, offset) {
+      if (offset >= header.totalSize) return Promise.resolve(true);
       var entrySectors = data.sectorize(sectors, offset, sit.OriginalEntryBlock.byteLength);
       return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
         var entry = new sit.OriginalEntryBlock(bytes);
         var entryPath = path.concat(entry.name);
         if (entry.isFolder) {
+          if (entry.dataForkMode & 1 || entry.resourceForkMode & 1) {
+            return nextEntry(path.slice(0, -1), offset + entry.byteLength);
+          }
           postMessage({
             id: id,
             headline: 'callback',
@@ -167,13 +170,11 @@ sit.original = function original(id, cc, sectors) {
               },
             }],
           });
-          return nextEntry(entryPath, entry.firstChildEntryOffset, entry.childCount)
-          .then(function() {
-            return nextEntry(path, entry.nextEntryOffset, count-1);
-          });
+          return nextEntry(entryPath, offset + entry.byteLength);
         }
         var resourceOffset = offset + entry.byteLength;
         var dataOffset = resourceOffset + entry.resourceForkStoredSize;
+        var nextOffset = dataOffset + entry.dataForkStoredSize;
         var metadata = {
           isInvisible: entry.isInvisible,
         };
@@ -196,10 +197,10 @@ sit.original = function original(id, cc, sectors) {
             },
           }],
         });
-        return nextEntry(path, entry.nextEntryOffset, count-1);
+        return nextEntry(path, nextOffset);
       });
     }
-    return nextEntry([], header.rootOffset, header.rootEntryCount);
+    return nextEntry([], header.rootOffset);
   });
 };
 
