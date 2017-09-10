@@ -1178,15 +1178,22 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
           op--;
           offset = (1 << op) + bits(op) + 1;
         }
-        var endRep = Math.max(0, length - offset);
-        length -= endRep;
+        if (length > offset) {
+          if (offset === 1) {
+            var c = output[output_i-1];
+            do { output[output_i++] = c; } while (--length);
+            continue;
+          }
+          var copy = output.subarray(output_i - offset, output_i);
+          do {
+            output.set(copy, output_i);
+            output_i += offset;
+            length -= offset;
+          } while (length > offset);
+        }
         var copy = output.subarray(output_i - offset, output_i + length - offset);
         output.set(copy, output_i);
         output_i += length;
-        if (endRep > 0) {
-          var repChar = output[output_i - 1];
-          do { output[output_i++] = repChar; } while (--endRep);
-        }
       }
       else {
         table = tables.len1;
