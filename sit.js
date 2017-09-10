@@ -172,9 +172,8 @@ sit.original = function original(id, cc, sectors) {
             return nextEntry(path, entry.nextEntryOffset, count-1);
           });
         }
-        var dataOffset = offset + entry.byteLength;
-        var resourceOffset = dataOffset + entry.dataForkStoredSize;
-        var nextOffset = resourceOffset + entry.resourceForkStoredSize;
+        var resourceOffset = offset + entry.byteLength;
+        var dataOffset = resourceOffset + entry.resourceForkStoredSize;
         var metadata = {
           isInvisible: entry.isInvisible,
         };
