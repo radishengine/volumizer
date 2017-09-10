@@ -152,7 +152,7 @@ sit.original = function original(id, cc, sectors) {
       return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
         var entry = new sit.OriginalEntryBlock(bytes);
         var entryPath = path.concat(entry.name);
-        if (entry.firstChildEntryOffset !== -1) {
+        if (entry.firstChildEntryOffset > 0) {
           postMessage({
             id: id,
             headline: 'callback',
