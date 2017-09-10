@@ -11,6 +11,9 @@ sit.OriginalHeaderBlock.prototype = Object.defineProperties({
   get signature1() {
     return this.bytes.sublen(0, 4).toByteString();
   },
+  get rootEntryCount() {
+    return this.dv.getUint16(4);
+  },
   get totalSize() {
     return this.dv.getUint32(6);
   },
@@ -19,6 +22,9 @@ sit.OriginalHeaderBlock.prototype = Object.defineProperties({
   },
   get hasValidSignatures() {
     return this.signature1 === 'SIT!' && this.signature2 === 'rLau';
+  },
+  get rootOffset() {
+    return this.dv.getUint32(16) || 22;
   },
 }, data.struct_props);
 sit.OriginalHeaderBlock.byteLength = 22;
@@ -127,7 +133,7 @@ sit.OriginalEntryBlock.prototype = Object.defineProperties({
     return this.bytes[104];
   },
   get dataForkPaddingBytes() {
-    return this.bytes[104];
+    return this.bytes[105];
   },
   get headerChecksum() {
     return this.dv.getUint16(110);
@@ -140,30 +146,28 @@ sit.original = function original(id, cc, sectors) {
   return Promise.resolve(cc.getBytes(headerSectors)).then(function(bytes) {
     var header = new sit.OriginalHeaderBlock(bytes);
     if (!header.hasValidSignatures) return false;
-    function nextFile(offset, path) {
-      if (offset >= header.totalSize) return true;
+    function nextEntry(path, offset, count) {
+      if (count === 0) return true;
       var entrySectors = data.sectorize(sectors, offset, sit.OriginalEntryBlock.byteLength);
       return Promise.resolve(cc.getBytes(entrySectors)).then(function(bytes) {
         var entry = new sit.OriginalEntryBlock(bytes);
-        if (entry.dataForkMode & 0x20 || entry.resourceForkMode & 0x20) {
-          if (entry.dataForkMode & 0x1 || entry.resourceForkMode & 1) {
-            path = path.slice(0, -1);
-          }
-          else {
-            path = path.concat(entry.name);
-            postMessage({
-              id: id,
-              headline: 'callback',
-              callback: 'onentry',
-              args: [{
-                path: path,
-                metadata: {
-                  isFolder:true
-                },
-              }],
-            });
-          }
-          return nextFile(offset + entry.byteLength, path);
+        var entryPath = path.concat(entry.name);
+        if (entry.firstChildEntryOffset !== -1) {
+          postMessage({
+            id: id,
+            headline: 'callback',
+            callback: 'onentry',
+            args: [{
+              path: entryPath,
+              metadata: {
+                isFolder:true
+              },
+            }],
+          });
+          return nextEntry(entryPath, entry.firstChildEntryOffset, entry.childCount)
+          .then(function() {
+            return nextEntry(path, entry.nextEntryOffset, count - 1);
+          });
         }
         var dataOffset = offset + entry.byteLength;
         var resourceOffset = dataOffset + entry.dataForkStoredSize;
@@ -190,10 +194,10 @@ sit.original = function original(id, cc, sectors) {
             },
           }],
         });
-        return nextFile(nextOffset, path);
+        return nextEntry(path, entry.nextEntryOffset, count-1);
       });
     }
-    return nextFile(header.byteLength, []);
+    return nextEntry([], header.rootOffset, header.rootEntryCount);
   });
 };
 
