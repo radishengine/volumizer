@@ -1048,24 +1048,22 @@ sit.mode13_presets[5].len2 = [
   ]
 ];
 
+sit.mode13_build = [
+  [ [ [ [[[[4,[[[24,23],[25,19]],[18,[20,[22,21]]]]],[2,3]],13],12],
+        [36,[[15,[1,[16,[[[30,29],0],[[26,17],[28,27]]]]]],[14,5]]]
+      ],
+      [[31,7],[8,9]]
+    ],
+    33
+  ],
+  [32,[[35,[[11,6],10]],34]]
+];
+
 sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
   return Promise.resolve(cc.getBytes(sectors)).then(function(input) {
     var output = new Uint8Array(outputLength);
     var input_i = 0, output_i = 0;
     var bitBuf = 0, bitCount = 0;
-    var tables;
-    var mode = input[input_i++];
-    var preset = mode >> 4;
-    if (preset !== 0) {
-      tables = sit.mode13_presets[preset];
-      if (!tables) {
-        throw new Error('unknown preset: ' + preset);
-      }
-    }
-    else {
-      console.warn('NYI: non-preset tables');
-      return new Blob([input]);
-    }
     function bit() {
       if (bitCount === 0) {
         bitBuf = input[input_i++];
@@ -1091,6 +1089,70 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
         branch = branch[bit()];
       } while (typeof branch !== 'number');
       return branch;
+    }
+    var tables;
+    var mode = input[input_i++];
+    var preset = mode >> 4;
+    if (preset !== 0) {
+      tables = sit.mode13_presets[preset];
+      if (!tables) {
+        throw new Error('unknown preset: ' + preset);
+      }
+    }
+    else {
+      function insert(branch, code, bitCount, value) {
+        if (typeof branch === 'number') throw new Error('collision');
+        if (bitCount === 1) {
+          var leftOrRight = code & 1;
+          if (branch[leftOrRight] !== null) throw new Error('collision');
+          branch[leftOrRight] = value;
+        }
+        else {
+          var leftOrRight = +!!(code & (1 << (bitCount-1)));
+          if (typeof branch[leftOrRight] === 'number') throw new Error('collision');
+          branch = branch[leftOrRight] = branch[leftOrRight] || [null, null];
+          return insert(branch, code, bitCount-1, value);
+        }
+      }
+      function buildTable(size) {
+        var byLen = [];
+        var i = 0;
+        function add(len, count) {
+          if (len >= byLen.length) byLen.length = len+1;
+          byLen[len] = byLen[len] || [];
+          while (count--) byLen[len].push(i++);
+        }
+        var op, len;
+        while (i < size) switch(op = traverse(sit.mode13_build)) {
+          default: add(len = 1 + op, 1); continue;
+          case 31: add(len = -1, 1); continue;
+          case 32: add(len += 1, 1); continue;
+          case 33: add(len -= 1, 1); continue;
+          case 34: add(len, 1 + bit()); continue;
+          case 35: add(len, 3 + bits(3)); continue;
+          case 36: add(len, 11 + bits(6)); continue;
+        }
+        var root = [], code = 0;
+        for (var len = 0; len < byLen.length; len++) {
+          if (byLen[len]) for (var n = 0; n < byLen[len].length; n++) {
+            if (byLen[len][n] !== -1) {
+              insert(root, code, len, byLen[len][n]);
+            }
+            code++;
+          }
+          code <<= 1;
+        }
+        return root;
+      }
+      tables = {};
+      tables.len1 = buildTable(321);
+      if (mode & 8) {
+        tables.len2 = tables.len1;
+      }
+      else {
+        tables.len2 = buildTable(321);
+      }
+      tables.offset = buildTable(10 + (mode & 7));
     }
     var table = tables.len1;
     while (output_i < output.length) {
