@@ -1139,9 +1139,7 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
         var root = [], code = 0;
         for (var len = 0; len < byLen.length; len++) {
           if (byLen[len]) for (var n = 0; n < byLen[len].length; n++) {
-            if (byLen[len][n] !== -1) {
-              insert(root, code, len, byLen[len][n]);
-            }
+            insert(root, code, len, byLen[len][n]);
             code++;
           }
           code <<= 1;
