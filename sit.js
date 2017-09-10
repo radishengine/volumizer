@@ -1122,7 +1122,7 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
           byLen[len] = byLen[len] || [];
           while (count--) byLen[len].push(i++);
         }
-        var op, len;
+        var op, len = 0;
         while (i < size) switch(op = traverse(sit.mode13_build)) {
           default: add(len = 1 + op, 1); continue;
           case 31: add(len = -1, 1); continue;
