@@ -354,8 +354,11 @@ sit.V5ResourceForkBlock.prototype = Object.defineProperties({
   get mode() {
     return this.bytes[12];
   },
+  get requiredLength() {
+    return 14 + this.bytes[13];
+  },
 }, data.struct_props);
-sit.V5ResourceForkBlock.byteLength = 13;
+sit.V5ResourceForkBlock.minByteLength = 14;
 
 sit.v5 = function v5(id, cc, sectors) {
   var headerSectors = data.sectorize(sectors, 0, sit.V5HeaderBlock.byteLength);
@@ -403,11 +406,11 @@ sit.v5 = function v5(id, cc, sectors) {
           var dataOffset;
           if (fileInfo.hasResourceFork) {
             var resInfoOffset = fileInfoOffset + fileInfo.byteLength;
-            var resInfoSectors = data.sectorize(sectors, resInfoOffset, sit.V5ResourceForkBlock.byteLength);
+            var resInfoSectors = data.sectorize(sectors, resInfoOffset, sit.V5ResourceForkBlock.minByteLength);
             gotResourceForkInfo = Promise.resolve(cc.getBytes(resInfoSectors)).then(function(bytes) {
               var resInfo = new sit.V5ResourceForkBlock(bytes);
-              var resForkOffset = resInfoOffset + resInfo.byteLength;
-              dataOffset = resInfoOffset + resInfo.storedLength;
+              var resForkOffset = resInfoOffset + resInfo.requiredLength;
+              dataOffset = resForkOffset + resInfo.storedLength;
               var resForkSectors = data.sectorize(sectors, resForkOffset, resInfo.storedLength);
               return {sectors:resForkSectors, encoding:'sit/mode' + resInfo.mode, decodedLength:resInfo.realLength};
             });
