@@ -166,7 +166,7 @@ sit.original = function original(id, cc, sectors) {
           });
           return nextEntry(entryPath, entry.firstChildEntryOffset, entry.childCount)
           .then(function() {
-            return nextEntry(path, entry.nextEntryOffset, count - 1);
+            return nextEntry(path, entry.nextEntryOffset, count-1);
           });
         }
         var dataOffset = offset + entry.byteLength;
