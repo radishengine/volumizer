@@ -1316,7 +1316,10 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
     var model, code, range, symbolFreq = new Array(256);
     function arithinit() {
       range = one;
-      code = bits(nbits);
+      code = 0;
+      for (var i = 0; i < nbits; i++) {
+        code = (code << 1) | bits(1);
+      }
       for (var sym = model.symlow; sym < model.symhigh; sym++) {
         symbolFreq[sym] = model.increment;
       }
