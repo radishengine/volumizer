@@ -1273,7 +1273,7 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
     }
     Model.prototype = {
       reset: function() {
-        for (var sym = this.firstSymbol; sym < this.lastSymbol; sym++) {
+        for (var sym = this.firstSymbol; sym <= this.lastSymbol; sym++) {
           this.symbolFreq[sym] = this.increment;
         }
         this.allFreq = this.symbolCount * this.increment;
@@ -1300,8 +1300,8 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
         this.symbolFreq[sym] += this.increment;
         if ((this.allFreq += this.increment) > this.freqLimit) {
           this.allFreq = 0;
-          for (var sym = this.firstSymbol; sym <= this.lastSymbol; sym++) {
-            this.allFreq += this.symbolFreq[sym] = (this.symbolFreq[sym] + 1) >>> 1;
+          for (var sym_adj = this.firstSymbol; sym_adj <= this.lastSymbol; sym_adj++) {
+            this.allFreq += this.symbolFreq[sym_adj] = (this.symbolFreq[sym_adj] + 1) >>> 1;
           }
         }
         return sym;
