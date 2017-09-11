@@ -130,7 +130,7 @@
           structure.push('mac/hqx');
           encoding = 'mac/hqx';
         }
-        item.dataset.kind = structure.join(' ');
+        if (structure.length) item.dataset.kind = structure.join(' ');
         if (encoding) item.dataset.encoding = encoding;
       }
       
