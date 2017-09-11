@@ -1204,63 +1204,6 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
   });
 };
 
-sit.mode15_models = {
-  initial: {
-    symtot: 2,
-    increment: 1,
-    symlow: 0, symhigh: 1+1,
-    freqlimit: 256,
-  },
-  selector: {
-    symtot: 88,
-    increment: 8,
-    symlow: 0, symhigh: 10+1,
-    freqlimit: 1024,
-  },
-  3: {
-    symtot: 16,
-    increment: 8,
-    symlow: 2, symhigh: 3+1,
-    freqlimit: 1024,
-  },
-  4: {
-    symtot: 16,
-    increment: 4,
-    symlow: 4, symhigh: 7+1,
-    freqlimit: 1024,
-  },
-  5: {
-    symtot: 32,
-    increment: 4,
-    symlow: 8, symhigh: 15+1,
-    freqlimit: 1024,
-  },
-  6: {
-    symtot: 64,
-    increment: 4,
-    symlow: 16, symhigh: 31+1,
-    freqlimit: 1024,
-  },
-  7: {
-    symtot: 64,
-    increment: 2,
-    symlow: 32, symhigh: 63+1,
-    freqlimit: 1024,
-  },
-  8: {
-    symtot: 128,
-    increment: 2,
-    symlow: 64, symhigh: 127+1,
-    freqlimit: 1024,
-  },
-  9: {
-    symtot: 128,
-    increment: 1,
-    symlow: 128, symhigh: 255+1,
-    freqlimit: 1024,
-  },
-};
-
 sit.mode15_rando = new Uint16Array([
   0xee,  0x56,  0xf8,  0xc3,  0x9d,  0x9f,  0xae,  0x2c,
   0xad,  0xcd,  0x24,  0x9d,  0xa6, 0x101,  0x18,  0xb9,
@@ -1300,6 +1243,7 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
   return Promise.resolve(cc.getBytes(sectors)).then(function(input) {
     var output = new Uint8Array(outputLength);
     var input_i = 0, output_i = 0;
+    
     var bitBuf = 0, bitCount = 0;
     function bits(n) {
       while (bitCount < n) {
@@ -1310,60 +1254,82 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
       bitCount -= n;
       return v;
     }
+    
     const nbits = 26;
     const one = 1 << (nbits-1);
     const half = 1 << (nbits-2);
-    var model, code, range, symbolFreq = new Array(256);
-    function arithinit() {
-      range = one;
-      code = 0;
-      for (var i = 0; i < nbits; i++) {
-        code = (code << 1) | bits(1);
-      }
-      for (var sym = model.symlow; sym < model.symhigh; sym++) {
-        symbolFreq[sym] = model.increment;
-      }
-      symbolFreq.all = (model.symhigh - model.symlow) * model.increment;
+    
+    var range = one;
+    var code = bits(nbits);
+    
+    function Model(firstSymbol, lastSymbol, increment, freqLimit) {
+      this.firstSymbol = firstSymbol;
+      this.lastSymbol = lastSymbol;
+      this.symbolCount = 1 + lastSymbol - firstSymbol;
+      this.increment = increment;
+      this.freqLimit = freqLimit;
+      this.symbolFreq = new Array(lastSymbol+1);
+      this.reset();
     }
-    function arithsymbol() {
-      var freq = (code / ((range / symbolFreq.all) | 0)) | 0;
-      var sym, cumfreq = 0;
-      for (sym = model.symlow; sym < model.symhigh-1; sym++) {
-        if ((cumfreq + symbolFreq[sym]) > freq) break;
-        cumfreq += symbolFreq[sym];
-      }
-      var lowincr = Math.imul(range / symbolFreq.all, cumfreq);
-      code -= lowincr;
-      if ((cumfreq + symbolFreq[sym]) === symbolFreq.all) {
-        range -= lowincr;
-      }
-      else {
-        range = Math.imul(symbolFreq[sym], range / symbolFreq.all);
-      }
-      while (range <= half) {
-        range <<= 1;
-        code = (code << 1) | bits(1);
-      }
-      symbolFreq[sym] += model.increment;
-      if ((symbolFreq.all += model.increment) > model.freqlimit) {
-        symbolFreq.all = 0;
-        for (var sym = model.symlow; sym < model.symhigh; sym++) {
-          symbolFreq.all += symbolFreq[sym] = (symbolFreq[sym] + 1) >>> 1;
+    Model.prototype = {
+      reset: function() {
+        for (var sym = this.firstSymbol sym < this.lastSymbol; sym++) {
+          this.symbolFreq[sym] = this.increment;
         }
-      }
-      return sym;
-    }
-    function arithbits(n) {
+        this.allFreq = this.symbolCount * this.increment;
+      },
+      readSymbol: function() {
+        var freq = (code / ((range / this.allFreq) | 0)) | 0;
+        var sym, cumfreq = 0;
+        for (sym = this.firstSymbol; sym < this.lastSymbol; sym++) {
+          if ((cumfreq + this.symbolFreq[sym]) > freq) break;
+          cumfreq += this.symbolFreq[sym];
+        }
+        var lowincr = Math.imul(range / this.allFreq, cumfreq);
+        code -= lowincr;
+        if ((cumfreq + this.symbolFreq[sym]) === this.allFreq) {
+          range -= lowincr;
+        }
+        else {
+          range = Math.imul(this.symbolFreq[sym], range / this.allFreq);
+        }
+        while (range <= half) {
+          range <<= 1;
+          code = (code << 1) | bits(1);
+        }
+        this.symbolFreq[sym] += this.increment;
+        if ((this.allFreq += this.increment) > this.freqLimit) {
+          this.allFreq = 0;
+          for (var sym = this.firstSymbol; sym <= this.lastSymbol; sym++) {
+            this.allFreq += this.symbolFreq[sym] = (this.symbolFreq[sym] + 1) >>> 1;
+          }
+        }
+        return sym;
+      },
+    };
+
+    var models = {
+        binary: new Model(  0,   1, 1,  256),
+      selector: new Model(  0,  10, 8, 1024),
+             0: new Model(  2,   3, 8, 1024),
+             1: new Model(  4,   7, 4, 1024),
+             2: new Model(  8,  15, 4, 1024),
+             3: new Model( 16,  31, 4, 1024),
+             4: new Model( 32,  63, 2, 1024),
+             5: new Model( 64, 127, 2, 1024),
+             6: new Model(128, 255, 1, 1024),
+    };
+    
+    models.binary.bits = function(n) {
       var v = 0;
       for (var bit_i = 0; bit_i < n; bit_i++) {
-        v |= arithsymbol() << bit_i;
+        v |= this.readSymbol() << bit_i;
       }
       return v;
-    }
-    model = sit.mode15_models.initial;
-    arithinit();
-    var sig1 = arithbits(8);
-    var sig2 = arithbits(8);
+    };
+    
+    var sig1 = models.binary.bits(8);
+    var sig2 = models.binary.bits(8);
     if (String.fromCharCode(sig1, sig2) !== 'As') {
       throw new Error('invalid signature');
     }
