@@ -1303,12 +1303,22 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
     var bitBuf = 0, bitCount = 0;
     function bits(n) {
       while (bitCount < n) {
+        bitBuf |= input[input_i++] << bitCount;
+        bitCount += 8;
+      }
+      var v = bitBuf & ((1 << n) - 1);
+      bitBuf >>>= n;
+      bitCount -= n;
+      return v;
+      /*
+      while (bitCount < n) {
         bitBuf = (bitBuf << 8) | input[input_i++];
         bitCount += 8;
       }
       var v = bitBuf << (32 - bitCount) >>> (32 - n);
       bitCount -= n;
       return v;
+      */
     }
     const nbits = 26;
     const one = 1 << nbits;
