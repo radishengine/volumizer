@@ -126,6 +126,9 @@
         if (/\.sit$/i.test(filename)) {
           structure.push('sit/v5', 'sit/original');
         }
+        if (/\.sea$/i.test(filename)) {
+          structure.push('sit/original');
+        }
         if (/\.hqx$/i.test(filename)) {
           structure.push('mac/hqx');
           encoding = 'mac/hqx';
