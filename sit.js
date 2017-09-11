@@ -1301,23 +1301,12 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
     var output = new Uint8Array(outputLength);
     var input_i = 0, output_i = 0;
     var bitBuf = 0, bitCount = 0;
-    function bit() {
-      if (bitCount === 0) {
-        bitBuf = input[input_i++];
-        bitCount = 8;
-      }
-      var bit = bitBuf & 1;
-      bitBuf >>>= 1;
-      bitCount--;
-      return bit;
-    }
     function bits(n) {
       while (bitCount < n) {
-        bitBuf |= input[input_i++] << bitCount;
+        bitBuf = (bitBuf << 8) | input[input_i++];
         bitCount += 8;
       }
-      var v = bitBuf & ((1 << n) - 1);
-      bitBuf >>>= n;
+      var v = (bitBuf >>> (bitCount - n)) & ((1 << n) - 1);
       bitCount -= n;
       return v;
     }
@@ -1352,7 +1341,7 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
       }
       while (range <= half) {
         range <<= 1;
-        code = (code << 1) | bit();
+        code = (code << 1) | bits(1);
       }
       symbolFreq[sym] += model.increment;
       if ((symbolFreq.all += model.increment) > model.freqlimit) {
