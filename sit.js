@@ -1308,19 +1308,9 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
       },
     };
 
-    var models = {
-        binary: new Model(  0,   1, 1,  256),
-      selector: new Model(  0,  10, 8, 1024),
-             0: new Model(  2,   3, 8, 1024),
-             1: new Model(  4,   7, 4, 1024),
-             2: new Model(  8,  15, 4, 1024),
-             3: new Model( 16,  31, 4, 1024),
-             4: new Model( 32,  63, 2, 1024),
-             5: new Model( 64, 127, 2, 1024),
-             6: new Model(128, 255, 1, 1024),
-    };
+    var binaryModel = new Model(0, 1, 1, 256);
     
-    models.binary.bits = function(n) {
+    binaryModel.bits = function(n) {
       var v = 0;
       for (var bit_i = 0; bit_i < n; bit_i++) {
         v |= this.readSymbol() << bit_i;
@@ -1328,11 +1318,59 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
       return v;
     };
     
-    var sig1 = models.binary.bits(8);
-    var sig2 = models.binary.bits(8);
+    var sig1 = binaryModel.bits(8);
+    var sig2 = binaryModel.bits(8);
     if (String.fromCharCode(sig1, sig2) !== 'As') {
       throw new Error('invalid signature');
     }
+    var opModel = new Model(0, 10, 8, 1024);
+    
+    // move-to-front transform table
+    var mtf = new Uint8Array(256);
+    var mtfModels = [
+       new Model(  2,   3, 8, 1024),
+       new Model(  4,   7, 4, 1024),
+       new Model(  8,  15, 4, 1024),
+       new Model( 16,  31, 4, 1024),
+       new Model( 32,  63, 2, 1024),
+       new Model( 64, 127, 2, 1024),
+       new Model(128, 255, 1, 1024),
+    ];
+    
+    var blockBits = 9 + binaryModel.bits(4);
+    var block = new Uint8Array(1 << blockBits);
+    while (binaryModel.readSymbol() === 0) {
+      for (var i = 0; i < 256; i++) mtf[i] = i;
+      for (var i = 0; i < mtfModels.length; i++) mtfModels[i].reset();
+      opModel.reset();
+      var block_i = 0;
+      var isRandomized = binaryModel.readSymbol();
+      var transform_i = binaryModel.bits(blockBits);
+      var op = opModel.readSymbol();
+      blockLoop: while (true) {
+        var symbol_i;
+        switch (op) {
+          case 10: break blockLoop;
+          case 0: case 1:
+            var zeroState = 1, zeroCount = 0;
+            do {
+              zeroCount += zeroState * (1 + op);
+              zeroState <<= 1;
+            } while ((op = opModel.readSymbol()) < 2);
+            do { block[block_i++] = mtf[0]; } while (--zeroCount > 0);
+            continue blockLoop;
+          case 2: symbol_i = 1; break;
+          default: symbol_i = mtfModels[op-3].readSymbol(); break;
+        }
+        var symbol = block[block_i++] = mtf[symbol_i];
+        // symbol_i cannot be zero here
+        do { mtf[symbol_i] = mtf[symbol_i-1]; } while (--symbol_i > 0);
+        mtf[0] = symbol;
+        op = opModel.readSymbol();
+      }
+      // TODO...
+    }
+    var crc = binaryModel.bits(32);
     return new Blob([output]);
   });
 };
