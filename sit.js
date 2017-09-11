@@ -1329,7 +1329,7 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
       symbolFreq.all = (symbolFreq.length - symbolFreq.first) * model.increment;
     }
     function arithsymbol() {
-      var freq = (code / ((range / model.symtot) | 0)) | 0;
+      var freq = (code / ((range / symbolFreq.all) | 0)) | 0;
       var sym, cumfreq = 0;
       for (sym = symbolFreq.first; sym < symbolFreq.length; sym++) {
         if ((cumfreq + symbolFreq[sym]) > freq) break;
