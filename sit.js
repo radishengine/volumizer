@@ -1314,24 +1314,24 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
     const nbits = 26;
     const one = 1 << nbits;
     const half = one >>> 1;
-    var model, code, range, symbolFreq = [];
+    var model, code, range, symbolFreq = new Array(256);
     function arithinit() {
       range = one;
       code = 0;
       for (var i = 0; i < nbits; i++) {
         code = (code << 1) | bit();
       }
-      symbolFreq.length = model.symhigh;
-      symbolFreq.first = model.symlow;
-      for (var sym = symbolFreq.first; sym < symbolFreq.length; sym++) {
+      symbolFreq.start = model.symlow;
+      symbolFreq.stop = model.symhigh;
+      for (var sym = symbolFreq.start; sym < symbolFreq.stop; sym++) {
         symbolFreq[sym] = model.increment;
       }
-      symbolFreq.all = (symbolFreq.length - symbolFreq.first) * model.increment;
+      symbolFreq.all = (symbolFreq.stop - symbolFreq.start) * model.increment;
     }
     function arithsymbol() {
       var freq = (code / ((range / symbolFreq.all) | 0)) | 0;
       var sym, cumfreq = 0;
-      for (sym = symbolFreq.first; sym < symbolFreq.length; sym++) {
+      for (sym = symbolFreq.start; sym < symbolFreq.stop-1; sym++) {
         if ((cumfreq + symbolFreq[sym]) > freq) break;
         cumfreq += symbolFreq[sym];
       }
@@ -1350,8 +1350,8 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
       symbolFreq[sym] += model.increment;
       if ((symbolFreq.all += model.increment) > model.freqlimit) {
         symbolFreq.all = 0;
-        for (var sym = symbolFreq.first; sym < symbolFreq.length; sym++) {
-          symbolFreq.all += (symbolFreq[sym] = (symbolFreq[sym] + 1) >> 1);
+        for (var sym = symbolFreq.start; sym < symbolFreq.stop; sym++) {
+          symbolFreq.all += symbolFreq[sym] = (symbolFreq[sym] + 1) >> 1;
         }
       }
       return sym;
