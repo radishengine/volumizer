@@ -130,10 +130,6 @@
           structure.push('mac/hqx');
           encoding = 'mac/hqx';
         }
-        if (structure.length === 0) {
-          alert('unrecognized file type');
-          return;
-        }
         item.dataset.kind = structure.join(' ');
         if (encoding) item.dataset.encoding = encoding;
       }
