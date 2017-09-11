@@ -110,6 +110,34 @@
       var vc = null;
       var blobVC = new VolumizerClient;
       
+      function initItem(item) {
+        var filename = item.dataset.filename || '';
+        var structure = [];
+        var encoding = null;
+        if (/\.(?:iso|dsk|img|image|toast|cdr)$/i.test(filename)) {
+          structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
+        }
+        if (/\.rsrc$/i.test(filename)) {
+          structure.push('mac/single-or-double');
+        }
+        if (/\.stak$/i.test(filename)) {
+          structure.push('hypercard/stack');
+        }
+        if (/\.sit$/i.test(filename)) {
+          structure.push('sit/v5', 'sit/original');
+        }
+        if (/\.hqx$/i.test(filename)) {
+          structure.push('mac/hqx');
+          encoding = 'mac/hqx';
+        }
+        if (structure.length === 0) {
+          alert('unrecognized file type');
+          return;
+        }
+        item.dataset.kind = structure.join(' ');
+        if (encoding) item.dataset.encoding = encoding;
+      }
+      
       function createItemElement() {
         var el = document.querySelector('#templates > .container').cloneNode(true);
         el.titleElement = el.querySelector('.title');
@@ -134,7 +162,7 @@
         if (!el) {
           el = createItemElement();
           el.dataset.path = encoded;
-          el.titleElement.innerText = path[path.length-1];
+          el.dataset.filename = el.titleElement.innerText = path[path.length-1];
           if (path.length === 1) {
             pathRoot.childrenElement.appendChild(el);
           }
@@ -229,6 +257,7 @@
               resItem.classList.add('hidden');
               item.childrenElement.appendChild(resItem);
             }
+            initItem(item);
             /*
             var path = ('path' in entry) ? entry.path : [entry.metadata.type];
             var folder = getElementForPath(volumeEl, path);
@@ -326,16 +355,15 @@
         }
       });
       
-      function loadFile(file, structure, encoding, sectors) {
+      function loadFile(file, sectors) {
         var item = createItemElement();
         item.source = file;
         item.titleElement.innerText = file.name;
         item.dataset.filename = file.name;
         item.classList.add('source', 'path-root');
         item.classList.remove('empty');
-        item.dataset.kind = structure.join(' ');
-        if (encoding) item.dataset.encoding = encoding;
         item.dataset.sectors = encodeSectors(sectors);
+        initItem(item);
         document.getElementById('content').appendChild(item);
         /*
         if (encoding) item.dataset.encoding = encoding;
@@ -436,29 +464,7 @@
       }
       
       function onFile(file, sectors) {
-        var structure = [];
-        var encoding = null;
-        if (/\.(?:iso|dsk|img|image|toast|cdr)$/i.test(file.name)) {
-          structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
-        }
-        if (/\.rsrc$/i.test(file.name)) {
-          structure.push('mac/single-or-double');
-        }
-        if (/\.stak$/i.test(file.name)) {
-          structure.push('hypercard/stack');
-        }
-        if (/\.sit$/i.test(file.name)) {
-          structure.push('sit/v5', 'sit/original');
-        }
-        if (/\.hqx$/i.test(file.name)) {
-          structure.push('mac/hqx');
-          encoding = 'mac/hqx';
-        }
-        if (structure.length === 0) {
-          alert('unrecognized file type');
-          return;
-        }
-        return loadFile(file, structure, encoding, [{offset:0, length:file.size}]);
+        return loadFile(file, [{offset:0, length:file.size}]);
       }
       
       document.body.dragEnterCount = 0;
