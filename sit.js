@@ -1273,7 +1273,7 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
     }
     Model.prototype = {
       reset: function() {
-        for (var sym = this.firstSymbol sym < this.lastSymbol; sym++) {
+        for (var sym = this.firstSymbol; sym < this.lastSymbol; sym++) {
           this.symbolFreq[sym] = this.increment;
         }
         this.allFreq = this.symbolCount * this.increment;
