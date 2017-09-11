@@ -1311,16 +1311,23 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
       bitCount--;
       return bit;
     }
+    function bits(n) {
+      while (bitCount < n) {
+        bitBuf |= input[input_i++] << bitCount;
+        bitCount += 8;
+      }
+      var v = bitBuf & ((1 << n) - 1);
+      bitBuf >>>= n;
+      bitCount -= n;
+      return v;
+    }
     const nbits = 26;
     const one = 1 << nbits;
     const half = one >>> 1;
     var model, code, range, symbolFreq = new Array(256);
     function arithinit() {
       range = one;
-      code = 0;
-      for (var i = 0; i < nbits; i++) {
-        code = (code << 1) | bit();
-      }
+      code = bits(nbits);
       symbolFreq.start = model.symlow;
       symbolFreq.stop = model.symhigh;
       for (var sym = symbolFreq.start; sym < symbolFreq.stop; sym++) {
