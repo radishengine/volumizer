@@ -1205,38 +1205,22 @@ sit.decode_mode13 = function decode_mode13(id, cc, sectors, outputLength) {
 };
 
 sit.mode15_rando = new Uint16Array([
-  0xee,  0x56,  0xf8,  0xc3,  0x9d,  0x9f,  0xae,  0x2c,
-  0xad,  0xcd,  0x24,  0x9d,  0xa6, 0x101,  0x18,  0xb9,
-  0xa1,  0x82,  0x75,  0xe9,  0x9f,  0x55,  0x66,  0x6a,
-  0x86,  0x71,  0xdc,  0x84,  0x56,  0x96,  0x56,  0xa1,
-  0x84,  0x78,  0xb7,  0x32,  0x6a,   0x3,  0xe3,   0x2,
-  0x11, 0x101,   0x8,  0x44,  0x83, 0x100,  0x43,  0xe3,
-  0x1c,  0xf0,  0x86,  0x6a,  0x6b,   0xf,   0x3,  0x2d,
-  0x86,  0x17,  0x7b,  0x10,  0xf6,  0x80,  0x78,  0x7a,
-  0xa1,  0xe1,  0xef,  0x8c,  0xf6,  0x87,  0x4b,  0xa7,
-  0xe2,  0x77,  0xfa,  0xb8,  0x81,  0xee,  0x77,  0xc0,
-  0x9d,  0x29,  0x20,  0x27,  0x71,  0x12,  0xe0,  0x6b,
-  0xd1,  0x7c,   0xa,  0x89,  0x7d,  0x87,  0xc4, 0x101,
-  0xc1,  0x31,  0xaf,  0x38,   0x3,  0x68,  0x1b,  0x76,
-  0x79,  0x3f,  0xdb,  0xc7,  0x1b,  0x36,  0x7b,  0xe2,
-  0x63,  0x81,  0xee,   0xc,  0x63,  0x8b,  0x78,  0x38,
-  0x97,  0x9b,  0xd7,  0x8f,  0xdd,  0xf2,  0xa3,  0x77,
-  0x8c,  0xc3,  0x39,  0x20,  0xb3,  0x12,  0x11,   0xe,
-  0x17,  0x42,  0x80,  0x2c,  0xc4,  0x92,  0x59,  0xc8,
-  0xdb,  0x40,  0x76,  0x64,  0xb4,  0x55,  0x1a,  0x9e,
-  0xfe,  0x5f,   0x6,  0x3c,  0x41,  0xef,  0xd4,  0xaa,
-  0x98,  0x29,  0xcd,  0x1f,   0x2,  0xa8,  0x87,  0xd2,
-  0xa0,  0x93,  0x98,  0xef,   0xc,  0x43,  0xed,  0x9d,
-  0xc2,  0xeb,  0x81,  0xe9,  0x64,  0x23,  0x68,  0x1e,
-  0x25,  0x57,  0xde,  0x9a,  0xcf,  0x7f,  0xe5,  0xba,
-  0x41,  0xea,  0xea,  0x36,  0x1a,  0x28,  0x79,  0x20,
-  0x5e,  0x18,  0x4e,  0x7c,  0x8e,  0x58,  0x7a,  0xef,
-  0x91,   0x2,  0x93,  0xbb,  0x56,  0xa1,  0x49,  0x1b,
-  0x79,  0x92,  0xf3,  0x58,  0x4f,  0x52,  0x9c,   0x2,
-  0x77,  0xaf,  0x2a,  0x8f,  0x49,  0xd0,  0x99,  0x4d,
-  0x98, 0x101,  0x60,  0x93, 0x100,  0x75,  0x31,  0xce,
-  0x49,  0x20,  0x56,  0x57,  0xe2,  0xf5,  0x26,  0x2b,
-  0x8a,  0xbf,  0xde,  0xd0,  0x83,  0x34,  0xf4,  0x17
+  238,  86, 248, 195, 157, 159, 174,  44, 173, 205,  36, 157, 166, 257,  24, 185,
+  161, 130, 117, 233, 159,  85, 102, 106, 134, 113, 220, 132,  86, 150,  86, 161,
+  132, 120, 183,  50, 106,   3, 227,   2,  17, 257,   8,  68, 131, 256,  67, 227,
+   28, 240, 134, 106, 107,  15,   3,  45, 134,  23, 123,  16, 246, 128, 120, 122,
+  161, 225, 239, 140, 246, 135,  75, 167, 226, 119, 250, 184, 129, 238, 119, 192,
+  157,  41,  32,  39, 113,  18, 224, 107, 209, 124,  10, 137, 125, 135, 196, 257,
+  193,  49, 175,  56,   3, 104,  27, 118, 121,  63, 219, 199,  27,  54, 123, 226,
+   99, 129, 238,  12,  99, 139, 120,  56, 151, 155, 215, 143, 221, 242, 163, 119,
+  140, 195,  57,  32, 179,  18,  17,  14,  23,  66, 128,  44, 196, 146,  89, 200,
+  219,  64, 118, 100, 180,  85,  26, 158, 254,  95,   6,  60,  65, 239, 212, 170,
+  152,  41, 205,  31,   2, 168, 135, 210, 160, 147, 152, 239,  12,  67, 237, 157,
+  194, 235, 129, 233, 100,  35, 104,  30,  37,  87, 222, 154, 207, 127, 229, 186,
+   65, 234, 234,  54,  26,  40, 121,  32,  94,  24,  78, 124, 142,  88, 122, 239,
+  145,   2, 147, 187,  86, 161,  73,  27, 121, 146, 243,  88,  79,  82, 156,   2,
+  119, 175,  42, 143,  73, 208, 153,  77, 152, 257,  96, 147, 256, 117,  49, 206,
+   73,  32,  86,  87, 226, 245,  38,  43, 138, 191, 222, 208, 131,  52, 244,  23,
 ]);
 
 sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
@@ -1323,7 +1307,9 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
     if (String.fromCharCode(sig1, sig2) !== 'As') {
       throw new Error('invalid signature');
     }
-    var opModel = new Model(0, 10, 8, 1024);
+    
+    var blockBits = 9 + binaryModel.bits(4);
+    var block = new Uint8Array(1 << blockBits);
     
     // move-to-front transform table
     var mtf = new Uint8Array(256);
@@ -1337,15 +1323,18 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
        new Model(128, 255, 1, 1024),
     ];
     
-    var blockBits = 9 + binaryModel.bits(4);
-    var block = new Uint8Array(1 << blockBits);
+	  // burrows-wheeler transform table
+    var bwt = new Int32Array(1 << blockBits);
+    
+    var opModel = new Model(0, 10, 8, 1024);
+    
     while (binaryModel.readSymbol() === 0) {
       for (var i = 0; i < 256; i++) mtf[i] = i;
       for (var i = 0; i < mtfModels.length; i++) mtfModels[i].reset();
       opModel.reset();
       var block_i = 0;
       var isRandomized = binaryModel.readSymbol();
-      var transform_i = binaryModel.bits(blockBits);
+      var bwt_i = binaryModel.bits(blockBits);
       var op = opModel.readSymbol();
       blockLoop: while (true) {
         var symbol_i;
@@ -1368,7 +1357,48 @@ sit.decode_mode15 = function decode_mode15(id, cc, sectors, outputLength) {
         mtf[0] = symbol;
         op = opModel.readSymbol();
       }
-      // TODO...
+      // bwt calculation
+      {
+        var counts = new Int32Array(256);
+        var cumulativeCounts = new Int32Array(256);
+        var total = 0;
+        for (var i = 0; i < block_i; i++) {
+          counts[block[i]]++;
+        }
+        for (var i = 0; i < 256; i++) {
+          cumulativeCounts[i] = total;
+          total += counts[i];
+          counts[i] = 0;
+        }
+        for (var i = 0; i < block_i; i++) {
+          bwt[cumulativeCounts[block[i]] + counts[block[i]]] = i;
+          counts[block[i]]++;
+        }
+      }
+      var prevByte = 0, count = 0;
+      var rando_i, rando_n;
+      if (isRandomized) {
+        rando_i = sit.mode15_rando[rando_n = 0];
+      }
+      for (var i = 0; i < block_i; i++) {
+        var byte = block[bwt_i = bwt[bwt_i]];
+        if (i === rando_i) {
+          byte ^= 1;
+          rando_n = (rando_n + 1) % sit.mode15_rando.length;
+          rando_i += sit.mode15_rando[rando_n];
+        }
+        if (count === 4) {
+          count = byte;
+          while (count > 0) {
+            output[output_i++] = prevByte;
+            count--;
+          }
+          continue;
+        }
+        if (byte === prevByte) count++;
+        else { prevByte = byte; count = 1; }
+        output[output_i++] = byte;
+      }
     }
     var crc = binaryModel.bits(32);
     return new Blob([output]);
