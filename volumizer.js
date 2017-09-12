@@ -106,7 +106,7 @@ volumizer.extend_dataSectionStore = {
   },
 };
 
-volumizer.openTransaction = function openTransaction(storeNames, mode) {
+volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
   if (typeof storeNames === 'string') storeNames = [storeNames];
   mode = mode || 'readonly';
   return this.getDB().then(function(db) {
@@ -114,7 +114,15 @@ volumizer.openTransaction = function openTransaction(storeNames, mode) {
     if (mode !== 'readonly' && storeNames.indexOf('dataSections') !== -1) {
       Object.assign(t.objectStore('dataSections'), volumizer.extend_dataSectionStore);
     }
-    return t;
+    return new Promise(function(resolve, reject) {
+      t.addEventListener('complete', function() {
+        resolve(this.result);
+      });
+      t.addEventListener('abort', function() {
+        reject(this.error);
+      });
+      t.result = fn(t);
+    });
   });
 };
 
