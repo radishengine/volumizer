@@ -119,7 +119,7 @@ volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
         resolve(this.result);
       });
       t.addEventListener('abort', function() {
-        reject(this.error);
+        reject(this.error || 'transaction aborted');
       });
       t.result = fn(t);
     });
