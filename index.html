@@ -577,6 +577,7 @@
         template.selfElement = template.querySelector('.item-self');
         template.titleElement = template.selfElement.querySelector('.item-title');
         template.childrenElement = template.querySelector('.item-children');
+        return template;
       }
       
       self.addEventListener('volumizer-section-update', function(e) {
