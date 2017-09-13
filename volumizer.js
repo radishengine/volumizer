@@ -67,18 +67,16 @@ volumizer.extend_itemIndexCursor = {
 volumizer.extend_itemStore = {
   addModifiedKey: function(key) {
     if (!('modifiedKeys' in this)) {
-      this.modifiedKeys = [];
-      this.transaction.addEventListener('complete', this.onmodifiedkeys);
+      var modifiedKeys = this.modifiedKeys = [];
+      this.transaction.addEventListener('complete', function(e) {
+        self.dispatchEvent(new CustomEvent('volumizer-section-update', {
+          detail: {sections: modifiedKeys},
+        }));
+      });
     }
     if (this.modifiedKeys.indexOf(key) === -1) {
       this.modifiedKeys.push(key);
     }
-  },
-  onmodifiedkeys: function(e) {
-    var items = e.target.objectStore('items');
-    self.dispatchEvent(new CustomEvent('volumizer-section-update', {
-      detail: {sections: items.modifiedKeys},
-    }));
   },
   add: function() {
     var req = Object.getPrototypeOf(this).add.apply(this, arguments);
