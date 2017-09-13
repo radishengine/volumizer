@@ -10,12 +10,11 @@ volumizer.getDB = function getDB() {
 
       var dataSources = db.createObjectStore('dataSources', {keyPath:'id', autoIncrement:true});
       dataSources.createIndex('byURL', 'url', {unique:true});
-      transaction.objectStore('dataSources').add({url:'meta:null', blob:new Blob([])});
 
-      var dataSections = transaction.createObjectStore('dataSections', {keyPath:'id', autoIncrement:true});
-      dataSections.createIndex('bySource', 'source', {unique:false});
-      dataSections.createIndex('byParent', 'parent', {unique:false});
-      dataSections.createIndex('byClass', 'classList', {multiEntry:true});
+      var items = transaction.createObjectStore('items', {keyPath:'id', autoIncrement:true});
+      items.createIndex('bySource', 'source', {unique:false});
+      items.createIndex('byParent', 'parent', {unique:false});
+      items.createIndex('byClass', 'classList', {multiEntry:true});
     };
     opening.onblocked = function() {
       delete volumizer.gotDB;
@@ -46,7 +45,7 @@ volumizer.extend_dataSectionCursor = {
   },
 };
 
-volumizer.extend_dataSectionStore = {
+volumizer.extend_itemStore = {
   addModifiedKey: function(key) {
     if (!('modifiedKeys' in this)) {
       this.modifiedKeys = [];
@@ -57,9 +56,9 @@ volumizer.extend_dataSectionStore = {
     }
   },
   onmodifiedkeys: function(e) {
-    var dataSections = e.target.objectStore('dataSections');
+    var items = e.target.objectStore('items');
     self.dispatchEvent(new CustomEvent('volumizer-section-update', {
-      detail: {sections: dataSections.modifiedKeys},
+      detail: {sections: items.modifiedKeys},
     }));
   },
   add: function() {
@@ -81,7 +80,7 @@ volumizer.extend_dataSectionStore = {
     cursing.addEventListener('success', function(e) {
       var cursor = this.result;
       if (cursor) {
-        Object.assign(cursor, volumizer.extend_dataSectionCursor);
+        Object.assign(cursor, volumizer.extend_itemCursor);
       }
     });
     return cursing;
@@ -111,8 +110,8 @@ volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
   mode = mode || 'readonly';
   return this.getDB().then(function(db) {
     var t = db.transaction(storeNames, mode);
-    if (mode !== 'readonly' && storeNames.indexOf('dataSections') !== -1) {
-      Object.assign(t.objectStore('dataSections'), volumizer.extend_dataSectionStore);
+    if (mode !== 'readonly' && storeNames.indexOf('items') !== -1) {
+      Object.assign(t.objectStore('items'), volumizer.extend_itemStore);
     }
     return new Promise(function(resolve, reject) {
       t.addEventListener('complete', function() {
@@ -122,6 +121,94 @@ volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
         reject(this.error || 'transaction aborted');
       });
       t.result = fn(t);
+    });
+  });
+};
+
+volumizer.loadFromDataTransfer = function(dataTransfer) {
+  var gotEntries;
+  if (dataTransfer.items && dataTransfer.items[0] && 'webkitGetAsEntry' in dataTransfer.items[0]) {
+    function gotFile(entry) {
+      return new Promise(function(resolve, reject) {
+        entry.file(function(file) {
+          resolve(file);
+        },
+        function(e) {
+          reject(e);
+        });
+      });
+    }
+    function readDir(name, dirReader, list) {
+      return new Promise(function(resolve, reject) {
+        dirReader.readEntries(function(entries) {
+          if (entries.length === 0) {
+            Promise.all(list).then(function(list) {
+              list.name = name;
+              return list;
+            });
+            return;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            if (entry.isDirectory) {
+              list.push(readDir(entry.name, entry.createReader(), []));
+            }
+            else {
+              list.push(gotFile(entry));
+            }
+          }
+          return readDir(name, dirReader, list);
+        },
+        function(e) {
+          reject(e);
+        });
+      });
+    }
+    gotEntries = [];
+    for (var i = 0; i < dataTransfer.items.length; i++) {
+      var entry = dataTransfer.items[i].webkitGetAsEntry();
+      if (entry.isDirectory) {
+        gotEntries.push(readDir(entry.name, entry.createReader(), []));
+      }
+      else {
+        gotEntries.push(gotFile(entry));
+      }
+    }
+    gotEntries = Promise.all(gotEntries);
+  }
+  else {
+    gotEntries = Promise.resolve(dataTransfer.files || []);
+  }
+  return gotEntries.then(function(entries) {
+    return volumizer.withTransaction(['dataSources', 'items'], 'readwrite', function(t) {
+      var dataSources = t.objectStore('dataSources');
+      var items = t.objectStore('items');
+      function doEntries(entries, parentKey) {
+        entries.forEach(function(entries) {
+          if (entry instanceof Blob) {
+            dataSources.add({blob:entries[i]}).onsuccess = function() {
+              items.add({
+                name: entry.name,
+                classList: ['file'],
+                mimeType: entry.type,
+                source: this.result,
+                sectors: '0,' + entry.size,
+                parent: parentKey,
+              });
+            };
+          }
+          else {
+            items.add({
+              name: entry.name,
+              classList: ['folder'],
+              parent: parentKey,
+            }).onsuccess = function() {
+              doEntries(entry, this.result);
+            };
+          }
+        });
+      }
+      doEntries(entries, null);
     });
   });
 };
