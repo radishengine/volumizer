@@ -69,6 +69,7 @@ volumizer.extend_itemStore = {
     if (!('modifiedKeys' in this)) {
       var modifiedKeys = this.modifiedKeys = [];
       this.transaction.addEventListener('complete', function(e) {
+        modifiedKeys.sort(function(a,b){ return a-b; });
         self.dispatchEvent(new CustomEvent('volumizer-section-update', {
           detail: {sections: modifiedKeys},
         }));
