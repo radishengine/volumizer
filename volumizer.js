@@ -34,13 +34,32 @@ volumizer.getDB = function getDB() {
   });
 };
 
-volumizer.extend_dataSectionCursor = {
+volumizer.extend_itemCursor = {
   delete: function() {
-    this.source.addModifiedKey(this.key);
+    if (typeof this.key !== 'undefined') {
+      this.source.addModifiedKey(this.key);
+    }
     return this.prototype.delete.apply(this, arguments);
   },
   update: function() {
-    this.source.addModifiedKey(this.key);
+    if (typeof this.key !== 'undefined') {
+      this.source.addModifiedKey(this.key);
+    }
+    return this.prototype.update.apply(this, arguments);
+  },
+};
+
+volumizer.extend_itemIndexCursor = {
+  delete: function() {
+    if (typeof this.primaryKey !== 'undefined') {
+      this.source.objectStore.addModifiedKey(this.primaryKey);
+    }
+    return this.prototype.delete.apply(this, arguments);
+  },
+  update: function() {
+    if (typeof this.key !== 'undefined') {
+      this.source.objectStore.addModifiedKey(this.primaryKey);
+    }
     return this.prototype.update.apply(this, arguments);
   },
 };
@@ -105,13 +124,31 @@ volumizer.extend_itemStore = {
   },
 };
 
+volumizer.extend_itemIndex = {
+  openCursor: function() {
+    var cursing = this.prototype.openCursor.apply(this, arguments);
+    cursing.addEventListener('success', function(e) {
+      var cursor = this.result;
+      if (cursor) {
+        Object.assign(cursor, volumizer.extend_itemIndexCursor);
+      }
+    });
+    return cursing;
+  },
+};
+
 volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
   if (typeof storeNames === 'string') storeNames = [storeNames];
   mode = mode || 'readonly';
   return this.getDB().then(function(db) {
     var t = db.transaction(storeNames, mode);
     if (mode !== 'readonly' && storeNames.indexOf('items') !== -1) {
-      Object.assign(t.objectStore('items'), volumizer.extend_itemStore);
+      var itemStore = t.objectStore('items');
+      Object.assign(itemStore, volumizer.extend_itemStore);
+      for (var i = 0; i < itemStore.indexNames.length; i++) {
+        var itemIndex = itemStore.index(itemStore.indexNames[i]);
+        Object.assign(itemIndex, volumizer.extend_itemIndex);
+      }
     }
     return new Promise(function(resolve, reject) {
       t.addEventListener('complete', function() {
