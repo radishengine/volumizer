@@ -3,7 +3,10 @@
   <head>
     <meta charset='utf-8'>
     <title>Volumizer</title>
+    <script src='volumizer.js'></script>
+    <!--
     <script src='VolumizerClient.js'></script>
+    -->
     <style>
       body {
         font-family: sans-serif;
@@ -95,6 +98,7 @@
     <div id='dropzone'>
       <div class='drop-border'></div>
     </div>
+    <!--
     <div id='templates' style='display:none'>
       <div class='container'>
         <button class='toggler'></button><span class='symbol'></span>
@@ -515,6 +519,43 @@
             vc = null;
           }
         }
+      };
+      
+    </script>
+    -->
+    <script>
+      
+      document.body.dragEnterCount = 0;
+      
+      document.body.ondragenter = function(e) {
+        e.preventDefault();
+        if (++document.body.dragEnterCount === 1) {
+          e.dataTransfer.dropEffect = 'copy';
+          document.body.classList.add('dropping');
+        }
+      };
+
+      document.documentElement.ondragenter = function(e) {
+        e.preventDefault();
+        document.body.classList.add('dropping');
+      };
+      document.body.ondragleave = function(e) {
+        e.preventDefault();
+        if (--document.body.dragEnterCount === 0) {
+          document.body.classList.remove('dropping');
+        }
+      };
+      document.body.ondragover = function(e) {
+        e.preventDefault();
+      }
+      document.body.ondragend = function(e) {
+        e.preventDefault();
+        document.body.classList.remove('dropping');
+      };
+      document.body.ondrop = function(e) {
+        e.preventDefault();
+        document.body.classList.remove('dropping');
+        volumizer.loadFromDataTransfer(e.dataTransfer);
       };
       
     </script>
