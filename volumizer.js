@@ -303,7 +303,7 @@ volumizer.getItemsIn = function getItems(parentKey) {
 };
 
 if ('document' in self) {
-  volumizer.workers = new Array(navigator.hardwareConcurrency || 1);
+  volumizer.workers = []; // new Array(navigator.hardwareConcurrency || 1);
   for (var i = 0; i < volumizer.workers.length; i++) {
     var worker = volumizer.workers[i] = new Worker('volumizer.worker.js');
     worker.id = 'worker_' + i;
