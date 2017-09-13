@@ -162,7 +162,6 @@ volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
 };
 
 volumizer.loadFromDataTransfer = function(dataTransfer) {
-  self.dispatchEvent(new CustomEvent('task-counter', {detail:1}));
   var gotEntries;
   if (dataTransfer.items && dataTransfer.items[0] && 'webkitGetAsEntry' in dataTransfer.items[0]) {
     function gotFile(entry) {
@@ -221,8 +220,10 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
   else {
     gotEntries = Promise.resolve(dataTransfer.files || []);
   }
+  self.dispatchEvent(new CustomEvent('task-counter', {detail:1}));
   return gotEntries.then(function(entries) {
     self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
+    self.dispatchEvent(new CustomEvent('task-counter', {detail:1}));
     return volumizer.withTransaction(['dataSources', 'items'], 'readwrite', function(t) {
       var dataSources = t.objectStore('dataSources');
       var items = t.objectStore('items');
@@ -255,6 +256,9 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
         });
       }
       doEntries(entries, -1);
+    })
+    .then(function() {
+      self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
     });
   });
 };
