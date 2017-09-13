@@ -277,14 +277,20 @@ volumizer.getItems = function getItems(ids) {
   return volumizer.withTransaction(['items'], 'readonly', function(t) {
     return new Promise(function(resolve, reject) {
       var list = [], i = 0;
-      t.objectStore('items').openCursor(range).onsuccess = function(e) {
+      var itemStore = t.objectStore('items');
+      var byParent = itemStore.index('byParent');
+      itemStore.openCursor(range).onsuccess = function(e) {
         var cursor = this.result;
         if (!cursor) {
           resolve(list);
           return;
         }
-        if (cursor.value.id === ids[i]) {
-          list.push(cursor.value);
+        var entry = cursor.value;
+        if (entry.id === ids[i]) {
+          list.push(entry);
+          byParent.count(entry.id).onsuccess = function() {
+            entry.childCount = this.result;
+          };
           if (++i >= ids.length) {
             resolve(list);
           }
@@ -310,13 +316,18 @@ volumizer.getItemsIn = function getItems(parentKey) {
   return volumizer.withTransaction(['items'], 'readonly', function(t) {
     return new Promise(function(resolve, reject) {
       var list = [];
-      t.objectStore('items').index('byParent').openCursor(parentKey).onsuccess = function(e) {
+      var byParent = t.objectStore('items').index('byParent');
+      byParent.openCursor(parentKey).onsuccess = function(e) {
         var cursor = this.result;
         if (!cursor) {
           resolve(list);
           return;
         }
-        list.push(cursor.value);
+        var entry = cursor.value;
+        list.push(entry);
+        byParent.count(cursor.value.id).onsuccess = function() {
+          entry.childCount = this.result;
+        };
         cursor.continue();
       };
     });
