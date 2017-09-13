@@ -179,10 +179,10 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
       return new Promise(function(resolve, reject) {
         dirReader.readEntries(function(entries) {
           if (entries.length === 0) {
-            Promise.all(list).then(function(list) {
+            resolve(Promise.all(list).then(function(list) {
               list.name = name;
-              resolve(list);
-            });
+              return list;
+            }));
             return;
           }
           for (var i = 0; i < entries.length; i++) {
