@@ -39,13 +39,13 @@ volumizer.extend_itemCursor = {
     if (typeof this.key !== 'undefined') {
       this.source.addModifiedKey(this.key);
     }
-    return this.prototype.delete.apply(this, arguments);
+    return Object.getPrototypeOf(this).delete.apply(this, arguments);
   },
   update: function() {
     if (typeof this.key !== 'undefined') {
       this.source.addModifiedKey(this.key);
     }
-    return this.prototype.update.apply(this, arguments);
+    return Object.getPrototypeOf(this).update.apply(this, arguments);
   },
 };
 
@@ -54,13 +54,13 @@ volumizer.extend_itemIndexCursor = {
     if (typeof this.primaryKey !== 'undefined') {
       this.source.objectStore.addModifiedKey(this.primaryKey);
     }
-    return this.prototype.delete.apply(this, arguments);
+    return Object.getPrototypeOf(this).delete.apply(this, arguments);
   },
   update: function() {
     if (typeof this.primaryKey !== 'undefined') {
       this.source.objectStore.addModifiedKey(this.primaryKey);
     }
-    return this.prototype.update.apply(this, arguments);
+    return Object.getPrototypeOf(this).update.apply(this, arguments);
   },
 };
 
@@ -81,21 +81,21 @@ volumizer.extend_itemStore = {
     }));
   },
   add: function() {
-    var req = this.prototype.add.apply(this, arguments);
+    var req = Object.getPrototypeOf(this).add.apply(this, arguments);
     req.addEventListener('success', function onsuccess() {
       this.source.addModifiedKey(this.result);
     });
     return req;
   },
   put: function() {
-    var req = this.prototype.put.apply(this, arguments);
+    var req = Object.getPrototypeOf(this).put.apply(this, arguments);
     req.addEventListener('success', function onsuccess() {
       this.source.addModifiedKey(this.result);
     });
     return req;
   },
   openCursor: function() {
-    var cursing = this.prototype.openCursor.apply(this, arguments);
+    var cursing = Object.getPrototypeOf(this).openCursor.apply(this, arguments);
     cursing.addEventListener('success', function(e) {
       var cursor = this.result;
       if (cursor) {
@@ -126,7 +126,7 @@ volumizer.extend_itemStore = {
 
 volumizer.extend_itemIndex = {
   openCursor: function() {
-    var cursing = this.prototype.openCursor.apply(this, arguments);
+    var cursing = Object.getPrototypeOf(this).openCursor.apply(this, arguments);
     cursing.addEventListener('success', function(e) {
       var cursor = this.result;
       if (cursor) {
