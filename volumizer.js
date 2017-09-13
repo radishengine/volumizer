@@ -277,7 +277,7 @@ if ('document' in self) {
     if (e.key === 'volumizer-section-update' && e.newValue !== null) {
       self.dispatchEvent(new CustomEvent('volumizer-section-update', {
         detail: {sections: e.newValue.split(',').map(parseInt), external:true},
-      });
+      }));
     }
   });
 }
@@ -291,7 +291,7 @@ else {
     if (typeof e.data === 'string') {
       self.dispatchEvent(new CustomEvent('volumizer-section-update', {
         detail: {sections: e.split(',').map(parseInt), external: true},
-      });
+      }));
     }
   });
 }
