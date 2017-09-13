@@ -612,7 +612,7 @@
         });
       });
       
-      volumizer.getItemsIn(null).then(function(items) {
+      volumizer.getItemsIn(-1).then(function(items) {
         for (var i = 0; i < items.length; i++) {
           document.getElementById('content').appendChild(makeItemElement(items[i]));
         }
