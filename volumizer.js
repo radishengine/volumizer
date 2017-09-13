@@ -257,7 +257,7 @@ volumizer.getItems = function getItems(ids) {
     return new Promise(function(resolve, reject) {
       var list = [], i = 0;
       t.objectStore('items').openCursor(range).onsuccess = function(e) {
-        var cursor = e.result;
+        var cursor = this.result;
         if (!cursor) {
           resolve(list);
           return;
@@ -290,7 +290,7 @@ volumizer.getItemsIn = function getItems(parentKey) {
     return new Promise(function(resolve, reject) {
       var list = [];
       t.objectStore('items').index('byParent').openCursor(parentKey).onsuccess = function(e) {
-        var cursor = e.result;
+        var cursor = this.result;
         if (!cursor) {
           resolve(list);
           return;
