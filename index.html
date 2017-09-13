@@ -82,13 +82,6 @@
       .item-self > .toggler::before {
         content: '\25b6';
       }
-      .item-self > .item-title {
-        cursor: default;
-        font: menu;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-      }
       .item-self > .symbol {
       }
       .item-self > .symbol::before {
@@ -96,6 +89,19 @@
       }
       .item-self.folder > .symbol::before {
         content: '\1F4C2';
+      }
+      .item-self > .item-title {
+        cursor: default;
+        font: menu;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        flex-grow: 1;
+      }
+      .item-self > time {
+        font-family: monospace;
+        font-size: smaller;
+        opacity: 0.5;
       }
       /*
       .container > .children {
@@ -174,6 +180,7 @@
           <button class='toggler'></button>
           <span class='symbol'></span>
           <span class='item-title'></span>
+          <time></time>
         </div>
         <div class='item-children'>
         </div>
