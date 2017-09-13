@@ -11,7 +11,7 @@ volumizer.getDB = function getDB() {
       var dataSources = db.createObjectStore('dataSources', {keyPath:'id', autoIncrement:true});
       dataSources.createIndex('byURL', 'url', {unique:true});
 
-      var items = transaction.createObjectStore('items', {keyPath:'id', autoIncrement:true});
+      var items = db.createObjectStore('items', {keyPath:'id', autoIncrement:true});
       items.createIndex('bySource', 'source', {unique:false});
       items.createIndex('byParent', 'parent', {unique:false});
       items.createIndex('byClass', 'classList', {multiEntry:true});
