@@ -221,9 +221,9 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
       var dataSources = t.objectStore('dataSources');
       var items = t.objectStore('items');
       function doEntries(entries, parentKey) {
-        entries.forEach(function(entries) {
+        entries.forEach(function(entry) {
           if (entry instanceof Blob) {
-            dataSources.add({blob:entries[i]}).onsuccess = function() {
+            dataSources.add({blob:entry}).onsuccess = function() {
               items.add({
                 name: entry.name,
                 classList: ['file'],
