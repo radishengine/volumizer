@@ -244,7 +244,7 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
           }
         });
       }
-      doEntries(entries, null);
+      doEntries(entries, -1);
     });
   });
 };
