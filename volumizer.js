@@ -258,7 +258,7 @@ if ('document' in self) {
     worker.addEventListener('message', function(e) {
       self.dispatchEvent(new CustomEvent('volumizer-section-update', {
         detail: {sections: e.data.split(',').map(parseInt), worker:this.id},
-      });
+      }));
     });
   }
   self.addEventListener('volumizer-section-update', function onupdate(e) {
