@@ -181,7 +181,7 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
           if (entries.length === 0) {
             Promise.all(list).then(function(list) {
               list.name = name;
-              return list;
+              resolve(list);
             });
             return;
           }
@@ -194,7 +194,7 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
               list.push(gotFile(entry));
             }
           }
-          return readDir(name, dirReader, list);
+          resolve(readDir(name, dirReader, list));
         },
         function(e) {
           reject(e);
