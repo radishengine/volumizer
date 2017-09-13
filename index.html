@@ -599,7 +599,7 @@
           for (var i = 0; i < items.length; i++) {
             var itemEl = document.getElementById('item-' + items[i].id);
             if (itemEl) updateItemElement(itemEl, item);
-            else if (itemEl.parent < 0) {
+            else if (items[i].parent < 0) {
               document.getElementById('content').appendChild(makeItemElement(items[i]));
             }
             else {
