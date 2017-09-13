@@ -98,17 +98,19 @@
     <div id='dropzone'>
       <div class='drop-border'></div>
     </div>
-    <!--
     <div id='templates' style='display:none'>
-      <div class='container'>
-        <button class='toggler'></button><span class='symbol'></span>
-        <span class='title'></span>
-        <div class='children'>
+      <div class='item'>
+        <div class='item-self'>
+          <button class='toggler'></button><span class='symbol'></span>
+          <span class='item-title'></span>
+        </div>
+        <div class='item-children'>
         </div>
       </div>
     </div>
     <div id='content'>
     </div>
+    <!--
     <script>
       
       var vc = null;
@@ -557,6 +559,62 @@
         document.body.classList.remove('dropping');
         volumizer.loadFromDataTransfer(e.dataTransfer);
       };
+      
+      function updateItemElement(el, item) {
+        el.titleElement.innerText = item.name;
+        el.selfElement.className = ['item-self'].concat(item.classList || []).join(' ');
+      }
+      
+      function makeItemElement(item) {
+        var template = document.querySelector('#templates > .item').cloneNode(true);
+        template.setAttribute('id', 'item-' + item.id);
+        if ('source' in item) {
+          template.dataset.source = item.source;
+        }
+        if ('sectors' in item) {
+          template.dataset.sectors = item.sectors;
+        }
+        template.selfElement = template.querySelector('.item-self');
+        template.titleElement = template.selfElement.querySelector('.item-title');
+        template.childrenElement = template.querySelector('.item-children');
+      }
+      
+      self.addEventListener('volumizer-section-update', function(e) {
+        volumizer.getItems(e.detail.sections).then(function(items) {
+          if (items.length !== e.detail.sections) {
+            var present = {};
+            for (var i = 0; i < items.length; i++) {
+              present[items[i].id] = true;
+            }
+            for (var i = 0; i < e.detail.sections.length; i++) {
+              if (e.detail.sections[i] in present) continue;
+              var itemEl = document.getElementById('item-' + e.detail.sections[i]);
+              if (itemEl) {
+                itemEl.parentNode.removeChild(itemEl);
+              }
+            }
+          }
+          for (var i = 0; i < items.length; i++) {
+            var itemEl = document.getElementById('item-' + items[i].id);
+            if (itemEl) updateItemElement(itemEl, item);
+            else if (itemEl.parentKey === null) {
+              document.getElementById('content').appendChild(makeItemElement(items[i]));
+            }
+            else {
+              var parentEl = document.getElementById('item-' + items[i].parentKey);
+              if (parentEl && parentEl.classList.contains('active')) {
+                parentEl.childrenElement.appendChild(makeItemElement(items[i]));
+              }
+            }
+          }
+        });
+      });
+      
+      volumizer.getItemsIn(null).then(function(items) {
+        for (var i = 0; i < items.length; i++) {
+          document.getElementById('content').appendChild(makeItemElement(items[i]));
+        }
+      });
       
     </script>
   </body>
