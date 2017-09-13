@@ -184,6 +184,7 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
             }));
             return;
           }
+          self.dispatchEvent(new CustomEvent('task-counter', {detail:entries.length}));
           for (var i = 0; i < entries.length; i++) {
             var entry = entries[i];
             if (entry.isDirectory) {
@@ -201,6 +202,7 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
       });
     }
     gotEntries = [];
+    self.dispatchEvent(new CustomEvent('task-counter', {detail:dataTransfer.items.length}));
     for (var i = 0; i < dataTransfer.items.length; i++) {
       var entry = dataTransfer.items[i].webkitGetAsEntry();
       if (entry.isDirectory) {
@@ -230,7 +232,9 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
                 source: this.result,
                 sectors: '0,' + entry.size,
                 parent: parentKey,
-              });
+              }).onsuccess = function() {
+                self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
+              };
             };
           }
           else {
@@ -239,6 +243,7 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
               classList: ['folder'],
               parent: parentKey,
             }).onsuccess = function() {
+              self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
               doEntries(entry, this.result);
             };
           }
