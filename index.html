@@ -8,6 +8,18 @@
     <script src='VolumizerClient.js'></script>
     -->
     <style>
+      #loadbar {
+        background: green;
+        position: fixed;
+        pointer-events: none;
+        opacity: 0.75;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 3px;
+        transform-origin: left;
+        transition: transform 0.1s, opacity 0.3s;
+      }
       body {
         font-family: sans-serif;
         font-size: small;
@@ -95,6 +107,7 @@
     </style>
   </head>
   <body>
+    <div id='loadbar' style='transform:scaleX(0); opacity:0;'></div>
     <div id='dropzone'>
       <div class='drop-border'></div>
     </div>
@@ -615,6 +628,27 @@
       volumizer.getItemsIn(-1).then(function(items) {
         for (var i = 0; i < items.length; i++) {
           document.getElementById('content').appendChild(makeItemElement(items[i]));
+        }
+      });
+      
+      var loadBar = document.getElementById('load-bar');
+      loadBar.toDo = 0;
+      loadBar.completed = 0;
+      window.addEventListener('task-counter', function(e) {
+        if (e.detail < 0) {
+          loadBar.completed -= e.detail;
+        }
+        else if (e.detail > 0) {
+          if (loadBar.toDo === 0) {
+            delete loadBar.style.opacity;
+          }
+          loadBar.toDo += e.detail;
+        }
+        else return;
+        loadBar.style.transform = 'scaleX(' + (loadBar.completed / loadBar.toDo) + ')';
+        if (loadBar.completed === loadBar.toDo) {
+          loadBar.completed = loadBar.toDo = 0;
+          loadBar.style.opacity = 0;
         }
       });
       
