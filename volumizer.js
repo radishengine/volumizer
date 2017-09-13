@@ -220,46 +220,51 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
   else {
     gotEntries = Promise.resolve(dataTransfer.files || []);
   }
-  self.dispatchEvent(new CustomEvent('task-counter', {detail:1}));
   return gotEntries.then(function(entries) {
-    self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
-    self.dispatchEvent(new CustomEvent('task-counter', {detail:1}));
-    return volumizer.withTransaction(['dataSources', 'items'], 'readwrite', function(t) {
-      var dataSources = t.objectStore('dataSources');
-      var items = t.objectStore('items');
-      function doEntries(entries, parentKey) {
-        entries.forEach(function(entry) {
-          if (entry instanceof Blob) {
-            dataSources.add({blob:entry}).onsuccess = function() {
-              items.add({
+    function doEntries(entries, parentKey) {
+      function doEntry(entry, parentKey) {
+        if (entry instanceof Blob) {
+          return volumizer.withTransaction(['dataSources', 'items'], 'readwrite', function(t) {
+            t.objectStore('dataSources').add({blob:entry})
+            .onsuccess = function() {
+              t.objectStore('items').add({
                 name: entry.name,
                 classList: ['file'],
                 mimeType: entry.type,
                 source: this.result,
                 sectors: '0,' + entry.size,
                 parent: parentKey,
-              }).onsuccess = function() {
-                self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
-              };
+              });
             };
-          }
-          else {
-            items.add({
+          })
+          .then(function() {
+            self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
+          });
+        }
+        return volumizer.withTransaction(['items'], 'readwrite', function(t) {
+          return new Promise(function(resolve, reject) {
+            t.objectStore('items').add({
               name: entry.name,
               classList: ['folder'],
               parent: parentKey,
-            }).onsuccess = function() {
-              self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
-              doEntries(entry, this.result);
+            })
+            .onsuccess = function() {
+              resolve(this.result);
             };
-          }
+          });
+        })
+        .then(function(id) {
+          self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
+          return doEntries(entry, id);
         });
       }
-      doEntries(entries, -1);
-    })
-    .then(function() {
-      self.dispatchEvent(new CustomEvent('task-counter', {detail:-1}));
-    });
+      var promiseChain = Promise.resolve();
+      for (var i = 0; i < entries.length; i++) {
+        promiseChain = promiseChain.then(doEntry.bind(null, entries[i], parentKey));
+      }
+      return promiseChain;
+    }
+    return doEntries(entries, -1);
   });
 };
 
