@@ -599,11 +599,11 @@
           for (var i = 0; i < items.length; i++) {
             var itemEl = document.getElementById('item-' + items[i].id);
             if (itemEl) updateItemElement(itemEl, item);
-            else if (itemEl.parentKey === null) {
+            else if (itemEl.parent === null) {
               document.getElementById('content').appendChild(makeItemElement(items[i]));
             }
             else {
-              var parentEl = document.getElementById('item-' + items[i].parentKey);
+              var parentEl = document.getElementById('item-' + items[i].parent);
               if (parentEl && parentEl.classList.contains('active')) {
                 parentEl.childrenElement.appendChild(makeItemElement(items[i]));
               }
