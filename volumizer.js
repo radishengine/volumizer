@@ -249,6 +249,59 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
   });
 };
 
+volumizer.getItems = function getItems(ids) {
+  if (ids.length === 0) return Promise.resolve([]);
+  var sorted = ids.slice().sort(function(a,b){ return a-b; });
+  var range = IDBKeyRange.bound(sorted[0], sorted[sorted.length-1]);
+  return volumizer.withTransaction(['items'], 'readonly', function(t) {
+    return new Promise(function(resolve, reject) {
+      var list = [], i = 0;
+      t.objectStore('items').openCursor(range).onsuccess = function(e) {
+        var cursor = e.result;
+        if (!cursor) {
+          resolve(list);
+          return;
+        }
+        if (cursor.value.id === ids[i]) {
+          list.push(cursor.value);
+          if (++i >= ids.length) {
+            resolve(list);
+          }
+          else {
+            cursor.continue(ids[i]);
+          }
+        }
+        else if (cursor.value.id < ids[i]) {
+          cursor.continue(ids[i]);
+        }
+        else if (++i >= ids.length) {
+          resolve(list);
+        }
+        else {
+          cursor.continue(ids[i]);
+        }
+      };
+    });
+  });
+};
+
+volumizer.getItemsIn = function getItems(parentKey) {
+  return volumizer.withTransaction(['items'], 'readonly', function(t) {
+    return new Promise(function(resolve, reject) {
+      var list = [];
+      t.objectStore('items').index('byParent').openCursor(parentKey).onsuccess = function(e) {
+        var cursor = e.result;
+        if (!cursor) {
+          resolve(list);
+          return;
+        }
+        list.push(cursor.value);
+        cursor.continue();
+      };
+    });
+  });
+};
+
 if ('document' in self) {
   volumizer.workers = new Array(navigator.hardwareConcurrency || 1);
   for (var i = 0; i < volumizer.workers.length; i++) {
