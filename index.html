@@ -640,7 +640,7 @@
         }
         else if (e.detail > 0) {
           if (loadBar.toDo === 0) {
-            delete loadBar.style.opacity;
+            loadBar.style.opacity = '';
           }
           loadBar.toDo += e.detail;
         }
