@@ -142,7 +142,9 @@ volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
   return this.getDB().then(function(db) {
     var t = db.transaction(storeNames, mode);
     if (mode !== 'readonly' && storeNames.indexOf('items') !== -1) {
-      var itemStore = t.objectStore('items');
+      // t.itemStore in an attempt to prevent garbage collection
+      // removing our customizations
+      var itemStore = t.itemStore = t.objectStore('items');
       Object.assign(itemStore, volumizer.extend_itemStore);
       for (var i = 0; i < itemStore.indexNames.length; i++) {
         var itemIndex = itemStore.index(itemStore.indexNames[i]);
