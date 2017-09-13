@@ -57,7 +57,7 @@ volumizer.extend_itemIndexCursor = {
     return this.prototype.delete.apply(this, arguments);
   },
   update: function() {
-    if (typeof this.key !== 'undefined') {
+    if (typeof this.primaryKey !== 'undefined') {
       this.source.objectStore.addModifiedKey(this.primaryKey);
     }
     return this.prototype.update.apply(this, arguments);
