@@ -43,11 +43,34 @@
         display: block;
       }
       
+      #frame {
+        position: fixed;
+        display: flex;
+        flex-flow: row nowrap;
+        overflow: hidden;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+      }
+      #content {
+        flex-grow: 1;
+        overflow-x: none;
+        overflow-y: auto;
+        overflow-y: scroll;
+      }
+      #viewer {
+        flex-grow: 1;
+        background: black;
+        color: white;
+      }
+      
       .item-self:hover {
         background: rgba(128,128,128,0.2);
       }
       .item-self > .item-title {
         cursor: default;
+        font: menu;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
@@ -144,7 +167,11 @@
         </div>
       </div>
     </div>
-    <div id='content'>
+    <div id='frame'>
+      <div id='content'>
+      </div>
+      <div id='viewer'>
+      </div>
     </div>
     <!--
     <script>
