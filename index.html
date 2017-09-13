@@ -8,6 +8,10 @@
     <script src='VolumizerClient.js'></script>
     -->
     <style>
+      body {
+        font-family: sans-serif;
+        font-size: small;
+      }
       #loadbar {
         background: green;
         position: fixed;
@@ -19,10 +23,6 @@
         height: 3px;
         transform-origin: left;
         transition: transform 0.1s, opacity 0.3s;
-      }
-      body {
-        font-family: sans-serif;
-        font-size: small;
       }
       #dropzone {
         display: none;
@@ -42,6 +42,19 @@
       body.dropping > #dropzone {
         display: block;
       }
+      
+      .item-self > .symbol {
+        width: 1.2em;
+        display: inline-block;
+        text-align: right;
+      }
+      .item-self > .symbol::before {
+        content: '\1F4C4';
+      }
+      .item-self.folder > .symbol::before {
+        content: '\1F4C2';
+      }
+      /*
       .container > .children {
         padding-left: 0.75em;
       }
@@ -104,6 +117,7 @@
       .symbol.loading {
         cursor: progress;
       }
+      */
     </style>
   </head>
   <body>
