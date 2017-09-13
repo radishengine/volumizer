@@ -61,6 +61,19 @@
         color: white;
       }
       
+      .item > .toggler {
+        width: 1em;
+        background: none;
+        border: none;
+        outline: none;
+        padding: 0;
+        margin: 0;
+        text-align: right;
+      }
+      .item > .toggler::before {
+        content: '\25b6';
+      }
+      
       .item-self {
         display: flex;
         flex-flow: row nowrap;
