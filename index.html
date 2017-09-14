@@ -876,16 +876,18 @@
           case 33: // page up
             var refItem = this.focusItem;
             if (!refItem) return;
-            refItem = this.previousItem(refItem);
-            if (!refItem) return;
-            var rect = refItem.selfElement.getBoundingClientRect();
-            var minTop = this.scrollTop;
-            if (rect.top < minTop) {
-              minTop = rect.bottom - this.clientHeight;
-            }
-            for (var prevRef = this.previousItem(refItem); prevRef; prevRef = this.previousItem(prevRef)) {
-              if (prevRef.selfElement.getBoundingClientRect().top < minTop) break;
+            var prevRef = this.previousItem(refItem);
+            if (prevRef) {
               refItem = prevRef;
+              var rect = refItem.selfElement.getBoundingClientRect();
+              var minTop = this.scrollTop;
+              if (rect.top < minTop) {
+                minTop = rect.bottom - this.clientHeight;
+              }
+              for (prevRef = this.previousItem(refItem); prevRef; prevRef = this.previousItem(prevRef)) {
+                if (prevRef.selfElement.getBoundingClientRect().top < minTop) break;
+                refItem = prevRef;
+              }
             }
             if (e.shiftKey) {
               refItem.dispatchEvent(new Event('item-range', {bubbles:true}));
@@ -898,16 +900,18 @@
           case 34: // page down
             var refItem = this.focusItem;
             if (!refItem) return;
-            refItem = this.nextItem(refItem);
-            if (!refItem) return;
-            var rect = refItem.selfElement.getBoundingClientRect();
-            var maxBottom = this.scrollTop + this.clientHeight;
-            if (rect.bottom > maxBottom) {
-              maxBottom = rect.top + this.clientHeight;
-            }
-            for (var nextRef = this.nextItem(refItem); nextRef; nextRef = this.nextItem(nextRef)) {
-              if (nextRef.selfElement.getBoundingClientRect().bottom > maxBottom) break;
+            var nextRef = this.nextItem(refItem);
+            if (nextRef) {
               refItem = nextRef;
+              var rect = refItem.selfElement.getBoundingClientRect();
+              var maxBottom = this.scrollTop + this.clientHeight;
+              if (rect.bottom > maxBottom) {
+                maxBottom = rect.top + this.clientHeight;
+              }
+              for (nextRef = this.nextItem(refItem); nextRef; nextRef = this.nextItem(nextRef)) {
+                if (nextRef.selfElement.getBoundingClientRect().bottom > maxBottom) break;
+                refItem = nextRef;
+              }
             }
             if (e.shiftKey) {
               refItem.dispatchEvent(new Event('item-range', {bubbles:true}));
@@ -932,7 +936,7 @@
             }
             break;
           case 38: // up
-            var prev = this.previousItem(this.focusItem);
+            var prev = this.previousItem(this.focusItem) || this.focusItem;
             if (!prev) return;
             if (e.shiftKey) {
               prev.dispatchEvent(new Event('item-range', {bubbles:true}));
@@ -957,7 +961,7 @@
             }
             break;
           case 40: // down
-            var next = this.nextItem(this.focusItem);
+            var next = this.nextItem(this.focusItem) || this.focusItem;
             if (!next) return;
             if (e.shiftKey) {
               next.dispatchEvent(new Event('item-range', {bubbles:true}));
