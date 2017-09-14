@@ -796,7 +796,7 @@
               if (selected[0].childrenElement.firstElementChild) {
                 selected[0].classList.remove('selected');
                 selected[0].childrenElement.firstElementChild.classList.add('selected');
-                selected[0].childrenElement.firstElementChild.focus();
+                selected[0].childrenElement.firstElementChild.selfElement.focus();
               }
             }
             else for (var i = 0; i < selected.length; i++) {
