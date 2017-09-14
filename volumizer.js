@@ -367,6 +367,9 @@ volumizer.deleteItems = function deleteItems(ids) {
         } while (sourceList.length > 0);
       };
     }
+    function deleteSuccess() {
+      if (--count === 0) deleteSources();
+    }
     function recurseDelete(e) {
       var cursor = e.target.result;
       if (!cursor) {
@@ -379,7 +382,8 @@ volumizer.deleteItems = function deleteItems(ids) {
       }
       count++;
       byParent.openCursor(entry.id).onsuccess = recurseDelete;
-      cursor.delete();
+      count++;
+      cursor.delete().onsuccess = deleteSuccess;
       cursor.continue();
     }
     itemStore.openCursor(range).onsuccess = function(e) {
@@ -404,7 +408,8 @@ volumizer.deleteItems = function deleteItems(ids) {
           }
           count++;
           byParent.openCursor(entry.id).onsuccess = recurseDelete;
-          itemStore.delete(entry.id);
+          count++;
+          cursor.delete().onsuccess = deleteSuccess;
           ids.shift();
           if (ids.length > 0) {
             cursor.continue(ids[0]);
