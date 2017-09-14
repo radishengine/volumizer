@@ -760,7 +760,7 @@
         itemEl.classList.add('open');
         if (itemEl.classList.contains('selected')
             && afterItem && afterItem.classList.contains('selected')
-            && this.dataset.selectionMode !== 'set')) {
+            && this.dataset.selectionMode !== 'set') {
           for (var nextItem = this.nextItem(itemEl); nextItem !== afterItem; nextItem = this.nextItem(nextItem)) {
             nextItem.classList.add('selected');
           }
