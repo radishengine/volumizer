@@ -880,7 +880,7 @@
             if (prevRef) {
               refItem = prevRef;
               var rect = refItem.selfElement.getBoundingClientRect();
-              var minTop = this.scrollTop;
+              var minTop = 0;
               if (rect.top < minTop) {
                 minTop = rect.bottom - this.clientHeight;
               }
@@ -905,7 +905,7 @@
             if (nextRef) {
               refItem = nextRef;
               var rect = refItem.selfElement.getBoundingClientRect();
-              var maxBottom = this.scrollTop + this.clientHeight;
+              var maxBottom = this.clientHeight;
               if (rect.bottom > maxBottom) {
                 maxBottom = rect.top + this.clientHeight;
               }
@@ -946,6 +946,7 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(prev, prev);
             }
+            prev.scrollIntoView(true);
             this.focusItem = prev;
             break;
           case 39: // right
@@ -971,6 +972,7 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(next, next);
             }
+            next.scrollIntoView(false);
             this.focusItem = next;
             break;
         }
