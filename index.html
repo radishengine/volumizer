@@ -786,8 +786,8 @@
               || !(referenceItem.compareDocumentPosition(this) & Node.DOCUMENT_POSITION_CONTAINS)) {
             return null;
           }
-          while ((referenceItem = referenceItem.parentNode()) !== this) {
-            if (referenceItem.classList.has('item')) return referenceItem;
+          while ((referenceItem = referenceItem.parentNode) !== this) {
+            if (referenceItem.classList.contains('item')) return referenceItem;
           }
           return null;
         },
