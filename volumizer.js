@@ -69,7 +69,7 @@ volumizer.extend_itemStore = {
     if (!('modifiedKeys' in this)) {
       var modifiedKeys = this.modifiedKeys = [];
       this.transaction.addEventListener('complete', function(e) {
-        modifiedKeys.sort(function(a,b){ return a-b; });
+        modifiedKeys.sort(indexedDB.cmp);
         self.dispatchEvent(new CustomEvent('volumizer-section-update', {
           detail: {sections: modifiedKeys},
         }));
@@ -272,8 +272,8 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
 
 volumizer.getItems = function getItems(ids) {
   if (ids.length === 0) return Promise.resolve([]);
-  var sorted = ids.slice().sort(function(a,b){ return a-b; });
-  var range = IDBKeyRange.bound(sorted[0], sorted[sorted.length-1]);
+  ids = ids.slice().sort(indexedDB.cmp);
+  var range = IDBKeyRange.bound(ids[0], ids[ids.length-1]);
   return volumizer.withTransaction(['items'], 'readonly', function(t) {
     return new Promise(function(resolve, reject) {
       var list = [], i = 0;
@@ -331,6 +331,88 @@ volumizer.getItemsIn = function getItems(parentKey) {
         cursor.continue();
       };
     });
+  });
+};
+
+volumizer.deleteItems = function deleteItems(ids) {
+  return volumizer.withTransaction(['items', 'dataSources'], 'readwrite', function(t) {
+    ids = ids.slice().sort(indexedDB.cmp);
+    var range = IDBKeyRange.bound(ids[0], ids[ids.length-1]);
+    var itemStore = t.objectStore('items');
+    var sourceStore = t.objectStore('dataSources');
+    var sourceList = [];
+    var byParent = itemStore.index('byParent');
+    var count = 1;
+    function deleteSources() {
+      if (sourceList.length === 0) return;
+      sourceList.sort(indexedDB.cmp);
+      range = IDBKeyRange.bound(sourceList[0], sourceList[sourceList.length-1]);
+      itemStore.index('bySource').openCursor(range).onsuccess = function(e) {
+        var cursor = this.result;
+        if (!cursor) for (var i = 0; i < sourceList.length; i++) {
+          sourceStore.delete(sourceList[i]);
+        }
+        else do {
+          var diff = indexedDB.cmp(sourceList[0], cursor.value.source);
+          if (diff >= 0) {
+            if (diff === 0) {
+              sourceList.shift();
+            }
+            if (sourceList.length > 0) {
+              cursor.continue(sourceList[0]);
+            }
+            break;
+          }
+          sourceStore.delete(sourceList.shift());
+        } while (sourceList.length > 0);
+      };
+    }
+    function recurseDelete(e) {
+      var cursor = e.target.result;
+      if (!cursor) {
+        if (--count === 0) deleteSources();
+        return;
+      }
+      var entry = cursor.value;
+      if (typeof entry.source === 'number' && sourceList.indexOf(entry.source) === -1) {
+        sourceList.push(entry.source);
+      }
+      count++;
+      byParent.openCursor(entry.id).onsuccess = recurseDelete;
+      cursor.delete();
+      cursor.continue();
+    }
+    itemStore.openCursor(range).onsuccess = function(e) {
+      var cursor = this.result;
+      if (cursor) {
+        var entry = cursor.value;
+        do {
+          var diff = indexedDB.cmp(ids[0], entry.id);
+          if (diff < 0) {
+            ids.shift();
+            continue;
+          }
+          else if (diff > 0) {
+            cursor.continue(ids[0]);
+            return;
+          }
+          else break;
+        } while (ids.length > 0);
+        if (ids.length > 0) {
+          if (typeof entry.source === 'number' && sourceList.indexOf(entry.source) === -1) {
+            sourceList.push(entry.source);
+          }
+          count++;
+          byParent.openCursor(entry.id).onsuccess = recurseDelete;
+          ids.shift();
+          if (ids.length > 0) {
+            cursor.continue(ids[0]);
+            return;
+          }
+        }
+      }
+      if (--count === 0) deleteSources();
+    };
   });
 };
 
