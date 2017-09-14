@@ -740,7 +740,7 @@
           volumizer.getItemsIn(id).then(function(items) {
             for (var i = 0; i < items.length; i++) {
               var subitemEl = makeItemElement(items[i]);
-              target.childrenElement.appendChild(subitemEl);
+              itemEl.childrenElement.appendChild(subitemEl);
               if (items.length === 1 && !itemEl.classList.contains('empty')) {
                 subitemEl.dispatchEvent(new Event('item-open', {bubbles:true}));
               }
