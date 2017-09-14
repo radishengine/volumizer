@@ -64,12 +64,18 @@ volumizer.extend_itemIndexCursor = {
   },
 };
 
+volumizer.keyCmp = function(a, b) {
+  // getting "illegal invocation" errors if passed
+  // directly to [].sort()
+  return indexedDB.cmp(a, b);
+};
+
 volumizer.extend_itemStore = {
   addModifiedKey: function(key) {
     if (!('modifiedKeys' in this)) {
       var modifiedKeys = this.modifiedKeys = [];
       this.transaction.addEventListener('complete', function(e) {
-        modifiedKeys.sort(indexedDB.cmp);
+        modifiedKeys.sort(volumizer.keyCmp);
         self.dispatchEvent(new CustomEvent('volumizer-section-update', {
           detail: {sections: modifiedKeys},
         }));
@@ -272,7 +278,7 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
 
 volumizer.getItems = function getItems(ids) {
   if (ids.length === 0) return Promise.resolve([]);
-  ids = ids.slice().sort(indexedDB.cmp);
+  ids = ids.slice().sort(volumizer.keyCmp);
   var range = IDBKeyRange.bound(ids[0], ids[ids.length-1]);
   return volumizer.withTransaction(['items'], 'readonly', function(t) {
     return new Promise(function(resolve, reject) {
@@ -336,7 +342,7 @@ volumizer.getItemsIn = function getItems(parentKey) {
 
 volumizer.deleteItems = function deleteItems(ids) {
   return volumizer.withTransaction(['items', 'dataSources'], 'readwrite', function(t) {
-    ids = ids.slice().sort(indexedDB.cmp);
+    ids = ids.slice().sort(volumizer.keyCmp);
     var range = IDBKeyRange.bound(ids[0], ids[ids.length-1]);
     var itemStore = t.objectStore('items');
     var sourceStore = t.objectStore('dataSources');
@@ -345,7 +351,7 @@ volumizer.deleteItems = function deleteItems(ids) {
     var count = 1;
     function deleteSources() {
       if (sourceList.length === 0) return;
-      sourceList.sort(indexedDB.cmp);
+      sourceList.sort(volumizer.keyCmp);
       range = IDBKeyRange.bound(sourceList[0], sourceList[sourceList.length-1]);
       itemStore.index('bySource').openCursor(range).onsuccess = function(e) {
         var cursor = this.result;
