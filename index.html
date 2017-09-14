@@ -794,10 +794,10 @@
         set: function(item) {
           var rect = item.selfElement.getBoundingClientRect();
           if (rect.top < 0) {
-            item.scrollIntoView(true);
+            item.selfElement.scrollIntoView(true);
           }
           else if (rect.bottom > this.clientHeight) {
-            item.scrollIntoView(false);
+            item.selfElement.scrollIntoView(false);
           }
           item.selfElement.focus();
         },
