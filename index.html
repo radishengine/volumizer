@@ -873,6 +873,48 @@
               }
             }
             break;
+          case 33: // page up
+            var refItem = this.focusItem;
+            if (!refItem) return;
+            refItem = this.previousItem(refItem);
+            if (!refItem) return;
+            var rect = refItem.selfElement.getClientRect();
+            var minTop = this.scrollTop;
+            if (rect.top < minTop) {
+              minTop = rect.bottom - this.clientHeight;
+            }
+            for (var prevRef = this.previousItem(refItem); prevRef; prevRef = this.previousItem(prevRef)) {
+              if (prevRef.selfElement.getClientRect().top < minTop) break;
+            }
+            if (e.shiftKey) {
+              refItem.dispatchEvent(new Event('item-range', {bubbles:true}));
+            }
+            else if (!e.ctrlKey) {
+              this.selectItemRange(refItem, refItem);
+            }
+            this.focusItem = refItem;
+            break;
+          case 34: // page down
+            var refItem = this.focusItem;
+            if (!refItem) return;
+            refItem = this.nextItem(refItem);
+            if (!refItem) return;
+            var rect = refItem.selfElement.getClientRect();
+            var maxBottom = this.scrollTop + this.clientHeight;
+            if (rect.bottom > maxBottom) {
+              maxBottom = rect.top + this.clientHeight;
+            }
+            for (var nextRef = this.nextItem(refItem); nextRef; nextRef = this.previousItem(nextRef)) {
+              if (nextRef.selfElement.getClientRect().bottom > maxBottom) break;
+            }
+            if (e.shiftKey) {
+              refItem.dispatchEvent(new Event('item-range', {bubbles:true}));
+            }
+            else if (!e.ctrlKey) {
+              this.selectItemRange(refItem, refItem);
+            }
+            this.focusItem = refItem;
+            break;
           case 37: // left
             var selected = this.querySelectorAll('.selected');
             if (selected.length === 1 && !selected[0].classList.contains('open')) {
