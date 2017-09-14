@@ -798,6 +798,9 @@
       
       itemTree.nextItem = function(referenceItem) {
         do {
+          if (referenceItem.classList.contains('open') && referenceItem.childrenElement.firstElementChild) {
+            return referenceItem.childrenElement.firstElementChild;
+          }
           if (referenceItem.nextElementSibling) {
             return referenceItem.nextElementSibling;
           }
@@ -808,7 +811,11 @@
       
       itemTree.previousItem = function(referenceItem) {
         if (referenceItem.previousElementSibling) {
-          return referenceItem.previousElementSibling;
+          referenceItem = referenceItem.previousElementSibling;
+          while (referenceItem.classList.contains('open') && referenceItem.childrenElement.firstElementChild) {
+            referenceItem = referenceItem.childrenElement.lastElementChild;
+          }
+          return referenceItem;
         }
         referenceItem = referenceItem.parentNode.parentNode;
         if (referenceItem.classList.contains('item')) {
