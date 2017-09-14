@@ -792,6 +792,13 @@
           return null;
         },
         set: function(item) {
+          var rect = item.selfElement.getBoundingClientRect();
+          if (rect.top < 0) {
+            item.scrollIntoView(true);
+          }
+          else if (rect.bottom > this.clientHeight) {
+            item.scrollIntoView(false);
+          }
           item.selfElement.focus();
         },
       });
@@ -895,7 +902,6 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(refItem, refItem);
             }
-            refItem.scrollIntoView(true);
             this.focusItem = refItem;
             break;
           case 34: // page down
@@ -920,7 +926,6 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(refItem, refItem);
             }
-            refItem.scrollIntoView(false);
             this.focusItem = refItem;
             break;
           case 37: // left
@@ -946,7 +951,6 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(prev, prev);
             }
-            prev.scrollIntoView(true);
             this.focusItem = prev;
             break;
           case 39: // right
@@ -972,7 +976,6 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(next, next);
             }
-            next.scrollIntoView(false);
             this.focusItem = next;
             break;
         }
