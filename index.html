@@ -756,7 +756,15 @@
       
       itemTree.addEventListener('item-open', function onitemopen(e) {
         var itemEl = e.target;
+        var afterItem = this.nextItem(itemEl);
         itemEl.classList.add('open');
+        if (itemEl.classList.contains('selected')
+            && afterItem && afterItem.classList.contains('selected')
+            && this.dataset.selectionMode !== 'set')) {
+          for (var nextItem = this.nextItem(itemEl); nextItem !== afterItem; nextItem = this.nextItem(nextItem)) {
+            nextItem.classList.add('selected');
+          }
+        }
         if (!itemEl.classList.contains('active')) {
           itemEl.classList.add('active', 'fetching');
           var id = +itemEl.id.match(/^item-(\d+)$/)[1];
