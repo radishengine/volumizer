@@ -757,7 +757,7 @@
             var selected = this.querySelectorAll('.selected');
             if (selected.length === 1 && !selected[0].classList.contains('open')) {
               // close parent instead
-              var above = selected.parentNode.parentNode;
+              var above = selected[0].parentNode.parentNode;
               if (above.classList.contains('item')) {
                 selected[0].classList.remove('selected');
                 above.classList.add('selected');
