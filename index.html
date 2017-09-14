@@ -79,6 +79,9 @@
       .item:not(.open) > .item-self > .toggler::before {
         content: '\25b6';
       }
+      .item-children {
+        padding-left: 0.75em;
+      }
       .item:not(.open) > .item-children {
         display: none;
       }
@@ -688,7 +691,11 @@
           var id = +target.id.match(/^item-(\d+)$/)[1];
           volumizer.getItemsIn(id).then(function(items) {
             for (var i = 0; i < items.length; i++) {
-              target.childrenElement.appendChild(makeItemElement(items[i]));
+              var itemEl = makeItemElement(items[i]);
+              target.childrenElement.appendChild(itemEl);
+              if (items.length === 1 && !itemEl.classList.contains('empty')) {
+                itemEl.selfElement.click();
+              }
             }
             target.classList.remove('fetching');
           });
