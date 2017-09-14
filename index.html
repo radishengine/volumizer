@@ -208,7 +208,7 @@
       </div>
     </div>
     <div id='frame'>
-      <div id='content'>
+      <div id='content' data-selection-mode='range'>
       </div>
       <div id='viewer'>
       </div>
@@ -689,32 +689,51 @@
       
       itemTree.addEventListener('mousedown', function onmousedown(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item')) break;
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
         }
         if (target === this) return;
         e.preventDefault();
         if (e.target.classList.contains('toggler')) return;
-        if (!target.classList.contains('selected')) {
-          var selected = this.querySelectorAll('.item.selected');
-          for (var i = 0; i < selected.length; i++) {
-            selected[i].classList.remove('selected');
-          }
-          target.classList.add('selected');
-        }
       });
       
       itemTree.addEventListener('click', function onclick(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item')) break;
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
         }
         if (target === this) return;
         e.preventDefault();
-        if (e.target.classList.contains('toggler') || document.activeElement === target.selfElement) {
+        if (e.target.classList.contains('toggler')) {
           target.dispatchEvent(new Event('item-toggle', {bubbles:true}));
+          return;
+        }
+        if (e.shiftKey) {
+          target.dispatchEvent(new Event('item-range', {bubbles:true}));
+        }
+        else if (e.ctrlKey) {
+          target.dispatchEvent(new Event('item-set', {bubbles:true}));
         }
         else {
-          target.selfElement.focus();
+          this.selectItemRange(target, target);
         }
+        this.focusItem = target;
+      }, true);
+      
+      itemTree.addEventListener('dblclick', function ondblclick(e) {
+        for (var target = e.target; target !== this; target = target.parentNode) {
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
+        }
+        if (target === this) return;
+        e.preventDefault();
+        target.dispatchEvent(new Event('item-toggle', {bubbles:true}));
       }, true);
       
       itemTree.addEventListener('item-toggle', function onitemtoggle(e) {
@@ -754,6 +773,99 @@
         }
       });
       
+      itemTree.addEventListener('item-set', function(e) {
+        this.dataset.selectionMode = 'set';
+        e.target.classList.toggle('selected');
+      });
+      
+      Object.defineProperty(itemTree, 'focusItem', {
+        get: function() {
+          var referenceItem = document.activeElement;
+          if (!referenceItem
+              || !referenceItem.classList.contains('item-self')
+              || !(this.compareDocumentPosition(referenceItem) & Node.DOCUMENT_POSITION_CONTAINS)) {
+            return null;
+          }
+          while ((referenceItem = referenceItem.parentNode()) !== this) {
+            if (referenceItem.classList.has('item')) return referenceItem;
+          }
+          return null;
+        },
+        set: function(item) {
+          item.selfElement.focus();
+        },
+      });
+      
+      itemTree.nextItem = function(referenceItem) {
+        do {
+          if (referenceItem.nextElementSibling) {
+            return referenceItem.nextElementSibling;
+          }
+          referenceItem = referenceItem.parentNode.parentNode;
+        } while (referenceItem.classList.contains('item'));
+        return null;
+      },
+      
+      itemTree.previousItem = function(referenceItem) {
+        if (referenceItem.previousElementSibling) {
+          return referenceItem.previousElementSibling;
+        }
+        referenceItem = referenceItem.parentNode.parentNode;
+        if (referenceItem.classList.contains('item')) {
+          return referenceItem;
+        }
+        return null;
+      },
+      
+      itemTree.selectItemRange = function(fromItem, toItem) {
+        var selected = this.querySelectorAll('.selected');
+        for (var i = 0; i < selected.length; i++) {
+          selected[i].classList.remove('selected');
+        }
+        if (fromItem.compareDocumentPosition(toItem) & Node.DOCUMENT_POSITION_PRECEDING) {
+          this.dataset.selectionMode = 'range-reverse';
+          for (var item = fromItem; item !== toItem; item = this.previousItem(item)) {
+            item.classList.add('selected');
+          }
+          toItem.classList.add('selected');
+        }
+        else {
+          this.dataset.selectionMode = 'range';
+          for (var item = fromItem; item !== toItem; item = this.nextItem(item)) {
+            item.classList.add('selected');
+          }
+          toItem.classList.add('selected');
+        }
+      };
+      
+      itemTree.addEventListener('item-range', function(e) {
+        switch (this.dataset.selectionMode) {
+          case 'set':
+            this.selectItemRange(this.focusItem || e.target, e.target);
+            break;
+          case 'range':
+            this.selectItemRange(this.querySelector('.selected') || e.target, e.target);
+            break;
+          case 'range-reverse':
+            var allSelected = this.querySelectorAll('.selected');
+            this.selectItemRange(allSelected[allSelected.length-1] || e.target, e.target);
+            break;
+        }
+          var referenceItem;
+          if (this.dataset.selectionMode !== 'range') {
+            referenceItem = document.activeElement;
+            if (referenceItem && !(this.compareDocumentPosition(referenceItem) & Node.DOCUMENT_POSITION_CONTAINS)) {
+              referenceItem = null;
+            }
+            if (referenceItem && !referenceItem.classList.contains('item-self')) {
+              referenceItem = null;
+            }
+          }
+        }
+        e.target.classList.add('selected');
+        this.dataset.selectionMode = 'range';
+      });
+      
       itemTree.addEventListener('keydown', function onkeydown(e) {
         e.preventDefault();
         switch (e.keyCode) {
@@ -772,9 +884,8 @@
               // move to parent instead
               var above = selected[0].parentNode.parentNode;
               if (above.classList.contains('item')) {
-                selected[0].classList.remove('selected');
-                above.classList.add('selected');
-                above.selfElement.focus();
+                this.selectItemRange(above, above);
+                this.focusItem = above;
               }
             }
             else for (var i = 0; i < selected.length; i++) {
@@ -782,24 +893,15 @@
             }
             break;
           case 38: // up
-            var selected = this.querySelector('.selected');
-            if (!selected) return;
-            var above = selected.previousElementSibling;
-            if (above) {
-              while (above.classList.contains('open') && above.childrenElement.firstElementChild) {
-                above = above.childrenElement.lastElementChild;
-              }
+            var prev = this.previousItem(this.focusItem);
+            if (!prev) return;
+            if (e.shiftKey) {
+              prev.dispatchEvent(new Event('item-range', {bubbles:true}));
             }
-            else {
-              above = selected.parentNode.parentNode;
-              if (!above.classList.contains('item')) return;
+            else if (!e.ctrlKey) {
+              this.selectItemRange(prev, prev);
             }
-            var selected = this.querySelectorAll('.item.selected');
-            for (var i = 0; i < selected.length; i++) {
-              selected[i].classList.remove('selected');
-            }
-            above.classList.add('selected');
-            above.selfElement.focus();
+            this.focusItem = prev;
             break;
           case 39: // right
             var selected = this.querySelectorAll('.selected');
@@ -808,35 +910,23 @@
               if (selected[0].childrenElement.firstElementChild) {
                 selected[0].classList.remove('selected');
                 selected[0].childrenElement.firstElementChild.classList.add('selected');
-                selected[0].childrenElement.firstElementChild.selfElement.focus();
+                this.focusItem = selected[0].childrenElement.firstElementChild;
               }
             }
             else for (var i = 0; i < selected.length; i++) {
               selected[i].dispatchEvent(new Event('item-open', {bubbles:true}));
             }
-            break;            
+            break;
           case 40: // down
-            var allSelected = this.querySelectorAll('.selected');
-            if (allSelected.length === 0) return;
-            e.preventDefault();
-            var selected = allSelected[allSelected.length-1];
-            var below;
-            if (selected.classList.contains('open') && selected.childrenElement.firstElementChild) {
-              below = selected.childrenElement.firstElementChild;
+            var next = this.nextItem(this.focusItem);
+            if (!next) return;
+            if (e.shiftKey) {
+              next.dispatchEvent(new Event('item-range', {bubbles:true}));
             }
-            else {
-              while (!selected.nextElementSibling) {
-                selected = selected.parentNode.parentNode;
-                if (!selected.classList.contains('item')) return;
-              }
-              below = selected.nextElementSibling;
-              if (!below) return;
+            else if (!e.ctrlKey) {
+              this.selectItemRange(next, next);
             }
-            for (var i = 0; i < allSelected.length; i++) {
-              allSelected[i].classList.remove('selected');
-            }
-            below.classList.add('selected');
-            below.selfElement.focus();
+            this.focusItem = next;
             break;
         }
       });
