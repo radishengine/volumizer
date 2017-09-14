@@ -755,7 +755,17 @@
         switch (e.keyCode) {
           case 37: // left
             var selected = this.querySelectorAll('.selected');
-            for (var i = 0; i < selected.length; i++) {
+            if (selected.length === 1 && !selected[0].classList.contains('open')) {
+              // close parent instead
+              var above = selected.parentNode.parentNode;
+              if (above.classList.contains('item')) {
+                selected[0].classList.remove('selected');
+                above.classList.add('selected');
+                above.classList.remove('open');
+                above.selfElement.focus();
+              }
+            }
+            else for (var i = 0; i < selected.length; i++) {
               selected[i].dispatchEvent(new Event('item-close', {bubbles:true}));
             }
             break;
@@ -781,7 +791,14 @@
             break;
           case 39: // right
             var selected = this.querySelectorAll('.selected');
-            for (var i = 0; i < selected.length; i++) {
+            if (selected.length === 1 && selected[0].classList.contains('open')) {
+              // go to first child instead
+              if (selected[0].childrenElement.firstElementChild) {
+                selected[0].childrenElement.firstElementChild.classList.add('selected');
+                selected[0].childrenElement.firstElementChild.focus();
+              }
+            }
+            else for (var i = 0; i < selected.length; i++) {
               selected[i].dispatchEvent(new Event('item-open', {bubbles:true}));
             }
             break;            
