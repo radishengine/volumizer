@@ -694,7 +694,6 @@
         if (target === this) return;
         e.preventDefault();
         if (e.target.classList.contains('toggler')) return;
-        target.selfElement.focus();
         if (!target.classList.contains('selected')) {
           var selected = this.querySelectorAll('.item.selected');
           for (var i = 0; i < selected.length; i++) {
@@ -710,12 +709,22 @@
         }
         if (target === this) return;
         e.preventDefault();
-        if (e.target.classList.contains('toggler')) {
-          var whichEvent = target.classList.contains('open') ? 'item-close' : 'item-open';
-          target.dispatchEvent(new Event(whichEvent, {bubbles:true}));
-          return;
+        if (e.target.classList.contains('toggler') || document.activeElement === target.selfElement) {
+          target.dispatchEvent(new Event('item-toggle', {bubbles:true}));
+        }
+        else {
+          target.selfElement.focus();
         }
       }, true);
+      
+      itemTree.addEventListener('item-toggle', function onitemtoggle(e) {
+        if (e.target.classList.contains('open')) {
+          e.target.dispatchEvent(new Event('item-close', {bubbles:true}));
+        }
+        else {
+          e.target.dispatchEvent(new Event('item-open', {bubbles:true}));
+        }
+      });
       
       itemTree.addEventListener('item-close', function onitemclose(e) {
         var itemEl = e.target;
