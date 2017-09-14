@@ -686,8 +686,7 @@
       
       var itemTree = document.getElementById('content');
       
-      itemTree.addEventListener('click', function onclick(e) {
-        e.preventDefault();
+      itemTree.addEventListener('mousedown', function onmousedown(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
           if (target.classList.contains('item-self')) {
             target = target.parentNode;
@@ -695,6 +694,23 @@
           }
         }
         if (target === this) return;
+        e.preventDefault();
+        var selected = this.querySelectorAll('.item.selected');
+        for (var i = 0; i < selected.length; i++) {
+          selected.classList.remove('.selected');
+        }
+        target.classList.add('.selected');
+      });
+      
+      itemTree.addEventListener('click', function onclick(e) {
+        for (var target = e.target; target !== this; target = target.parentNode) {
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
+        }
+        if (target === this) return;
+        e.preventDefault();
         if (target.classList.toggle('open') && !target.classList.contains('active')) {
           target.classList.add('active', 'fetching');
           var id = +target.id.match(/^item-(\d+)$/)[1];
