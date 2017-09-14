@@ -685,7 +685,7 @@
         if (target === this) return;
         if (target.classList.toggle('open') && !target.classList.contains('active')) {
           target.classList.add('active', 'fetching');
-          var id = +target.id.match(/^test-(\d+)$/)[1];
+          var id = +target.id.match(/^item-(\d+)$/)[1];
           volumizer.getItemsIn(id).then(function(items) {
             for (var i = 0; i < items.length; i++) {
               target.childrenElement.appendChild(makeItemElement(items[i]));
