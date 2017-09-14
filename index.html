@@ -758,14 +758,12 @@
             if (allSelected.length === 0) return;
             e.preventDefault();
             var selected = allSelected[allSelected.length-1];
-            var below = selected.nextElementSibling;
-            if (below) {
-              while (below.classList.contains('open') && below.childrenElement.firstElementChild) {
-                below = below.childrenElement.firstElementChild;
-              }
+            var below;
+            if (selected.classList.contains('open') && selected.childrenElement.firstElementChild) {
+              below = selected.childrenElement.firstElementChild;
             }
             else {
-              below = selected.parentNode.parentNode.nextElementSibling;
+              below = selected.nextElementSibling || selected.parentNode.parentNode.nextElementSibling;
               if (!below.classList.contains('item')) return;
             }
             for (var i = 0; i < allSelected.length; i++) {
