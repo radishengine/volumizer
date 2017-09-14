@@ -731,11 +731,11 @@
       }, true);
       
       itemTree.addEventListener('keydown', function onkeydown(e) {
+        e.preventDefault();
         switch (e.keyCode) {
           case 38: // up
-            var selected = this.querySelector('selected');
+            var selected = this.querySelector('.selected');
             if (!selected) return;
-            e.preventDefault();
             var above = selected.previousElementSibling || selected.parentNode.parentNode;
             if (!above.classList.contains('item')) return;
             var selected = this.querySelectorAll('.item.selected');
@@ -743,19 +743,20 @@
               selected[i].classList.remove('selected');
             }
             above.classList.add('selected');
+            above.focus();
             break;
           case 40: // down
-            var selected = this.querySelectorAll('selected');
-            if (selected.length === 0) return;
+            var allSelected = this.querySelectorAll('.selected');
+            if (allSelected.length === 0) return;
             e.preventDefault();
-            selected = selected[selected.length-1];
+            var selected = allSelected[allSelected.length-1];
             var below = selected.nextElementSibling || selected.parentNode.parentNode.nextElementSibling;
             if (!below.classList.contains('item')) return;
-            var selected = this.querySelectorAll('.item.selected');
-            for (var i = 0; i < selected.length; i++) {
-              selected[i].classList.remove('selected');
+            for (var i = 0; i < allSelected.length; i++) {
+              allSelected[i].classList.remove('selected');
             }
             below.classList.add('selected');
+            below.focus();
             break;
         }
       });
