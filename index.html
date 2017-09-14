@@ -736,8 +736,16 @@
           case 38: // up
             var selected = this.querySelector('.selected');
             if (!selected) return;
-            var above = selected.previousElementSibling || selected.parentNode.parentNode;
-            if (!above.classList.contains('item')) return;
+            var above = selected.previousElementSibling;
+            if (above) {
+              while (above.classList.contains('open') && above.childrenElement.firstElementChild) {
+                above = above.childrenElement.lastElementChild;
+              }
+            }
+            else {
+              above = selected.parentNode.parentNode;
+              if (!above.classList.contains('item')) return;
+            }
             var selected = this.querySelectorAll('.item.selected');
             for (var i = 0; i < selected.length; i++) {
               selected[i].classList.remove('selected');
