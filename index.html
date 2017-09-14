@@ -994,6 +994,14 @@
             }
             this.focusItem = next;
             break;
+          case 65: // A
+            if (e.ctrlKey) {
+              for (var item = this.firstElementChild; item; item = this.nextItem(item)) {
+                item.classList.add('selected');
+              }
+              this.dataset.selectionMode = 'range';
+            }
+            break;
         }
       });
       
