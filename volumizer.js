@@ -106,7 +106,7 @@ volumizer.extend_itemStore = {
   ondeletecursor: function(e) {
     var cursor = e.target.result;
     if (cursor) {
-      e.preventImmediatePropagation();
+      e.stopImmediatePropagation();
       cursor.delete();
       cursor.continue();
     }
