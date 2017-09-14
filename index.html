@@ -872,6 +872,7 @@
         e.preventDefault();
         switch (e.keyCode) {
           case 32: // space
+          case 13: // enter
             var selected = this.querySelectorAll('.selected');
             if (selected.length !== 0) {
               var whichEvent = selected[0].classList.contains('open') ? 'item-close' : 'item-open';
@@ -1013,6 +1014,13 @@
                   parentEl.childrenElement.appendChild(makeItemElement(items[i]));
                 }
               }
+            }
+            var nextItem = itemTree.nextItem(itemEl);
+            var prevItem = itemTree.previousItem(itemEl);
+            if (nextItem && prevItem
+                && nextItem.classList.contains('selected') && prevItem.classList.contains('selected')
+                && itemTree.dataset.selectionMode !== 'set') {
+              itemEl.classList.add('selected');
             }
           }
         });
