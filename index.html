@@ -841,6 +841,7 @@
       itemTree.addEventListener('item-range', function(e) {
         switch (this.dataset.selectionMode) {
           case 'set':
+          default:
             this.selectItemRange(this.focusItem || e.target, e.target);
             break;
           case 'range':
@@ -851,19 +852,6 @@
             this.selectItemRange(allSelected[allSelected.length-1] || e.target, e.target);
             break;
         }
-          var referenceItem;
-          if (this.dataset.selectionMode !== 'range') {
-            referenceItem = document.activeElement;
-            if (referenceItem && !(this.compareDocumentPosition(referenceItem) & Node.DOCUMENT_POSITION_CONTAINS)) {
-              referenceItem = null;
-            }
-            if (referenceItem && !referenceItem.classList.contains('item-self')) {
-              referenceItem = null;
-            }
-          }
-        }
-        e.target.classList.add('selected');
-        this.dataset.selectionMode = 'range';
       });
       
       itemTree.addEventListener('keydown', function onkeydown(e) {
