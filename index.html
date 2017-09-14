@@ -76,11 +76,20 @@
         padding: 0;
         margin: 0;
       }
+      .item:not(.open) > .item-self > .toggler::before {
+        content: '\25b6';
+      }
+      .item:not(.open) > .item-children {
+        display: none;
+      }
+      .item.open > .item-self > .toggler::before {
+        content: '\25bc';
+      }
+      .item.open.fetching > .item-self > .toggler::before {
+        content: '\231B';
+      }
       .item.empty > .item-self > .toggler {
         visibility: hidden;
-      }
-      .item-self > .toggler::before {
-        content: '\25b6';
       }
       .item-self > .symbol {
       }
@@ -664,6 +673,28 @@
         return updateItemElement(template, item);
       }
       
+      var itemTree = document.getElementById('content');
+      
+      itemTree.addEventListener('click', function onclick(e) {
+        for (var target = e.target; target !== this; target = target.parentNode) {
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
+        }
+        if (target === this) return;
+        if (target.classList.toggle('open') && !target.classList.contains('active')) {
+          target.classList.add('active', 'fetching');
+          var id = +target.id.match(/^test-(\d+)$/)[1];
+          volumizer.getItemsIn(id).then(function(items) {
+            for (var i = 0; i < items.length; i++) {
+              target.childrenElement.appendChild(makeItemElement(items[i]));
+            }
+            target.classList.remove('fetching');
+          });
+        }
+      }, true);
+      
       self.addEventListener('volumizer-section-update', function(e) {
         volumizer.getItems(e.detail.sections).then(function(items) {
           if (items.length !== e.detail.sections) {
@@ -686,7 +717,7 @@
             var itemEl = document.getElementById('item-' + items[i].id);
             if (itemEl) updateItemElement(itemEl, item);
             else if (items[i].parent < 0) {
-              document.getElementById('content').appendChild(makeItemElement(items[i]));
+              itemTree.appendChild(makeItemElement(items[i]));
             }
             else {
               var parentEl = document.getElementById('item-' + items[i].parent);
@@ -703,7 +734,7 @@
       
       volumizer.getItemsIn(-1).then(function(items) {
         for (var i = 0; i < items.length; i++) {
-          document.getElementById('content').appendChild(makeItemElement(items[i]));
+          itemTree.appendChild(makeItemElement(items[i]));
         }
       });
       
