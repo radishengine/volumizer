@@ -729,6 +729,36 @@
         }
       }, true);
       
+      itemTree.addEventListener('keydown', function onkeydown(e) {
+        switch (e.keyCode) {
+          case 38: // up
+            var selected = this.querySelector('selected');
+            if (!selected) return;
+            e.preventDefault();
+            var above = selected.previousElementSibling || selected.parentNode.parentNode;
+            if (!above.classList.contains('item')) return;
+            var selected = this.querySelectorAll('.item.selected');
+            for (var i = 0; i < selected.length; i++) {
+              selected[i].classList.remove('selected');
+            }
+            above.classList.add('selected');
+            break;
+          case 40: // down
+            var selected = this.querySelectorAll('selected');
+            if (selected.length === 0) return;
+            e.preventDefault();
+            selected = selected[selected.length-1];
+            var below = selected.nextElementSibling || selected.parentNode.parentNode.nextElementSibling;
+            if (!below.classList.contains('item')) return;
+            var selected = this.querySelectorAll('.item.selected');
+            for (var i = 0; i < selected.length; i++) {
+              selected[i].classList.remove('selected');
+            }
+            below.classList.add('selected');
+            break;
+        }
+      });
+      
       self.addEventListener('volumizer-section-update', function(e) {
         volumizer.getItems(e.detail.sections).then(function(items) {
           if (items.length !== e.detail.sections) {
