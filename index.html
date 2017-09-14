@@ -760,8 +760,8 @@
             var selected = allSelected[allSelected.length-1];
             var below = selected.nextElementSibling;
             if (below) {
-              while (below.classList.contains('open') && below.firstElementChild) {
-                below = below.firstElementChild;
+              while (below.classList.contains('open') && below.childrenElement.firstElementChild) {
+                below = below.childrenElement.firstElementChild;
               }
             }
             else {
