@@ -994,6 +994,15 @@
             }
             this.focusItem = next;
             break;
+          case 46: // delete
+            var selected = this.querySelectorAll('.selected');
+            var topLevelList = [];
+            for (var i = 0; i < selected.length; i++) {
+              topLevelList.push(this.getItemKey(selected[i]));
+              while (selected[i].contains(selected[i+1])) i++;
+            }
+            console.log(topLevelList);
+            break;
           case 65: // A
             if (e.ctrlKey) {
               for (var item = this.firstElementChild; item; item = this.nextItem(item)) {
@@ -1004,6 +1013,10 @@
             break;
         }
       });
+      
+      itemTree.getItemKey = function getItemKey(itemEl) {
+        return +itemEl.id.match(/^item-(\d+)$/)[1];
+      };
       
       self.addEventListener('volumizer-section-update', function(e) {
         volumizer.getItems(e.detail.sections).then(function(items) {
