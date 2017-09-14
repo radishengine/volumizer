@@ -997,9 +997,10 @@
           case 46: // delete
             var selected = this.querySelectorAll('.selected');
             var topLevelList = [];
-            for (var i = 0; i < selected.length; i++) {
+            for (var i = 0, j = 0; i < selected.length; i = j) {
               topLevelList.push(this.getItemKey(selected[i]));
-              while (selected[i].contains(selected[i+1])) i++;
+              j++;
+              while (selected[i].contains(selected[j])) j++;
             }
             console.log(topLevelList);
             break;
