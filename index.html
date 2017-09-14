@@ -763,8 +763,12 @@
               below = selected.childrenElement.firstElementChild;
             }
             else {
-              below = selected.nextElementSibling || selected.parentNode.parentNode.nextElementSibling;
-              if (!below.classList.contains('item')) return;
+              while (!selected.nextElementSibling) {
+                selected = selected.parentNode.parentNode;
+                if (!selected.classList.contains('item')) return;
+              }
+              below = selected.nextElementSibling;
+              if (!below) return;
             }
             for (var i = 0; i < allSelected.length; i++) {
               allSelected[i].classList.remove('selected');
