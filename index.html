@@ -681,6 +681,7 @@
       var itemTree = document.getElementById('content');
       
       itemTree.addEventListener('click', function onclick(e) {
+        e.preventDefault();
         for (var target = e.target; target !== this; target = target.parentNode) {
           if (target.classList.contains('item-self')) {
             target = target.parentNode;
