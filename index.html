@@ -112,7 +112,7 @@
       }
       .item-self > .item-title {
         cursor: default;
-        font: menu;
+        font: small-caption;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
@@ -714,25 +714,51 @@
         }
         if (target === this) return;
         e.preventDefault();
-        if (target.classList.toggle('open') && !target.classList.contains('active')) {
-          target.classList.add('active', 'fetching');
-          var id = +target.id.match(/^item-(\d+)$/)[1];
-          volumizer.getItemsIn(id).then(function(items) {
-            for (var i = 0; i < items.length; i++) {
-              var itemEl = makeItemElement(items[i]);
-              target.childrenElement.appendChild(itemEl);
-              if (items.length === 1 && !itemEl.classList.contains('empty')) {
-                itemEl.selfElement.click();
-              }
-            }
-            target.classList.remove('fetching');
-          });
+        if (target.classList.contains('open')) {
+          target.dispatchEvent(new Event('item-close', {bubbles:true}));
+        }
+        else {
+          target.dispatchEvent(new Event('item-open', {bubbles:true}));
         }
       }, true);
+      
+      itemTree.addEventListener('item-close', function onitemclose(e) {
+        var itemEl = e.target;
+        itemEl.classList.remove('open');
+        var selected = itemEl.childrenElement.querySelectorAll('.selected');
+        for (var i = 0; i < selected.length; i++) {
+          selected.classList.remove('selected');
+        }
+      });
+      
+      itemTree.addEventListener('item-open', function onitemopen(e) {
+        var itemEl = e.target;
+        itemEl.classList.add('open');
+        if (!itemEl.classList.contains('active')) {
+          itemEl.classList.add('active', 'fetching');
+          var id = +itemEl.id.match(/^item-(\d+)$/)[1];
+          volumizer.getItemsIn(id).then(function(items) {
+            for (var i = 0; i < items.length; i++) {
+              var subitemEl = makeItemElement(items[i]);
+              target.childrenElement.appendChild(subitemEl);
+              if (items.length === 1 && !itemEl.classList.contains('empty')) {
+                subitemEl.dispatchEvent(new Event('item-open', {bubbles:true}));
+              }
+            }
+            itemEl.classList.remove('fetching');
+          });
+        }
+      });
       
       itemTree.addEventListener('keydown', function onkeydown(e) {
         e.preventDefault();
         switch (e.keyCode) {
+          case 37: // left
+            var selected = this.querySelectorAll('.selected');
+            for (var i = 0; i < selected.length; i++) {
+              selected[i].dispatchEvent(new Event('item-close', {bubbles:true}));
+            }
+            break;
           case 38: // up
             var selected = this.querySelector('.selected');
             if (!selected) return;
@@ -753,6 +779,12 @@
             above.classList.add('selected');
             above.selfElement.focus();
             break;
+          case 39: // right
+            var selected = this.querySelectorAll('.selected');
+            for (var i = 0; i < selected.length; i++) {
+              selected[i].dispatchEvent(new Event('item-open', {bubbles:true}));
+            }
+            break;            
           case 40: // down
             var allSelected = this.querySelectorAll('.selected');
             if (allSelected.length === 0) return;
