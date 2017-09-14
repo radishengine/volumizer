@@ -195,7 +195,7 @@
       <div class='drop-border'></div>
     </div>
     <div id='templates' style='display:none'>
-      <div class='item'>
+      <div class='item' tabindex='-1'>
         <div class='item-self'>
           <button class='toggler'></button>
           <span class='symbol'></span>
@@ -695,6 +695,7 @@
         }
         if (target === this) return;
         e.preventDefault();
+        target.focus();
         if (!target.classList.contains('selected')) {
           var selected = this.querySelectorAll('.item.selected');
           for (var i = 0; i < selected.length; i++) {
