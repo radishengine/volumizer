@@ -905,7 +905,7 @@
             if (rect.bottom > maxBottom) {
               maxBottom = rect.top + this.clientHeight;
             }
-            for (var nextRef = this.nextItem(refItem); nextRef; nextRef = this.previousItem(nextRef)) {
+            for (var nextRef = this.nextItem(refItem); nextRef; nextRef = this.nextItem(nextRef)) {
               if (nextRef.selfElement.getBoundingClientRect().bottom > maxBottom) break;
               refItem = nextRef;
             }
