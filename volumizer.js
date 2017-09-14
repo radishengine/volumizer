@@ -404,6 +404,7 @@ volumizer.deleteItems = function deleteItems(ids) {
           }
           count++;
           byParent.openCursor(entry.id).onsuccess = recurseDelete;
+          itemStore.delete(entry.id);
           ids.shift();
           if (ids.length > 0) {
             cursor.continue(ids[0]);
