@@ -698,7 +698,7 @@
         if (!target.classList.contains('selected')) {
           var selected = this.querySelectorAll('.item.selected');
           for (var i = 0; i < selected.length; i++) {
-            selected.classList.remove('selected');
+            selected[i].classList.remove('selected');
           }
           target.classList.add('selected');
         }
