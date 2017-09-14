@@ -885,6 +885,7 @@
             }
             for (var prevRef = this.previousItem(refItem); prevRef; prevRef = this.previousItem(prevRef)) {
               if (prevRef.selfElement.getClientRect().top < minTop) break;
+              refItem = prevRef;
             }
             if (e.shiftKey) {
               refItem.dispatchEvent(new Event('item-range', {bubbles:true}));
@@ -906,6 +907,7 @@
             }
             for (var nextRef = this.nextItem(refItem); nextRef; nextRef = this.previousItem(nextRef)) {
               if (nextRef.selfElement.getClientRect().bottom > maxBottom) break;
+              refItem = nextRef;
             }
             if (e.shiftKey) {
               refItem.dispatchEvent(new Event('item-range', {bubbles:true}));
