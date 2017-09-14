@@ -83,6 +83,7 @@
         margin: 0;
         width: 1em;
         text-align: right;
+        cursor: pointer;
       }
       .item:not(.open) > .item-self > .toggler::before {
         content: '\25b6';
@@ -688,13 +689,11 @@
       
       itemTree.addEventListener('mousedown', function onmousedown(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item-self')) {
-            target = target.parentNode;
-            break;
-          }
+          if (target.classList.contains('item')) break;
         }
         if (target === this) return;
         e.preventDefault();
+        if (e.target.classList.contains('toggler')) return;
         target.selfElement.focus();
         if (!target.classList.contains('selected')) {
           var selected = this.querySelectorAll('.item.selected');
@@ -707,18 +706,14 @@
       
       itemTree.addEventListener('click', function onclick(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item-self')) {
-            target = target.parentNode;
-            break;
-          }
+          if (target.classList.contains('item')) break;
         }
         if (target === this) return;
         e.preventDefault();
-        if (target.classList.contains('open')) {
-          target.dispatchEvent(new Event('item-close', {bubbles:true}));
-        }
-        else {
-          target.dispatchEvent(new Event('item-open', {bubbles:true}));
+        if (e.target.classList.contains('toggler')) {
+          var whichEvent = target.classList.contains('open') ? 'item-close' : 'item-open';
+          target.dispatchEvent(new Event(whichEvent, {bubbles:true}));
+          return;
         }
       }, true);
       
@@ -753,15 +748,23 @@
       itemTree.addEventListener('keydown', function onkeydown(e) {
         e.preventDefault();
         switch (e.keyCode) {
+          case 32: // space
+            var selected = this.querySelectorAll('.selected');
+            if (selected.length !== 0) {
+              var whichEvent = selected[0].classList.contains('open') ? 'item-close' : 'item-open';
+              for (var i = 0; i < selected.length; i++) {
+                selected[0].dispatchEvent(new Event(whichEvent, {bubbles:true}));
+              }
+            }
+            break;
           case 37: // left
             var selected = this.querySelectorAll('.selected');
             if (selected.length === 1 && !selected[0].classList.contains('open')) {
-              // close parent instead
+              // move to parent instead
               var above = selected[0].parentNode.parentNode;
               if (above.classList.contains('item')) {
                 selected[0].classList.remove('selected');
                 above.classList.add('selected');
-                above.classList.remove('open');
                 above.selfElement.focus();
               }
             }
