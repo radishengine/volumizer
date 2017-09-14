@@ -195,8 +195,8 @@
       <div class='drop-border'></div>
     </div>
     <div id='templates' style='display:none'>
-      <div class='item' tabindex='-1'>
-        <div class='item-self'>
+      <div class='item'>
+        <div class='item-self' tabindex='-1'>
           <button class='toggler'></button>
           <span class='symbol'></span>
           <span class='item-title'></span>
@@ -695,7 +695,7 @@
         }
         if (target === this) return;
         e.preventDefault();
-        target.focus();
+        target.selfElement.focus();
         if (!target.classList.contains('selected')) {
           var selected = this.querySelectorAll('.item.selected');
           for (var i = 0; i < selected.length; i++) {
@@ -751,20 +751,28 @@
               selected[i].classList.remove('selected');
             }
             above.classList.add('selected');
-            above.focus();
+            above.selfElement.focus();
             break;
           case 40: // down
             var allSelected = this.querySelectorAll('.selected');
             if (allSelected.length === 0) return;
             e.preventDefault();
             var selected = allSelected[allSelected.length-1];
-            var below = selected.nextElementSibling || selected.parentNode.parentNode.nextElementSibling;
-            if (!below.classList.contains('item')) return;
+            var below = selected.nextElementSibling;
+            if (below) {
+              while (below.classList.contains('open') && below.firstElementChild) {
+                below = below.firstElementChild;
+              }
+            }
+            else {
+              below = selected.parentNode.parentNode.nextElementSibling;
+              if (!below.classList.contains('item')) return;
+            }
             for (var i = 0; i < allSelected.length; i++) {
               allSelected[i].classList.remove('selected');
             }
             below.classList.add('selected');
-            below.focus();
+            below.selfElement.focus();
             break;
         }
       });
