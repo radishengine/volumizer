@@ -783,7 +783,7 @@
           var referenceItem = document.activeElement;
           if (!referenceItem
               || !referenceItem.classList.contains('item-self')
-              || !(referenceItem.compareDocumentPosition(this) & Node.DOCUMENT_POSITION_CONTAINING)) {
+              || !(referenceItem.compareDocumentPosition(this) & Node.DOCUMENT_POSITION_CONTAINS)) {
             return null;
           }
           while ((referenceItem = referenceItem.parentNode()) !== this) {
