@@ -895,6 +895,7 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(refItem, refItem);
             }
+            refItem.scrollIntoView(true);
             this.focusItem = refItem;
             break;
           case 34: // page down
@@ -919,6 +920,7 @@
             else if (!e.ctrlKey) {
               this.selectItemRange(refItem, refItem);
             }
+            refItem.scrollIntoView(false);
             this.focusItem = refItem;
             break;
           case 37: // left
