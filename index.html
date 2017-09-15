@@ -701,6 +701,20 @@
         e.preventDefault();
       }, true);
       
+      itemTree.addEventListener('drop', function ondrop(e) {
+        for (var target = e.target; target !== this; target = target.parentNode) {
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
+          if (target.classList.contains('item')) {
+            return;
+          }
+        }
+        target.classList.remove('drop-target');
+        delete target.dragCount;
+      }, true);
+      
       itemTree.addEventListener('mousedown', function onmousedown(e) {
         if (e.target === this || e.target.classList.contains('toggler')) {
           e.preventDefault();
