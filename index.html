@@ -32,11 +32,11 @@
         position: fixed;
         left: 0;
         transform: translateX(-100%);
-        font: caption;
+        font: small-caption;
         text-align: center;
       }
       .drag-icon > div {
-        font-size: 48px;
+        font-size: 32px;
       }
       .drop-border {
         border: 10px dashed silver;
@@ -783,6 +783,9 @@
           caption.innerText = items[0].titleElement.innerText;
         }
         else {
+          for (var i = 0; i < items.length; i++) {
+            icon.innerText += window.getComputedStyle(items[i].symbolElement, ':before').content.replace(/^"(.*)"$/, '$1');
+          }
           caption.innerText = items.length + ' items';
         }
         div.appendChild(icon);
