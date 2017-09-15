@@ -28,6 +28,12 @@
         bottom: 0;
         padding: 30px;
       }
+      .drag-icon {
+        position: fixed;
+        left: 0;
+        top: 0;
+        // transform: translateX(-100%);
+      }
       .drop-border {
         border: 10px dashed silver;
         height: 100%;
@@ -765,6 +771,8 @@
       
       itemTree.makeIcon = function(items) {
         var canvas = document.createElement('CANVAS');
+        canvas.className = 'drag-icon';
+        document.body.appendChild(canvas);
         canvas.width = canvas.height = 64;
         var ctx = canvas.getContext('2d');
         ctx.textBaseline = 'top';
