@@ -33,6 +33,10 @@
         left: 0;
         transform: translateX(-100%);
         font: caption;
+        text-align: center;
+      }
+      .drag-icon > div {
+        font-size: 48px;
       }
       .drop-border {
         border: 10px dashed silver;
@@ -772,8 +776,10 @@
       itemTree.makeIcon = function(items) {
         var div = document.createElement('DIV');
         div.className = 'drag-icon';
+        var icon = document.createElement('DIV');
         var caption = document.createElement('SPAN');
         if (items.length === 1) {
+          icon.innerText = window.getComputedStyle(items[0].symbolElement, ':before').content;
           caption.innerText = items[0].titleElement.innerText;
         }
         else {
@@ -823,7 +829,6 @@
           urlList.push(selected[i].id.match(/^item-(\d+)$/)[1]);
         }
         e.dataTransfer.setData('text/uri-list', location.href.replace(/((#|\?).*)?$/, '?' + urlList.join(',')));
-        var text = window.getComputedStyle(itemEl.symbolElement, ':before').content;
         if (typeof e.dataTransfer.setDragImage === 'function') {
           var icon = this.makeIcon(selected);
           this.appendChild(icon);
