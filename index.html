@@ -1064,7 +1064,11 @@
       
       volumizer.getItemsIn(-1).then(function(items) {
         for (var i = 0; i < items.length; i++) {
-          itemTree.appendChild(makeItemElement(items[i]));
+          var itemEl = makeItemElement(items[i]);
+          itemTree.appendChild(itemEl);
+          if (items.length === 1) {
+            itemEl.dispatchEvent(new Event('item-open', {bubbles:true}));
+          }
         }
       });
       
