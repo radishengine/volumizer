@@ -764,6 +764,17 @@
       }, true);
       
       itemTree.makeIcon = function(items) {
+        var div = document.createElement('DIV');
+        var caption = document.create('SPAN');
+        if (items.length === 1) {
+          caption.innerText = items[0].titleElement.innerText;
+        }
+        else {
+          caption.innerText = items.length + ' items';
+        }
+        div.appendChild(caption);
+        return div;
+        /*
         var canvas = document.createElement('CANVAS');
         canvas.width = canvas.height = 64;
         var ctx = canvas.getContext('2d');
@@ -777,15 +788,14 @@
         else {
           ctx.fillText(items.length + ' items', canvas.width/2, iconHeight, canvas.width);
         }
-        /*
         ctx.textAlign = 'center';
         ctx.fillText(text, 32, 32);
-        */
         var img = new Image();
         img.width = canvas.width;
         img.height = canvas.height;
         img.src = canvas.toDataURL();
         return img;
+        */
       };
       
       itemTree.addEventListener('dragstart', function(e) {
@@ -810,7 +820,7 @@
         if (typeof e.dataTransfer.setDragImage === 'function') {
           var icon = this.makeIcon(selected);
           this.appendChild(icon);
-          e.dataTransfer.setDragImage(icon, icon.width, icon.height);
+          e.dataTransfer.setDragImage(icon, 0, 0);
         }
       }, true);
       
