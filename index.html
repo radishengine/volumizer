@@ -763,6 +763,23 @@
         }
       }, true);
       
+      itemTree.makeIcon = function(items) {
+        var canvas = document.createElement('CANVAS');
+        canvas.width = canvas.height = 64;
+        var ctx = canvas.getContext('2d');
+        if (items.length === 1) {
+          ctx.fillText(items[0].titleElement.innerText, 0, 0, canvas.width);
+        }
+        else {
+          ctx.fillText(items.length + ' items', 0, 0, canvas.width);
+        }
+        /*
+        ctx.textAlign = 'center';
+        ctx.fillText(text, 32, 32);
+        */
+        return canvas;
+      };
+      
       itemTree.addEventListener('dragstart', function(e) {
         var itemEl = e.target;
         if (!itemEl.classList.contains('item')) return;
@@ -782,12 +799,8 @@
         }
         e.dataTransfer.setData('text/uri-list', location.href.replace(/((#|\?).*)?$/, '?' + urlList.join(',')));
         var text = window.getComputedStyle(itemEl.symbolElement, ':before').content;
-        var canvas = document.createElement('CANVAS');
-        canvas.width = canvas.height = 64;
-        var ctx = canvas.getContext('2d');
-        ctx.textAlign = 'center';
-        ctx.fillText(text, 32, 32);
-        e.dataTransfer.setDragImage(canvas, canvas.width, canvas.height);
+        var icon = this.makeIcon(selected);
+        e.dataTransfer.setDragImage(icon, icon.width, icon.height);
       }, true);
       
       Object.defineProperty(itemTree, 'focusItem', {
