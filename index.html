@@ -715,7 +715,10 @@
             break;
           }
         }
-        if (target === this) return;
+        if (target === this) {
+          this.focus();
+          return;
+        }
         e.preventDefault();
         if (e.target.classList.contains('toggler')) {
           target.dispatchEvent(new Event('item-toggle', {bubbles:true}));
