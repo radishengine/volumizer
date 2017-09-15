@@ -800,7 +800,7 @@
       
       itemTree.addEventListener('blur', function(e) {
         if (!this.contains(e.relatedTarget)) {
-          var selected = this.querySelector('.selected');
+          var selected = this.querySelectorAll('.selected');
           for (var i = 0; i < selected.length; i++) {
             selected[i].classList.remove('selected');
           }
