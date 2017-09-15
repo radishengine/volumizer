@@ -144,6 +144,9 @@
         font-size: smaller;
         opacity: 0.5;
       }
+      .item-self.drop-target {
+        background: #faa;
+      }
     </style>
   </head>
   <body>
@@ -659,7 +662,14 @@
         e.dataTransfer.dropEffect = 'move';
         e.preventDefault();
         if (e.target.classList.contains('item-self')) {
+          e.target.classList.add('drop-target');
           target.dispatchEvent(new Event('item-open', {bubbles:true}));
+        }
+      }, true);
+      
+      itemTree.addEventListener('dragleave', function ondragleave(e) {
+        if (e.target.classList.contains('item-self')) {
+          e.target.classList.remove('drop-target');
         }
       }, true);
       
