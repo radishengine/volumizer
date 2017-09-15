@@ -647,16 +647,34 @@
       var itemTree = document.getElementById('content');
       
       itemTree.addEventListener('dragenter', function ondragenter(e) {
+        for (var target = e.target; target !== this; target = target.parentNode) {
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
+          if (target.classList.contains('item')) {
+            return;
+          }
+        }
+        e.dataTransfer.dropEffect = 'move';
+        e.preventDefault();
         if (e.target.classList.contains('item-self')) {
-          e.dataTransfer.dropEffect = 'move';
-          e.preventDefault();
+          target.dispatchEvent(new Event('item-open', {bubbles:true}));
         }
       }, true);
       
       itemTree.addEventListener('dragover', function ondragover(e) {
-        if (e.target.classList.contains('item-self')) {
-          e.preventDefault();
+        for (var target = e.target; target !== this; target = target.parentNode) {
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
+          if (target.classList.contains('item')) {
+            return;
+          }
         }
+        e.dataTransfer.dropEffect = 'move';
+        e.preventDefault();
       }, true);
       
       itemTree.addEventListener('mousedown', function onmousedown(e) {
