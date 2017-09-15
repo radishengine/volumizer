@@ -688,7 +688,10 @@
       
       itemTree.appenderElement = itemTree.querySelector('.appender');
       itemTree.appenderElement.inputElement = itemTree.appenderElement.querySelector('input');
-      itemTree.appenderElement.inputElement.onchange = function(e) {
+      itemTree.appenderElement.inputElement.onkeypress =
+      itemTree.appenderElement.inputElement.onchange =
+      itemTree.appenderElement.inputElement.oninput =
+      itemTree.appenderElement.inputElement.onpaste = function(e) {
         itemTree.appenderElement.classList.toggle('web', this.value.indexOf('/') !== -1);
       };
       
