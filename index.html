@@ -792,6 +792,21 @@
         e.target.classList.toggle('selected');
       });
       
+      itemTree.addEventListener('dragstart', function(e) {
+        for (var item = e.target.parentNode; item; item = item.parentNode) {
+          if (item.classList.contains('item')) break;
+        }
+        if (!item) return;
+        e.dataTransfer.setData('text/plain', item.id);
+        var canvas = document.createElement('CANVAS');
+        canvas.width = 32;
+        canvas.height = 32;
+        var text = window.getComputedStyle(e.target, ':before').content;
+        var ctx = canvas.getContext('2d');
+        ctx.drawText(0, 0, 32);
+        e.dataTransfer.setDragImage(canvas);
+      }, true);
+      
       Object.defineProperty(itemTree, 'focusItem', {
         get: function() {
           var referenceItem = document.activeElement;
