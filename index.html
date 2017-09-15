@@ -763,7 +763,11 @@
           if (focus) focus.classList.remove('focus');
         }
         else if (!this.contains(e.relatedTarget)) {
-          this.classList.add('entering');
+          var focus = this.querySelector('.focus');
+          if (focus) {
+            focus.classList.remove('focus');
+            this.classList.add('entering');
+          }
         }
       }, true);
       
