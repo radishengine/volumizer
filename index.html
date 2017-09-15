@@ -767,11 +767,15 @@
         var canvas = document.createElement('CANVAS');
         canvas.width = canvas.height = 64;
         var ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'center';
+        var iconHeight = 32;
+        ctx.fillRect((canvas.width-32)/2,0,32,iconHeight);
         if (items.length === 1) {
-          ctx.fillText(items[0].titleElement.innerText, 0, 0, canvas.width);
+          ctx.fillText(items[0].titleElement.innerText, canvas.width/2, iconHeight, canvas.width);
         }
         else {
-          ctx.fillText(items.length + ' items', 0, 0, canvas.width);
+          ctx.fillText(items.length + ' items', canvas.width/2, iconHeight, canvas.width);
         }
         /*
         ctx.textAlign = 'center';
