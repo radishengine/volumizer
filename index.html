@@ -702,6 +702,7 @@
       }, true);
       
       itemTree.addEventListener('drop', function ondrop(e) {
+        e.preventDefault();
         for (var target = e.target; target !== this; target = target.parentNode) {
           if (target.classList.contains('item-self')) {
             target = target.parentNode;
