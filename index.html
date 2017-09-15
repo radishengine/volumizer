@@ -713,16 +713,7 @@
             break;
           }
         }
-        if (target === this) {
-          var allSelected = this.querySelectorAll('.selected');
-          for (var i = 0; i < allSelected.length; i++) {
-            allSelected[i].classList.remove('selected');
-          }
-          var focus = this.querySelector('.focus');
-          if (focus) focus.classList.remove('focus');
-          this.focus();
-          return;
-        }
+        if (target === this) return;
         e.preventDefault();
         if (e.target.classList.contains('toggler')) {
           target.dispatchEvent(new Event('item-toggle', {bubbles:true}));
@@ -812,6 +803,17 @@
       itemTree.getItemURL = function getItemURL(itemEl) {
         return location.href.replace(/(\?|#).*/, '') + '#' + itemEl.id;
       };
+      
+      itemTree.addEventListener('focus', function(e) {
+        if (e.target === this) {
+          var allSelected = this.querySelectorAll('.selected');
+          for (var i = 0; i < allSelected.length; i++) {
+            allSelected[i].classList.remove('selected');
+          }
+          var focus = this.querySelector('.focus');
+          if (focus) focus.classList.remove('focus');
+        }
+      });
       
       itemTree.addEventListener('blur', function(e) {
         if (!this.contains(e.relatedTarget)) {
