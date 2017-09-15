@@ -62,6 +62,8 @@
         overflow-y: auto;
         overflow-y: scroll;
         padding: 4px;
+        display: flex;
+        flex-flow: column nowrap;
       }
       #content:focus {
         outline: none;
@@ -150,6 +152,8 @@
       .appender {
         display: flex;
         flex-flow: row nowrap;
+        flex-grow: 1;
+        order: 100;
       }
       .appender > .symbol::before {
         content: '\1F4C2';
