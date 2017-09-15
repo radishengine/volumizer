@@ -939,10 +939,10 @@
       });
       
       itemTree.addEventListener('keydown', function onkeydown(e) {
-        e.preventDefault();
         switch (e.keyCode) {
           case 32: // space
           case 13: // enter
+            e.preventDefault();
             var selected = this.querySelectorAll('.selected');
             if (selected.length !== 0) {
               var whichEvent = selected[0].classList.contains('open') ? 'item-close' : 'item-open';
@@ -952,6 +952,7 @@
             }
             break;
           case 33: // page up
+            e.preventDefault();
             var refItem = this.focusItem;
             if (!refItem) return;
             var prevRef = this.previousItem(refItem);
@@ -976,6 +977,7 @@
             this.focusItem = refItem;
             break;
           case 34: // page down
+            e.preventDefault();
             var refItem = this.focusItem;
             if (!refItem) return;
             var nextRef = this.nextItem(refItem);
@@ -1000,6 +1002,7 @@
             this.focusItem = refItem;
             break;
           case 37: // left
+            e.preventDefault();
             var selected = this.querySelectorAll('.selected');
             if (selected.length === 1 && !selected[0].classList.contains('open')) {
               // move to parent instead
@@ -1014,6 +1017,7 @@
             }
             break;
           case 38: // up
+            e.preventDefault();
             var prev = this.previousItem(this.focusItem) || this.focusItem;
             if (!prev) return;
             if (e.shiftKey) {
@@ -1025,6 +1029,7 @@
             this.focusItem = prev;
             break;
           case 39: // right
+            e.preventDefault();
             var selected = this.querySelectorAll('.selected');
             if (selected.length === 1 && selected[0].classList.contains('open')) {
               // go to first child instead
@@ -1039,6 +1044,7 @@
             }
             break;
           case 40: // down
+            e.preventDefault();
             var next = this.nextItem(this.focusItem) || this.focusItem;
             if (!next) return;
             if (e.shiftKey) {
@@ -1050,6 +1056,7 @@
             this.focusItem = next;
             break;
           case 46: // delete
+            e.preventDefault();
             var selected = this.querySelectorAll('.selected');
             var topLevelList = [];
             for (var i = 0, j = 0; i < selected.length; i = j) {
@@ -1060,6 +1067,7 @@
             volumizer.deleteItems(topLevelList);
             break;
           case 65: // A
+            e.preventDefault();
             if (e.ctrlKey) {
               for (var item = this.firstElementChild; item; item = this.nextItem(item)) {
                 item.classList.add('selected');
