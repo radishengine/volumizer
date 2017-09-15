@@ -648,6 +648,7 @@
       
       itemTree.addEventListener('dragenter', function ondragover(e) {
         if (e.target.classList.contains('item-self')) {
+          e.dataTransfer.dropEffect = 'move';
           e.preventDefault();
         }
       }, true);
