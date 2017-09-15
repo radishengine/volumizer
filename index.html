@@ -661,13 +661,14 @@
         }
         e.dataTransfer.dropEffect = 'move';
         e.preventDefault();
-        if (e.target.classList.contains('item-self')) {
+        if (e.target.classList.contains('item-self') && !e.target.contains(e.relatedTarget)) {
           e.target.classList.add('drop-target');
           target.dispatchEvent(new Event('item-open', {bubbles:true}));
         }
       }, true);
       
       itemTree.addEventListener('dragleave', function ondragleave(e) {
+        if (e.target.contains(e.relatedTarget)) return;
         if (e.target.classList.contains('item-self')) {
           e.target.classList.remove('drop-target');
         }
