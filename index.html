@@ -646,9 +646,15 @@
       
       var itemTree = document.getElementById('content');
       
-      itemTree.addEventListener('dragenter', function ondragover(e) {
+      itemTree.addEventListener('dragenter', function ondragenter(e) {
         if (e.target.classList.contains('item-self')) {
           e.dataTransfer.dropEffect = 'move';
+          e.preventDefault();
+        }
+      }, true);
+      
+      itemTree.addEventListener('dragover', function ondragover(e) {
+        if (e.target.classList.contains('item-self')) {
           e.preventDefault();
         }
       }, true);
