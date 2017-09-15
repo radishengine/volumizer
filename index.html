@@ -779,7 +779,7 @@
         var icon = document.createElement('DIV');
         var caption = document.createElement('SPAN');
         if (items.length === 1) {
-          icon.innerText = window.getComputedStyle(items[0].symbolElement, ':before').content;
+          icon.innerText = window.getComputedStyle(items[0].symbolElement, ':before').content.replace(/^"(.*)"$/, '$1');
           caption.innerText = items[0].titleElement.innerText;
         }
         else {
