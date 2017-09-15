@@ -61,6 +61,13 @@
         color: white;
       }
       
+      .item:focus {
+        outline: none;
+      }
+      .item:focus > .item-self, .item.focus > .item-self {
+        outline: 2px solid rgb(94, 158, 214);
+      }
+      
       .item-self {
         display: flex;
         flex-flow: row nowrap;
@@ -196,8 +203,8 @@
       <div class='drop-border'></div>
     </div>
     <div id='templates' style='display:none'>
-      <div class='item' draggable='true'>
-        <div class='item-self' tabindex='-1'>
+      <div class='item' tabindex='-1' draggable='true'>
+        <div class='item-self'>
           <button class='toggler'></button>
           <span class='symbol'></span>
           <span class='item-title'></span>
@@ -689,17 +696,6 @@
       
       var itemTree = document.getElementById('content');
       
-      itemTree.addEventListener('mousedown', function onmousedown(e) {
-        for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item-self')) {
-            target = target.parentNode;
-            break;
-          }
-        }
-        if (target === this) return;
-        // e.preventDefault();
-      });
-      
       itemTree.addEventListener('click', function onclick(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
           if (target.classList.contains('item-self')) {
@@ -719,7 +715,7 @@
         else if (e.ctrlKey) {
           target.dispatchEvent(new Event('item-set', {bubbles:true}));
         }
-        else {
+        else if (!target.classList.contains('selected')) {
           this.selectItemRange(target, target);
         }
         this.focusItem = target;
@@ -800,10 +796,7 @@
       
       itemTree.addEventListener('blur', function(e) {
         if (!this.contains(e.relatedTarget)) {
-          var selected = this.querySelectorAll('.selected');
-          for (var i = 0; i < selected.length; i++) {
-            selected[i].classList.remove('selected');
-          }
+          e.target.classList.add('focus');
         }
       }, true);
       
@@ -830,15 +823,12 @@
       Object.defineProperty(itemTree, 'focusItem', {
         get: function() {
           var referenceItem = document.activeElement;
-          if (!referenceItem
-              || !referenceItem.classList.contains('item-self')
-              || !(referenceItem.compareDocumentPosition(this) & Node.DOCUMENT_POSITION_CONTAINS)) {
-            return null;
+          if (referenceItem
+              && referenceItem.classList.contains('item')
+              && this.contains(referenceItem)) {
+            return referenceItem;
           }
-          while ((referenceItem = referenceItem.parentNode) !== this) {
-            if (referenceItem.classList.contains('item')) return referenceItem;
-          }
-          return null;
+          return this.querySelector('.focus');
         },
         set: function(item) {
           var rect = item.selfElement.getBoundingClientRect();
@@ -848,7 +838,9 @@
           else if (rect.bottom > this.clientHeight) {
             item.selfElement.scrollIntoView(false);
           }
-          item.selfElement.focus();
+          item.focus();
+          var tempFocus = this.querySelector('.focus');
+          if (tempFocus) tempFocus.classList.remove('focus');
         },
       });
       
