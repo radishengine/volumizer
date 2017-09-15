@@ -815,7 +815,7 @@
         for (var i = 0; i < selected.length; i++) {
           urlList.push(this.getItemURL(selected[i]));
         }
-        e.dataTransfer.setData('text/uri-list', urlList.join('\n'));
+        e.dataTransfer.setData('text/uri-list', urlList.join('\r\n'));
       }, true);
       
       Object.defineProperty(itemTree, 'focusItem', {
