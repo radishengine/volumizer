@@ -56,6 +56,9 @@
         overflow-y: scroll;
         padding: 4px;
       }
+      #content:focus {
+        outline: none;
+      }
       #viewer {
         background: black;
         color: white;
@@ -218,7 +221,7 @@
       </div>
     </div>
     <div id='frame'>
-      <div id='content' data-selection-mode='range'>
+      <div id='content' data-selection-mode='range' tabindex='-1'>
       </div>
       <div id='viewer'>
       </div>
@@ -710,7 +713,16 @@
             break;
           }
         }
-        if (target === this) return;
+        if (target === this) {
+          var allSelected = this.querySelectorAll('.selected');
+          for (var i = 0; i < allSelected.length; i++) {
+            allSelected[i].classList.remove('selected');
+          }
+          var focus = this.querySelector('.focus');
+          if (focus) focus.classList.remove('focus');
+          this.focus();
+          return;
+        }
         e.preventDefault();
         if (e.target.classList.contains('toggler')) {
           target.dispatchEvent(new Event('item-toggle', {bubbles:true}));
