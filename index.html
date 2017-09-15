@@ -807,7 +807,7 @@
         else if (e.ctrlKey) {
           itemEl.dispatchEvent(new Event('item-set', {bubbles:true}));
         }
-        else {
+        else if (!itemEl.classList.contains('selected')) {
           this.selectItemRange(itemEl, itemEl);
         }
         var selected = this.querySelectorAll('.selected');
