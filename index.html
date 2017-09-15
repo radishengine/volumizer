@@ -703,9 +703,7 @@
       var itemTree = document.getElementById('content');
       
       itemTree.addEventListener('mousedown', function onmousedown(e) {
-        if (e.target === this || e.target.classList.contains('toggler')) {
-          e.preventDefault();
-        }
+        e.preventDefault();
       }, true);
       
       itemTree.addEventListener('click', function onclick(e) {
