@@ -848,6 +848,7 @@
       });
       
       itemTree.nextItem = function(referenceItem) {
+        if (referenceItem === null) return null;
         if (referenceItem.classList.contains('open') && referenceItem.childrenElement.firstElementChild) {
           return referenceItem.childrenElement.firstElementChild;
         }
@@ -861,6 +862,7 @@
       };
       
       itemTree.previousItem = function(referenceItem) {
+        if (referenceItem === null) return null;
         if (referenceItem.previousElementSibling) {
           referenceItem = referenceItem.previousElementSibling;
           while (referenceItem.classList.contains('open') && referenceItem.childrenElement.firstElementChild) {
