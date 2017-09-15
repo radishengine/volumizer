@@ -147,6 +147,10 @@
       .item.drop-target > .item-self {
         background: #faa;
       }
+      .appender {
+        display: flex;
+        flex-flow: row nowrap;
+      }
       .appender > .symbol::before {
         content: '\1F4C2';
       }
@@ -159,9 +163,12 @@
         width: 1em;
         text-align: right;
         cursor: pointer;
-      }      
+      }
       .appender > .add::before {
         content: '\2795';
+      }
+      .appender > input {
+        flex-grow: 1;
       }
     </style>
   </head>
