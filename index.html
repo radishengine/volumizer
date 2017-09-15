@@ -784,8 +784,9 @@
         var text = window.getComputedStyle(itemEl.symbolElement, ':before').content;
         var canvas = document.createElement('CANVAS');
         canvas.width = canvas.height = 64;
-        canvas.textAlign = 'center';
-        canvas.fillText(text, 32, 32);
+        var ctx = canvas.getContext('2d');
+        ctx.textAlign = 'center';
+        ctx.fillText(text, 32, 32);
         e.dataTransfer.setDragImage(canvas, canvas.width, canvas.height);
       }, true);
       
