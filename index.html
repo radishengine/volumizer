@@ -803,7 +803,7 @@
         canvas.height = 32;
         var text = window.getComputedStyle(e.target, ':before').content;
         var ctx = canvas.getContext('2d');
-        ctx.drawText(0, 0, 32);
+        ctx.fillText(text, 0, 0, 32);
         e.dataTransfer.setDragImage(canvas);
       }, true);
       
