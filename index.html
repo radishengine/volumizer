@@ -842,8 +842,8 @@
           this.appendChild(icon);
           e.dataTransfer.setDragImage(
             icon,
-            10 + icon.iconElement.clientX - icon.clientX,
-            10 + icon.iconElement.clientY - icon.clientY);
+            10 + icon.iconElement.offsetLeft,
+            10 + icon.iconElement.offsetTop);
         }
       }, true);
       
