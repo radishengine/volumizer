@@ -794,21 +794,28 @@
         e.target.classList.toggle('selected');
       });
       
+      itemTree.getItemURL = function getItemURL(itemEl) {
+        return location.href.replace(/(\?|#).*/, '') + '#' + itemEl.id;
+      };
+      
       itemTree.addEventListener('dragstart', function(e) {
-        for (var item = e.target.parentNode; item; item = item.parentNode) {
-          if (item.classList.contains('item')) break;
+        var itemEl = e.target;
+        if (!itemEl.classList.contains('item')) return;
+        if (e.shiftKey) {
+          itemEl.dispatchEvent(new Event('item-range', {bubbles:true}));
         }
-        if (!item) return;
-        e.dataTransfer.setData('text/plain', item.id);
-        var canvas = document.createElement('CANVAS');
-        canvas.width = 48;
-        canvas.height = 48;
-        var text = window.getComputedStyle(item.symbolElement, ':before').content;
-        var ctx = canvas.getContext('2d');
-        ctx.font = '48px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(String.fromCodePoint(0x1F4C4), 24, 48);
-        e.dataTransfer.setDragImage(canvas, 48, 48);
+        else if (e.ctrlKey) {
+          itemEl.dispatchEvent(new Event('item-set', {bubbles:true}));
+        }
+        else {
+          this.selectItemRange(itemEl, itemEl);
+        }
+        var selected = this.querySelectorAll('.selected');
+        var urlList = [];
+        for (var i = 0; i < selected.length; i++) {
+          urlList.push(this.getItemURL(selected[i]));
+        }
+        e.dataTransfer.setData('text/uri-list', urlList.join('\n'));
       }, true);
       
       Object.defineProperty(itemTree, 'focusItem', {
