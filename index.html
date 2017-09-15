@@ -798,6 +798,15 @@
         return location.href.replace(/(\?|#).*/, '') + '#' + itemEl.id;
       };
       
+      itemTree.addEventListener('blur', function(e) {
+        if (!this.contains(e.relatedTarget)) {
+          var selected = this.querySelector('.selected');
+          for (var i = 0; i < selected.length; i++) {
+            selected[i].classList.remove('selected');
+          }
+        }
+      }, true);
+      
       itemTree.addEventListener('dragstart', function(e) {
         var itemEl = e.target;
         if (!itemEl.classList.contains('item')) return;
@@ -854,7 +863,7 @@
           referenceItem = referenceItem.parentNode.parentNode;
         } while (referenceItem.classList.contains('item'));
         return null;
-      },
+      };
       
       itemTree.previousItem = function(referenceItem) {
         if (referenceItem.previousElementSibling) {
@@ -869,7 +878,7 @@
           return referenceItem;
         }
         return null;
-      },
+      };
       
       itemTree.selectItemRange = function(fromItem, toItem) {
         var selected = this.querySelectorAll('.selected');
