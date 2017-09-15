@@ -1023,6 +1023,7 @@
       });
       
       itemTree.addEventListener('keydown', function onkeydown(e) {
+        if (e.target.tagName === 'INPUT') return;
         switch (e.keyCode) {
           case 32: // space
           case 13: // enter
