@@ -728,7 +728,13 @@
         else if (e.ctrlKey) {
           target.dispatchEvent(new Event('item-set', {bubbles:true}));
         }
-        else if (this.contains(document.activeElement) || !target.classList.contains('selected')) {
+        else if (this.classList.contains('entering')) {
+          if (!target.classList.contains('selected')) {
+            this.selectItemRange(target, target);
+          }
+          this.classList.remove('entering');
+        }
+        else {
           this.selectItemRange(target, target);
         }
         this.focusItem = target;
@@ -815,6 +821,9 @@
           }
           var focus = this.querySelector('.focus');
           if (focus) focus.classList.remove('focus');
+        }
+        else if (!this.contains(e.relatedTarget)) {
+          this.classList.add('entering');
         }
       }, true);
       
