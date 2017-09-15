@@ -816,7 +816,7 @@
           var focus = this.querySelector('.focus');
           if (focus) focus.classList.remove('focus');
         }
-      });
+      }, true);
       
       itemTree.addEventListener('blur', function(e) {
         if (!this.contains(e.relatedTarget)) {
