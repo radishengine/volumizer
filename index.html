@@ -28,12 +28,6 @@
         bottom: 0;
         padding: 30px;
       }
-      .drag-icon {
-        position: fixed;
-        left: 0;
-        top: 0;
-        // transform: translateX(-100%);
-      }
       .drop-border {
         border: 10px dashed silver;
         height: 100%;
@@ -789,7 +783,11 @@
         ctx.textAlign = 'center';
         ctx.fillText(text, 32, 32);
         */
-        return canvas;
+        var img = new Image();
+        img.width = canvas.width;
+        img.height = canvas.height;
+        img.src = canvas.toDataURL();
+        return img;
       };
       
       itemTree.addEventListener('dragstart', function(e) {
@@ -811,8 +809,10 @@
         }
         e.dataTransfer.setData('text/uri-list', location.href.replace(/((#|\?).*)?$/, '?' + urlList.join(',')));
         var text = window.getComputedStyle(itemEl.symbolElement, ':before').content;
-        var icon = this.makeIcon(selected);
-        e.dataTransfer.setDragImage(icon, icon.width, icon.height);
+        if (typeof e.dataTransfer.setDragImage === 'function') {
+          var icon = this.makeIcon(selected);
+          e.dataTransfer.setDragImage(icon, icon.width, icon.height);
+        }
       }, true);
       
       Object.defineProperty(itemTree, 'focusItem', {
