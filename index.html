@@ -64,8 +64,11 @@
       .item:focus {
         outline: none;
       }
-      .item:focus > .item-self, .item.focus > .item-self {
+      .item:focus > .item-self {
         outline: 2px solid rgb(94, 158, 214);
+      }
+      .item.focus > .item-self {
+        outline: 1px solid black;
       }
       
       .item-self {
