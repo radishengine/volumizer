@@ -159,6 +159,9 @@
       .appender > .symbol::before {
         content: '\1F4C2';
       }
+      .appender.web > .symbol::before {
+        content: '\1F310';
+      }
       .appender > .add {
         background: none;
         border: none;
@@ -682,6 +685,12 @@
       }
       
       var itemTree = document.getElementById('content');
+      
+      itemTree.appenderElement = itemTree.querySelector('.appender');
+      itemTree.appenderElement.inputElement = itemTree.appenderElement.querySelector('input');
+      itemTree.appenderElement.inputElement.onchange = function(e) {
+        itemTree.appenderElement.classList.toggle('web', this.value.indexOf('/') !== -1);
+      };
       
       itemTree.addEventListener('dragenter', function ondragenter(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
