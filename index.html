@@ -4,9 +4,6 @@
     <meta charset='utf-8'>
     <title>Volumizer</title>
     <script src='volumizer.js'></script>
-    <!--
-    <script src='VolumizerClient.js'></script>
-    -->
     <style>
       #loadbar {
         background: green;
@@ -137,70 +134,6 @@
         font-size: smaller;
         opacity: 0.5;
       }
-      /*
-      .container > .children {
-        padding-left: 0.75em;
-      }
-      .container > .title {
-        white-space: pre-wrap;
-        cursor: default;
-        letter-spacing -0.05em;
-      }
-      .container.hidden > .title {
-        opacity: 0.6;
-      }
-      .container:not(.open) > .children {
-        display: none;
-      }
-      .toggler {
-        width: 1em;
-        background: none;
-        border: none;
-        outline: none;
-        padding: 0;
-        margin: 0;
-        text-align: right;
-      }
-      .container:not(.open) > .toggler::before {
-        content: '\25b6';
-      }
-      .container.open > .toggler::before {
-        content: '\25BC';
-      }
-      .container.empty > .toggler {
-        visibility: hidden;
-      }
-      .container > .symbol {
-        width: 1.2em;
-        display: inline-block;
-        text-align: right;
-      }
-      .container[data-sectors] > .symbol::before {
-        content: '\1F4BE';
-        cursor: pointer;
-      }
-      .container[data-kind] > .symbol::before {
-        content: '\1F4E6';
-      }
-      .container > .symbol::before {
-        content: '\1F4C4';
-      }
-      .container.folder > .symbol::before {
-        content: '\1F4C2';
-      }
-      .container.open.loading > .toggler::before, .symbol.loading::before {
-        content: '\231B';
-      }
-      .container.open.error > .toggler::before, .symbol.error::before {
-        content: '\26D4';
-      }
-      .container.open.loading > .toggler {
-        cursor: progress;
-      }
-      .symbol.loading {
-        cursor: progress;
-      }
-      */
     </style>
   </head>
   <body>
@@ -642,7 +575,7 @@
     </script>
     -->
     <script>
-      /*
+
       document.body.dragEnterCount = 0;
       
       document.body.ondragenter = function(e) {
@@ -675,7 +608,6 @@
         document.body.classList.remove('dropping');
         volumizer.loadFromDataTransfer(e.dataTransfer);
       };
-      */
       
       function updateItemElement(el, item) {
         el.titleElement.innerText = item.name;
