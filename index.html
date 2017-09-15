@@ -144,7 +144,7 @@
         font-size: smaller;
         opacity: 0.5;
       }
-      .item-self.drop-target {
+      .item.drop-target > .item.item-self {
         background: #faa;
       }
     </style>
@@ -661,18 +661,28 @@
         }
         e.dataTransfer.dropEffect = 'move';
         e.preventDefault();
-        if (e.target.classList.contains('item-self') && !e.target.contains(e.relatedTarget)) {
-          if ((e.target.dragCount = (e.target.dragCount || 0) + 1) === 1) {
-            e.target.classList.add('drop-target');
+        if (target !== this) {
+          if ((target.dragCount = (target.dragCount || 0) + 1) === 1) {
+            target.classList.add('drop-target');
             target.dispatchEvent(new Event('item-open', {bubbles:true}));
           }
         }
       }, true);
       
       itemTree.addEventListener('dragleave', function ondragleave(e) {
-        if (e.target.classList.contains('item-self')) {
-          if ((e.target.dragCount = (e.target.dragCount || 0) - 1) === 0) {
-            e.target.classList.remove('drop-target');
+        for (var target = e.target; target !== this; target = target.parentNode) {
+          if (target.classList.contains('item-self')) {
+            target = target.parentNode;
+            break;
+          }
+          if (target.classList.contains('item')) {
+            return;
+          }
+        }
+        if (target !== this) {
+          if ((target.dragCount = (target.dragCount || 0) - 1) === 0) {
+            target.classList.remove('drop-target');
+            delete target.dragCount;
           }
         }
       }, true);
