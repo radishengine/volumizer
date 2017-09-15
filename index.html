@@ -809,6 +809,7 @@
         var text = window.getComputedStyle(itemEl.symbolElement, ':before').content;
         if (typeof e.dataTransfer.setDragImage === 'function') {
           var icon = this.makeIcon(selected);
+          this.appendChild(icon);
           e.dataTransfer.setDragImage(icon, icon.width, icon.height);
         }
       }, true);
