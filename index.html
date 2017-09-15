@@ -734,7 +734,7 @@
         else if (e.ctrlKey) {
           target.dispatchEvent(new Event('item-set', {bubbles:true}));
         }
-        else if (!target.classList.contains('selected')) {
+        else if (this.contains(document.activeElement) || !target.classList.contains('selected')) {
           this.selectItemRange(target, target);
         }
         this.focusItem = target;
