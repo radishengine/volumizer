@@ -709,6 +709,27 @@
       }
       
       var itemTree = document.getElementById('content');
+      var viewer = document.getElementById('viewer');
+      
+      itemTree.addEventListener('item-focus', function(e) {
+        var item = e.detail;
+        if (!item) {
+          viewer.innerHTML = '';
+          return;
+        }
+        var table = document.createElement('TABLE');
+        for (var k in item.dataset) {
+          var row = document.createElement('TR');
+          var header = document.createElement('TH');
+          var cel = document.createElement('TD');
+          header.innerText = k;
+          cel.innerText = item.dataset[k];
+          row.appendChild(header);
+          row.appendChild(cel);
+          table.appendChild(row);
+        }
+        viewer.appendChild(table);
+      });
       
       itemTree.appenderElement = itemTree.querySelector('.appender');
       itemTree.appenderElement.inputElement = itemTree.appenderElement.querySelector('input');
@@ -903,13 +924,18 @@
           }
           var focus = this.querySelector('.focus');
           if (focus) focus.classList.remove('focus');
+          this.dispatchEvent(new CustomEvent('item-focus', {detail:null}));
         }
         else if (!this.contains(e.relatedTarget)) {
           var focus = this.querySelector('.focus');
           if (focus) {
             focus.classList.remove('focus');
             this.classList.add('entering');
+            this.dispatchEvent(new CustomEvent('item-focus', {detail:null}));
           }
+        }
+        else {
+          this.dispatchEvent(new CustomEvent('item-focus', {detail:e.target}));
         }
       }, true);
       
