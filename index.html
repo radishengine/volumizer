@@ -192,6 +192,7 @@
           <button class='toggler'></button>
           <span class='symbol'></span>
           <span class='item-title'></span>
+          <span class='file-size'></span>
           <time></time>
         </div>
         <div class='item-children'>
@@ -661,10 +662,36 @@
       };
       */
       
+      function getFileSizeString(bytes) {
+        if (bytes <= 1024) {
+          return fileSize + ' bytes';
+        }
+        var kb = bytes / 1024;
+        if (kb < 1024) {
+          return kb.toFixed(1).toString().replace(/\.0$/, '') + 'kb';
+        }
+        var mb = kb / 1024;
+        if (mb < 1024) {
+          return mb.toFixed(1).toString().replace(/\.0$/, '') + 'mb';
+        }
+        var gb = mb / 1024;
+        if (gb < 1024) {
+          return gb.toFixed(1).toString().replace(/\.0$/, '') + 'gb';
+        }
+        var tb = gb / 1024;
+        return tb.toFixed(1).toString().replace(/\.0$/, '') + 'tb';
+      }
+      
       function updateItemElement(el, item) {
         el.titleElement.innerText = item.name;
         el.selfElement.className = ['item-self'].concat(item.classList || []).join(' ');
         el.classList.toggle('empty', item.childCount === 0);
+        if (item.sectors) {
+          var fileSize = item.sectors.split(';').reduce(function(sum, v) {
+            return v + sum.split(',')[1];
+          }, 0);
+          el.sizeElement.innerText = getFileSizeString(fileSize);
+        }
         return el;
       }
       
@@ -680,6 +707,7 @@
         template.selfElement = template.querySelector('.item-self');
         template.titleElement = template.selfElement.querySelector('.item-title');
         template.symbolElement = template.selfElement.querySelector('.symbol');
+        template.sizeElement = template.selfElement.querySelector('.size');
         template.childrenElement = template.querySelector('.item-children');
         return updateItemElement(template, item);
       }
