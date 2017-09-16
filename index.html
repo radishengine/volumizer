@@ -668,18 +668,18 @@
         }
         var kb = bytes / 1024;
         if (kb < 1024) {
-          return kb.toFixed(1).toString().replace(/\.0$/, '') + 'kb';
+          return kb.toFixed(1) + 'kb';
         }
         var mb = kb / 1024;
         if (mb < 1024) {
-          return mb.toFixed(1).toString().replace(/\.0$/, '') + 'mb';
+          return mb.toFixed(1) + 'mb';
         }
         var gb = mb / 1024;
         if (gb < 1024) {
-          return gb.toFixed(1).toString().replace(/\.0$/, '') + 'gb';
+          return gb.toFixed(1) + 'gb';
         }
         var tb = gb / 1024;
-        return tb.toFixed(1).toString().replace(/\.0$/, '') + 'tb';
+        return tb.toFixed(1) + 'tb';
       }
       
       function updateItemElement(el, item) {
