@@ -712,9 +712,9 @@
       var viewer = document.getElementById('viewer');
       
       itemTree.addEventListener('item-focus', function(e) {
+        viewer.innerHTML = '';
         var item = e.detail;
         if (!item) {
-          viewer.innerHTML = '';
           return;
         }
         var table = document.createElement('TABLE');
