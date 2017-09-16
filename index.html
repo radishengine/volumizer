@@ -688,7 +688,7 @@
         el.classList.toggle('empty', item.childCount === 0);
         if (item.sectors) {
           var fileSize = item.sectors.split(';').reduce(function(sum, v) {
-            return v + sum.split(',')[1];
+            return sum + v.split(',')[1];
           }, 0);
           el.sizeElement.innerText = getFileSizeString(fileSize);
         }
