@@ -350,7 +350,7 @@
       
       itemTree.addEventListener('drop', function ondrop(e) {
         e.preventDefault();
-        this.classList.remove'drop-frame');
+        this.classList.remove('drop-frame');
         delete this.totalDragCount;
         for (var target = e.target; target !== this; target = target.parentNode) {
           if (target.classList.contains('item-self')) {
