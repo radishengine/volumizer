@@ -74,6 +74,9 @@
       .item:focus > .item-self {
         outline: 2px solid rgb(94, 158, 214);
       }
+      .drop-frame .appender {
+        visibility: hidden;
+      }
       
       .item-self {
         display: flex;
@@ -297,6 +300,9 @@
         }
         e.dataTransfer.dropEffect = 'move';
         e.preventDefault();
+        if ((this.totalDragCount = (this.totalDragCount || 0) + 1) === 1) {
+          this.classList.add('drop-frame');
+        }
         if ((target.dragCount = (target.dragCount || 0) + 1) === 1) {
           if (target === this) {
             target.classList.add('drop-target');
@@ -317,6 +323,10 @@
           if (target.classList.contains('item')) {
             return;
           }
+        }
+        if ((this.totalDragCount = (this.totalDragCount || 0) - 1) === 0) {
+          this.classList.add('drop-frame');
+          delete this.totalDragCount;
         }
         if ((target.dragCount = (target.dragCount || 0) - 1) === 0) {
           target.classList.remove('drop-target');
