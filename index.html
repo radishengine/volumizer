@@ -325,7 +325,7 @@
           }
         }
         if ((this.totalDragCount = (this.totalDragCount || 0) - 1) === 0) {
-          this.classList.add('drop-frame');
+          this.classList.remove('drop-frame');
           delete this.totalDragCount;
         }
         if ((target.dragCount = (target.dragCount || 0) - 1) === 0) {
@@ -350,6 +350,8 @@
       
       itemTree.addEventListener('drop', function ondrop(e) {
         e.preventDefault();
+        this.removeClass('drop-frame');
+        delete this.totalDragCount;
         for (var target = e.target; target !== this; target = target.parentNode) {
           if (target.classList.contains('item-self')) {
             target = target.parentNode;
