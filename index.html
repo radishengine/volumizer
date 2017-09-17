@@ -926,15 +926,14 @@
           if (focus) focus.classList.remove('focus');
           this.dispatchEvent(new CustomEvent('item-focus', {detail:null}));
         }
-        else if (!this.contains(e.relatedTarget)) {
-          var focus = this.querySelector('.focus');
-          if (focus) {
-            focus.classList.remove('focus');
-            this.classList.add('entering');
-            this.dispatchEvent(new CustomEvent('item-focus', {detail:null}));
-          }
-        }
         else {
+          if (!this.contains(e.relatedTarget)) {
+            var focus = this.querySelector('.focus');
+            if (focus) {
+              focus.classList.remove('focus');
+              this.classList.add('entering');
+            }
+          }
           this.dispatchEvent(new CustomEvent('item-focus', {detail:e.target}));
         }
       }, true);
