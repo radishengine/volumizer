@@ -17,17 +17,6 @@
         transform-origin: left;
         transition: transform 0.1s, opacity 0.3s;
       }
-      #dropzone {
-        display: none;
-        position: fixed;
-        z-order: 1000;
-        background: rgba(255, 255, 255, 0.);
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        padding: 30px;
-      }
       .drag-icon {
         position: fixed;
         left: 0;
@@ -73,6 +62,9 @@
         color: white;
       }
       
+      .item {
+        background: white;
+      }
       .item:focus {
         outline: none;
       }
@@ -146,7 +138,10 @@
         font-size: smaller;
         opacity: 0.5;
       }
-      .item.drop-target > .item-self {
+      .item-list.drop-target {
+        background: #faa;
+      }
+      .item.drop-target {
         background: #faa;
       }
       .item.drop-target:focus > .item-self {
@@ -206,457 +201,7 @@
       <div id='viewer'>
       </div>
     </div>
-    <!--
     <script>
-      
-      var vc = null;
-      var blobVC = new VolumizerClient;
-      
-      function initItem(item) {
-        var filename = item.dataset.filename || '';
-        var structure = [];
-        var encoding = null;
-        if (/\.(?:iso|dsk|img|image|toast|cdr)$/i.test(filename)) {
-          structure.push('mac/partitioned', 'mac/hfs', 'mac/mfs');
-        }
-        if (/\.rsrc$/i.test(filename)) {
-          structure.push('mac/single-or-double');
-        }
-        if (/\.stak$/i.test(filename)) {
-          structure.push('hypercard/stack');
-        }
-        if (/\.sit$/i.test(filename)) {
-          structure.push('sit/v5', 'sit/original');
-        }
-        if (/\.sea$/i.test(filename)) {
-          structure.push('sit/original');
-        }
-        if (/\.hqx$/i.test(filename)) {
-          structure.push('mac/hqx');
-          encoding = 'mac/hqx';
-        }
-        if (structure.length) item.dataset.kind = structure.join(' ');
-        if (encoding) item.dataset.encoding = encoding;
-      }
-      
-      function createItemElement() {
-        var el = document.querySelector('#templates > .container').cloneNode(true);
-        el.titleElement = el.querySelector('.title');
-        el.childrenElement = el.querySelector('.children');
-        el.symbolElement = el.querySelector('.symbol');
-        el.classList.add('empty');
-        return el;
-      }
-      
-      function getElementForPath(pathRoot, path) {
-        if (path.length === 0) return pathRoot;
-        var encoded = path.map(encodeURIComponent).join('/');
-        var els = pathRoot.querySelectorAll('[data-path="' + encoded.replace('/', '\\/') + '"]');
-        var el;
-        finding: for (var i = 0; i < els.length; i++) {
-          for (var ancestor = els[i].parentNode; ancestor !== pathRoot; ancestor = ancestor.parentNode) {
-            if (ancestor.classList.contains('path-root')) continue finding;
-          }
-          el = els[i];
-          break;
-        }
-        if (!el) {
-          el = createItemElement();
-          el.dataset.path = encoded;
-          el.dataset.filename = el.titleElement.innerText = path[path.length-1];
-          if (path.length === 1) {
-            pathRoot.childrenElement.appendChild(el);
-          }
-          else {
-            var parentEl = getElementForPath(pathRoot, path.slice(0, -1));
-            parentEl.classList.remove('empty');
-            parentEl.childrenElement.appendChild(el);
-          }
-        }
-        return el;
-      }
-      
-      function encodeSectors(sectors) {
-        return sectors.map(function(sector) {
-          return sector.offset + ',' + sector.length;
-        }).join(';');
-      }
-      
-      function decodeSectors(sectorString) {
-        return sectorString.split(';').map(function(sector) {
-          sector = sector.split(',');
-          return {offset:+sector[0], length:+sector[1]};
-        });
-      }
-      
-      function decodeEl(encodedEl, sourceEl) {
-        return blobVC.task({
-          headline: 'decode',
-          encoding: encodedEl.dataset.encoding,
-          decodedLength: +encodedEl.dataset.decodedLength,
-          source: sourceEl.source,
-          sectors: decodeSectors(encodedEl.dataset.sectors),
-        })
-        .then(function(result) {
-          encodedEl.source = result;
-          delete encodedEl.dataset.encoding;
-          delete encodedEl.dataset.decodedLength;
-          encodedEl.dataset.sectors = '0,' + result.size;
-          encodedEl.classList.add('source');
-        });
-      }
-      
-      function downloadEl(el, sourceEl) {
-        return blobVC.task({
-          headline: 'get-blob',
-          source: sourceEl.source,
-          sectors: decodeSectors(el.dataset.sectors),
-        })
-        .then(function(blob) {
-          var a = document.createElement('A');
-          a.setAttribute('href', URL.createObjectURL(blob));
-          a.setAttribute('download', el.dataset.filename);
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        });
-      }
-      
-      function volumizeEl(volumeEl, sourceEl) {
-        return blobVC.task({
-          headline: 'volumize',
-          sectors: decodeSectors(volumeEl.dataset.sectors),
-          source: sourceEl.source,
-          structure: volumeEl.dataset.kind.split(' '),
-        },
-        {
-          onentry: function(entry) {
-            var item = getElementForPath(volumeEl, entry.path);
-            item.classList.remove('empty');
-            if (entry.metadata.isFolder) item.classList.add('folder');
-            if (entry.metadata.isInvisible) item.classList.add('hidden');
-            if (entry.sectors && entry.sectors.length > 0) {
-              item.dataset.sectors = encodeSectors(entry.sectors);
-              if ('encoding' in entry) {
-                item.dataset.encoding = entry.encoding;
-                item.dataset.decodedLength = entry.decodedLength;
-              }
-            }
-            if (entry.secondary
-                && entry.secondary.resourceFork
-                && entry.secondary.resourceFork.sectors
-                && entry.secondary.resourceFork.sectors.length > 0) {
-              var resItem = createItemElement();
-              resItem.titleElement.innerText = '[resources]';
-              resItem.dataset.kind = 'mac/resource-fork';
-              resItem.dataset.sectors = encodeSectors(entry.secondary.resourceFork.sectors);
-              if ('encoding' in entry.secondary.resourceFork) {
-                resItem.dataset.encoding = entry.secondary.resourceFork.encoding;
-                resItem.dataset.decodedLength = entry.secondary.resourceFork.decodedLength;
-              }
-              resItem.classList.remove('empty');
-              resItem.classList.add('hidden');
-              item.childrenElement.appendChild(resItem);
-            }
-            initItem(item);
-            /*
-            var path = ('path' in entry) ? entry.path : [entry.metadata.type];
-            var folder = getElementForPath(volumeEl, path);
-            if (entry.metadata.isFolder || !('path' in entry)) folder.classList.add('folder');
-            folder.classList.remove('empty');
-            var entryEl = createItemElement();
-            entryEl.titleElement.innerText = '[' + entry.metadata.id + ']';
-            if (entry.metadata.name) {
-              entryEl.titleElement.innerText += ' ' + entry.metadata.name;
-            }
-            if (entry.sectors && entry.sectors.length > 0) {
-              entryEl.dataset.sectors = encodeSectors(entry.sectors);
-            }
-            folder.childrenElement.appendChild(entryEl);
-            */
-          },
-        });
-      }
-      
-      document.getElementById('content').addEventListener('click', function(e) {
-        for (var el = e.target; el !== this; el = el.parentNode) {
-          if (el.classList.contains('container')) {
-            if (el.classList.contains('empty')) {
-              break;
-            }
-            var nowOpen = el.classList.toggle('open');
-            if (nowOpen
-                && 'kind' in el.dataset
-                && !el.classList.contains('loading')
-                && !el.classList.contains('loaded')) {
-              for (var sourceEl = el; sourceEl; sourceEl = sourceEl.parentNode) {
-                if (!sourceEl.classList.contains('source')) continue;
-                el.classList.add('loading');
-                var promise;
-                if ('encoding' in el.dataset) {
-                  promise = decodeEl(el, sourceEl)
-                  .then(volumizeEl.bind(null, el, el));
-                }
-                else {
-                  promise = volumizeEl(el, sourceEl);
-                }
-                promise.then(function() {
-                  el.classList.remove('loading');
-                  el.classList.add('loaded');
-                  if (!el.childrenElement.firstElementChild) {
-                    el.classList.add('empty');
-                  }
-                })
-                .catch(function() {
-                  el.classList.remove('loading');
-                  el.classList.add('loaded');
-                  el.classList.add('error');
-                });
-                break;
-              }
-            }
-            break;
-          }
-          if (el.classList.contains('symbol')) {
-            var symbolEl = el;
-            if (symbolEl.classList.contains('loading')) {
-              return;
-            }
-            for (var containerEl = symbolEl.parentNode; containerEl !== this; containerEl = containerEl.parentNode) {
-              if (!containerEl.classList.contains('container')) continue;
-              if (!('sectors' in containerEl.dataset)) break;
-              var sectors = containerEl.dataset.sectors.split(';').map(function(sector) {
-                sector = sector.split(',');
-                return {offset:+sector[0], length:+sector[1]};
-              });
-              for (var sourceEl = containerEl; sourceEl !== this.parentNode; sourceEl = sourceEl.parentNode) {
-                if (!(sourceEl.classList.contains('source'))) continue;
-                symbolEl.classList.add('loading');
-                var promise;
-                if ('encoding' in containerEl.dataset) {
-                  promise = decodeEl(containerEl, sourceEl)
-                  .then(downloadEl.bind(null, containerEl, containerEl));
-                }
-                else {
-                  promise = downloadEl(containerEl, sourceEl);
-                }
-                promise.then(function() {
-                  symbolEl.classList.remove('loading');
-                })
-                .catch(function(reason) {
-                  symbolEl.classList.remove('loading');
-                  symbolEl.classList.add('error');
-                  symbolEl.setAttribute('title', reason || 'error');
-                });
-                return;
-              }
-              break;
-            }
-          }
-        }
-      });
-      
-      function loadFile(file, sectors) {
-        var item = createItemElement();
-        item.source = file;
-        item.titleElement.innerText = file.name;
-        item.dataset.filename = file.name;
-        item.classList.add('source', 'path-root');
-        item.classList.remove('empty');
-        item.dataset.sectors = encodeSectors(sectors);
-        initItem(item);
-        document.getElementById('content').appendChild(item);
-        /*
-        if (encoding) item.dataset.encoding = encoding;
-        root.childrenElement = root;
-        root.classList.add('source', 'loading', 'path-root');
-        root.innerHTML = '';
-        root.source = file;
-        vc.task(
-          {
-            headline: 'volumize',
-            source: file,
-            sectors: sectors,
-            structure: structure,
-          },
-          {
-            onentry: function(entry) {
-              if ('path' in entry) {
-                var el = getElementForPath(root, entry.path);
-                if (entry.path.length === 1) {
-                  el.classList.add('loading', 'open');
-                }
-                if (entry.metadata.isInvisible) {
-                  el.classList.add('hidden');
-                }
-                if (entry.metadata.isFolder) {
-                  el.classList.add('folder');
-                }
-                else {
-                  el.classList.add('file');
-                }
-                if ('encoding' in entry) {
-                  el.dataset.encoding = entry.encoding;
-                  if ('decodedLength' in entry) {
-                    el.dataset.decodedLength = ''+entry.decodedLength;
-                  }
-                }
-                var filename = entry.path.slice(-1)[0];
-                if (entry.sectors && entry.sectors.length > 0) {
-                  el.dataset.filename = filename;
-                  el.dataset.sectors = entry.sectors.map(function(sector) {
-                    return sector.offset + ',' + sector.length;
-                  }).join(';');
-                  if (entry.metadata.type === 'STAK') {
-                    var stackEl = getElementForPath(root, entry.path.concat('[stack]'));
-                    stackEl.dataset.filename = filename + '.stak';
-                    stackEl.dataset.kind = 'hypercard/stack';
-                    stackEl.classList.add('hidden', 'path-root');
-                    stackEl.classList.remove('empty');
-                    stackEl.dataset.sectors = el.dataset.sectors;
-                  }
-                }
-                if (entry.secondary
-                    && entry.secondary.resourceFork
-                    && entry.secondary.resourceFork.sectors
-                    && entry.secondary.resourceFork.sectors.length > 0) {
-                  el = getElementForPath(root, entry.path.concat('[resources]'));
-                  el.dataset.filename = filename + '.rsrc';
-                  el.dataset.kind = 'mac/resource-fork';
-                  el.classList.add('hidden', 'path-root');
-                  el.classList.remove('empty');
-                  el.dataset.sectors = entry.secondary.resourceFork.sectors.map(function(sector) {
-                    return sector.offset + ',' + sector.length;
-                  }).join(';');
-                  if ('encoding' in entry.secondary.resourceFork) {
-                    el.dataset.encoding = entry.secondary.resourceFork.encoding;
-                    if ('decodedLength' in entry.secondary.resourceFork) {
-                      el.dataset.decodedLength = ''+entry.secondary.resourceFork.decodedLength;
-                    }
-                  }                  
-                }
-              }
-              else if (entry.as === 'mac/partitioned') {
-                var type = entry.metadata.type.toLowerCase();
-                if (type === 'apple_hfs') {
-                  loadFile(file, ['mac/hfs'], null, entry.sectors);
-                }
-                else if (type === 'apple_mfs') {
-                  loadFile(file, ['mac/mfs'], null, entry.sectors);
-                }
-              }
-              else {
-                console.dir(entry);
-              }
-            },
-          }
-        ).then(function() {
-          for (var el = root.firstElementChild; el; el = el.nextElementSibling) {
-            el.classList.remove('loading');
-          }
-        })
-        .catch(function(reason) {
-          for (var el = root.firstElementChild; el; el = el.nextElementSibling) {
-            el.classList.remove('loading');
-            el.classList.add('error');
-          }
-        });
-        */
-      }
-      
-      function onFile(file, sectors) {
-        return loadFile(file, [{offset:0, length:file.size}]);
-      }
-      
-      document.body.dragEnterCount = 0;
-      
-      document.body.ondragenter = function(e) {
-        e.preventDefault();
-        if (++document.body.dragEnterCount === 1) {
-          e.dataTransfer.dropEffect = 'copy';
-          document.body.classList.add('dropping');
-        }
-      };
-
-      document.documentElement.ondragenter = function(e) {
-        e.preventDefault();
-        document.body.classList.add('dropping');
-      };
-      document.body.ondragleave = function(e) {
-        e.preventDefault();
-        if (--document.body.dragEnterCount === 0) {
-          document.body.classList.remove('dropping');
-        }
-      };
-      document.body.ondragover = function(e) {
-        e.preventDefault();
-      }
-      document.body.ondragend = function(e) {
-        e.preventDefault();
-        document.body.classList.remove('dropping');
-      };
-      document.body.ondrop = function(e) {
-        e.preventDefault();
-        document.body.classList.remove('dropping');
-        var file = e.dataTransfer.files && e.dataTransfer.files[0];
-        if (file) {
-          if (/^#?(upload:|$)/.test(location.hash)) {
-            history.replaceState(undefined, undefined, '#upload:' + file.name);
-          }
-          else {
-            history.pushState(undefined, undefined, '#upload:' + file.name);
-          }
-          onFile(file);
-        }
-      };
-      
-      window.onkeydown = function(e) {
-        if (e.keyCode === 27) {
-          if (vc) {
-            vc.close();
-            vc = null;
-          }
-        }
-      };
-      
-    </script>
-    -->
-    <script>
-
-      /*
-      document.body.dragEnterCount = 0;
-      
-      document.body.ondragenter = function(e) {
-        e.preventDefault();
-        if (++document.body.dragEnterCount === 1) {
-          e.dataTransfer.dropEffect = 'copy';
-          document.body.classList.add('dropping');
-        }
-      };
-
-      document.documentElement.ondragenter = function(e) {
-        e.preventDefault();
-        document.body.classList.add('dropping');
-      };
-      document.body.ondragleave = function(e) {
-        e.preventDefault();
-        if (--document.body.dragEnterCount === 0) {
-          document.body.classList.remove('dropping');
-        }
-      };
-      document.body.ondragover = function(e) {
-        e.preventDefault();
-      }
-      document.body.ondragend = function(e) {
-        e.preventDefault();
-        document.body.classList.remove('dropping');
-      };
-      document.body.ondrop = function(e) {
-        e.preventDefault();
-        document.body.classList.remove('dropping');
-        volumizer.loadFromDataTransfer(e.dataTransfer);
-      };
-      */
       
       function getFileSizeString(bytes) {
         if (bytes <= 1024) {
@@ -752,8 +297,11 @@
         }
         e.dataTransfer.dropEffect = 'move';
         e.preventDefault();
-        if (target !== this) {
-          if ((target.dragCount = (target.dragCount || 0) + 1) === 1) {
+        if ((target.dragCount = (target.dragCount || 0) + 1) === 1) {
+          if (target === this) {
+            target.classList.add('drop-target');
+          }
+          else {
             target.classList.add('drop-target');
             target.dispatchEvent(new Event('item-open', {bubbles:true}));
           }
@@ -770,11 +318,9 @@
             return;
           }
         }
-        if (target !== this) {
-          if ((target.dragCount = (target.dragCount || 0) - 1) === 0) {
-            target.classList.remove('drop-target');
-            delete target.dragCount;
-          }
+        if ((target.dragCount = (target.dragCount || 0) - 1) === 0) {
+          target.classList.remove('drop-target');
+          delete target.dragCount;
         }
       }, true);
       
