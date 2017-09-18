@@ -312,12 +312,8 @@
       
       itemTree.addEventListener('dragleave', function ondragleave(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item-self')) {
-            target = target.parentNode;
-            break;
-          }
           if (target.classList.contains('item')) {
-            return;
+            break;
           }
         }
         if ((this.totalDragCount = (this.totalDragCount || 0) - 1) === 0) {
@@ -332,7 +328,7 @@
       
       itemTree.addEventListener('dragover', function ondragover(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item-self')) {
+          if (target.classList.contains('item')) {
             break;
           }
         }
