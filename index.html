@@ -42,8 +42,8 @@
       #selector-panel {
         display: flex;
         flex-flow: column nowrap;
-        flex-grow: 1;
         background: #f3f3f3;
+        width: 20em;
       }
       .item-tree {
         flex-grow: 1;
@@ -59,6 +59,7 @@
         outline: none;
       }
       #viewer-panel {
+        flex-grow: 1;
       }
       
       .drag-bar {
@@ -868,7 +869,7 @@
       
       dragBar.onmousedown = function onmousedown(e) {
         function onmousemove(e) {
-          dragBar.nextElementSibling.style.flexGrow = 1 - (e.screenX / screen.width);
+          dragBar.previousElementSibling.style.flexGrow = e.screenX + 'px';
         }
         function onmouseup(e) {
           document.removeEventListener('mousemove', onmousemove);
