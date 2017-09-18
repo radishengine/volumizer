@@ -148,7 +148,7 @@
         outline: 2px solid #f00;
       }
       .item-actions {
-        box-shadow: 0 -1px 3px rgba(0,0,0,0.5);
+        border-bottom: 1px solid #aaa;
       }
       .appender {
         display: flex;
@@ -190,9 +190,8 @@
       <div id='selector-panel'>
         <div id='item-actions'>
           <div class='appender'>
-            <button class='add'>Add:</button>
             <span class='symbol'></span>
-            <input type='text' placeholder='New Folder' spellcheck='false'>
+            <input type='text' placeholder='Enter URL...' spellcheck='false'>
           </div>
         </div>
         <div class='item-tree' data-selection-mode='range' tabindex='-1'>
