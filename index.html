@@ -333,11 +333,7 @@
       itemTree.addEventListener('dragover', function ondragover(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
           if (target.classList.contains('item-self')) {
-            target = target.parentNode;
             break;
-          }
-          if (target.classList.contains('item')) {
-            return;
           }
         }
         e.dataTransfer.dropEffect = 'move';
