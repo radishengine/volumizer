@@ -53,11 +53,17 @@
         padding: 4px;
         display: flex;
         flex-flow: column nowrap;
+        margin-bottom: 2ex;
       }
       .item-tree:focus {
         outline: none;
       }
       #viewer-panel {
+      }
+      
+      .drag-bar {
+        cursor: ew-resize;
+        border: 2px solid black;
       }
       
       .item {
@@ -855,6 +861,20 @@
           loadBar.style.opacity = 0;
         }
       });
+      
+      var dragBar = document.querySelector('.drag-bar');
+      
+      dragBar.onmousedown = function onmousedown(e) {
+        function onmousemove(e) {
+          dragBar.nextElementSibling.style.flexGrow = 1 - (e.screenX / screen.width);
+        }
+        function onmouseup(e) {
+          document.removeEventListener('mousemove', onmousemove);
+          document.removeEventListener('mouseup', onmouseup);
+        }
+        document.addEventListener('mousemove', onmousemove);
+        document.addEventListener('mouseup', onmouseup);
+      };
       
     </script>
   </body>
