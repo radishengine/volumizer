@@ -869,7 +869,7 @@
       
       dragBar.onmousedown = function onmousedown(e) {
         function onmousemove(e) {
-          dragBar.previousElementSibling.style.flexGrow = e.screenX + 'px';
+          dragBar.previousElementSibling.style.width = e.screenX + 'px';
         }
         function onmouseup(e) {
           document.removeEventListener('mousemove', onmousemove);
