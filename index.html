@@ -828,6 +828,8 @@
           var itemEl = makeItemElement(items[i]);
           itemTree.appendChild(itemEl);
           if (items.length === 1) {
+            itemTree.selectItemRange(itemEl, itemEl);
+            itemTree.focusItem = itemEl;
             itemEl.dispatchEvent(new Event('item-open', {bubbles:true}));
           }
         }
