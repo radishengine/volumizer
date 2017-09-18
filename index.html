@@ -35,7 +35,7 @@
         display: block;
       }
       
-      #frame {
+      #panels {
         position: fixed;
         display: flex;
         flex-flow: row nowrap;
@@ -45,7 +45,7 @@
         top: 0;
         bottom: 0;
       }
-      #content {
+      #selector-panel {
         flex-grow: 1;
         overflow-x: none;
         overflow-y: auto;
@@ -54,10 +54,10 @@
         display: flex;
         flex-flow: column nowrap;
       }
-      #content:focus {
+      #selector-panel:focus {
         outline: none;
       }
-      #viewer {
+      #viewer-panel {
         background: black;
         color: white;
       }
@@ -193,15 +193,15 @@
         </div>
       </div>
     </div>
-    <div id='frame'>
-      <div id='content' class='item-tree' data-selection-mode='range'>
+    <div id='panels'>
+      <div id='selector-panel' class='item-tree' data-selection-mode='range'>
         <div class='appender'>
           <button class='add'>Add:</button>
           <span class='symbol'></span>
           <input type='text' placeholder='New Folder' spellcheck='false'>
         </div>
       </div>
-      <div id='viewer'>
+      <div id='viewer-panel'>
       </div>
     </div>
     <script>
@@ -256,8 +256,8 @@
         return updateItemElement(template, item);
       }
       
-      var itemTree = document.getElementById('content');
-      var viewer = document.getElementById('viewer');
+      var itemTree = document.getElementById('selector-panel');
+      var viewer = document.getElementById('viewer-panel');
       
       itemTree.addEventListener('item-focus', function(e) {
         viewer.innerHTML = '';
