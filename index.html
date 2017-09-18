@@ -868,8 +868,11 @@
       var dragBar = document.querySelector('.drag-bar');
       
       dragBar.onmousedown = function onmousedown(e) {
+        var rect = dragBar.previousElementSibling.getClientBoundingRect();
+        var width = rect.right - rect.left;
         function onmousemove(e) {
-          dragBar.previousElementSibling.style.width = e.screenX + 'px';
+          width += e.movementX;
+          dragBar.previousElementSibling.style.width = width + 'px';
         }
         function onmouseup(e) {
           document.removeEventListener('mousemove', onmousemove);
