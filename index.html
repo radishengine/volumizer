@@ -868,7 +868,7 @@
       var dragBar = document.querySelector('.drag-bar');
       
       dragBar.onmousedown = function onmousedown(e) {
-        var rect = dragBar.previousElementSibling.getClientBoundingRect();
+        var rect = dragBar.previousElementSibling.getBoundingClientRect();
         var width = rect.right - rect.left;
         function onmousemove(e) {
           width += e.movementX;
