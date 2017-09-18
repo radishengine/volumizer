@@ -27,10 +27,6 @@
       .drag-icon > span {
         font-size: 32px;
       }
-      .drop-border {
-        border: 10px dashed silver;
-        height: 100%;
-      }
       
       #panels {
         position: fixed;
@@ -142,7 +138,7 @@
       .item-tree.drop-target {
         background: #faa;
       }
-      .item.drop-target {
+      .item.drop-target, .item.selected.drop-target {
         background: #faa;
       }
       .item.drop-target:focus > .item-self {
