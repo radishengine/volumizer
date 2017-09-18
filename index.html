@@ -290,12 +290,8 @@
       
       itemTree.addEventListener('dragenter', function ondragenter(e) {
         for (var target = e.target; target !== this; target = target.parentNode) {
-          if (target.classList.contains('item-self')) {
-            target = target.parentNode;
-            break;
-          }
           if (target.classList.contains('item')) {
-            return;
+            break;
           }
         }
         e.dataTransfer.dropEffect = 'move';
