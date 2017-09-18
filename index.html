@@ -47,14 +47,14 @@
       }
       #selector-panel {
         flex-grow: 1;
-        overflow-x: none;
+        overflow-x: hidden;
         overflow-y: auto;
         overflow-y: scroll;
         padding: 4px;
         display: flex;
         flex-flow: column nowrap;
       }
-      #selector-panel:focus {
+      .item-tree:focus {
         outline: none;
       }
       #viewer-panel {
@@ -155,8 +155,6 @@
         display: flex;
         flex-flow: row nowrap;
         flex-grow: 1;
-        order: 100;
-        align-items: start;
       }
       .appender > .symbol::before {
         content: '\1F4C2';
@@ -194,11 +192,15 @@
       </div>
     </div>
     <div id='panels'>
-      <div id='selector-panel' class='item-tree' data-selection-mode='range'>
-        <div class='appender'>
-          <button class='add'>Add:</button>
-          <span class='symbol'></span>
-          <input type='text' placeholder='New Folder' spellcheck='false'>
+      <div id='selector-panel'>
+        <div class='item-tree' data-selection-mode='range' tabindex='-1'>
+        </div>
+        <div id='item-actions'>
+          <div class='appender'>
+            <button class='add'>Add:</button>
+            <span class='symbol'></span>
+            <input type='text' placeholder='New Folder' spellcheck='false'>
+          </div>
         </div>
       </div>
       <div id='viewer-panel'>
@@ -207,8 +209,8 @@
     <script>
       
       function getFileSizeString(bytes) {
-        if (bytes <= 1024) {
-          return fileSize + ' bytes';
+        if (bytes <= 10000) {
+          return bytes + ' bytes';
         }
         var kb = bytes / 1024;
         if (kb < 1024) {
@@ -256,7 +258,7 @@
         return updateItemElement(template, item);
       }
       
-      var itemTree = document.getElementById('selector-panel');
+      var itemTree = document.querySelector('.item-tree');
       var viewer = document.getElementById('viewer-panel');
       
       itemTree.addEventListener('item-focus', function(e) {
