@@ -319,7 +319,9 @@
                 var b = bytes[i];
                 if (b === 0) continue;
                 var x = i % 32;
-                var y = Math.floor(i/2048)*64 + Math.floor((i%2048) / (32*8)) + 32*(i % 32);
+                var third = Math.floor(i / 2048);
+                var line = Math.floor((i % 2048) / 32);
+                var y = third*64 + Math.floor(line/8) + (line%8)*8;
                 if (b === 0xff) {
                   ctx.fillRect(x*8, y, 8, 1);
                   continue;
