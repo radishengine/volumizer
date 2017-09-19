@@ -341,6 +341,7 @@
                 var y = Math.floor(i / 32) * 8;
                 var x = (i % 32) * 8;
                 ctx.save();
+                ctx.beginPath();
                 ctx.rect(x, y, 8, 8);
                 ctx.clip();
                 ctx.fillStyle = fgcol;
