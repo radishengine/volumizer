@@ -365,6 +365,9 @@
         }
         target.classList.remove('drop-target');
         delete target.dragCount;
+        if (target === this) {
+          volumizer.loadFromDataTransfer(e.dataTransfer);
+        }
       }, true);
       
       itemTree.addEventListener('mousedown', function onmousedown(e) {
