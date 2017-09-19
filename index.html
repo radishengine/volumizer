@@ -323,7 +323,7 @@
                     var mask = 1 << 7;
                     for (var bi = 0; bi < 8; bi++) {
                       if (b&mask) {
-                        ctx.fillRect(pb_x * 8 + bi, pb_y * 8, 1, 1);
+                        ctx.fillRect(pb_x * 8 + bi, pb_i * 64 + pb_y, 1, 1);
                       }
                       mask >>>= 1;
                     }
