@@ -276,7 +276,7 @@
       
       itemTree.getItemText = function(itemEl, fieldName) {
         if (fieldName in itemEl.dataset) {
-          return item.dataset[fieldName];
+          return itemEl.dataset[fieldName];
         }
         if ((fieldName+'_enc') in itemEl.dataset) {
           throw new Error('NYI: encoded text values');
