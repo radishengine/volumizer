@@ -241,6 +241,7 @@
       }
       
       function updateItemElement(el, item) {
+        Object.assign(el.dataset, item);
         el.titleElement.innerText = item.name;
         el.selfElement.className = ['item-self'].concat(item.classList || []).join(' ');
         el.classList.toggle('empty', item.childCount === 0);
@@ -273,6 +274,16 @@
       var itemTree = document.querySelector('.item-tree');
       var viewer = document.getElementById('viewer-panel');
       
+      itemTree.getItemText = function(itemEl, fieldName) {
+        if (fieldName in itemEl.dataset) {
+          return item.dataset[fieldName];
+        }
+        if ((fieldName+'_enc') in itemEl.dataset) {
+          throw new Error('NYI: encoded text values');
+        }
+        return null;
+      };
+      
       itemTree.addEventListener('item-focus', function(e) {
         viewer.innerHTML = '';
         var item = e.detail;
@@ -291,6 +302,17 @@
           table.appendChild(row);
         }
         viewer.appendChild(table);
+        var name = this.getItemText(item, 'name');
+        if (name && /\.scr$/i.test(name)) {
+          volumizer.getItemBlob(this.getItemKey(item)).then(function(blob) {
+            if (!blob) return;
+            var fr = new FileReader;
+            fr.onload = function() {
+              console.log(this.result);
+            };
+            fr.readAsArrayBuffer(blob);
+          });
+        }
       });
       
       itemTree.appenderElement = document.querySelector('.appender');
