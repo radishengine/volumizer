@@ -432,21 +432,29 @@ volumizer.getItemBlob = function getItemBlob(id) {
   return volumizer.withTransaction(['items', 'dataSources'], 'readonly', function(t) {
     return new Promise(function(resolve, reject) {
       t.objectStore('items').get(id).onsuccess = function(e) {
-        if (!(this.result && 'source' in this.result)) return;
+        if (!(this.result && 'source' in this.result)) {
+          resolve();
+          return;
+        }
         var source = this.result.source, sectors = this.result.sectors;
         var from = t.objectStore('dataSources');
         if (typeof source === 'string') {
           from = from.index('byURL');
         }
         from.get(source).onsuccess = function(e) {
-          if (!(this.result && 'blob' in this.result)) return;
+          if (!(this.result && 'blob' in this.result)) {
+            resolve();
+            return;
+          }
           var blob = this.result.blob;
           sectors = sectors || ('0,'+blob.size);
-          if (sectors === ('0,'+blob.size)) return blob;
-          resolve(new Blob(sectors.split(';').map(function(section) {
-            section = section.split(',').map(parseInt);
-            return blob.slice(section[0], section[0] + section[1]);
-          })));
+          if (sectors !== ('0,'+blob.size)) {
+            blob = new Blob(sectors.split(';').map(function(section) {
+              section = section.split(',').map(parseInt);
+              return blob.slice(section[0], section[0] + section[1]);
+            }));
+          }
+          resolve(blob);
         };
       };
     });
