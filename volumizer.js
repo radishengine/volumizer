@@ -428,6 +428,29 @@ volumizer.deleteItems = function deleteItems(ids) {
   });
 };
 
+volumizer.getItemBlob = function getItemBlob(id) {
+  return volumizer.withTransaction(['items', 'dataSources'], 'readonly', function(t) {
+    t.objectStore('items').get(id).onsuccess = function(e) {
+      if (!(this.result && 'source' in this.result)) return;
+      var source = this.result.source, sections = this.result.sections;
+      var from = t.objectStore('dataSources');
+      if (typeof source === 'string') {
+        from = from.index('byURL');
+      }
+      from.get(source).onsuccess = function(e) {
+        if (!(this.result && 'blob' in this.result)) return;
+        var blob = this.result.blob;
+        sections = sections || ('0,'+blob.size);
+        if (sections === ('0,'+blob.size)) return blob;
+        t.result = new Blob(sections.split(';').map(function(section) {
+          section = section.split(',').map(parseInt);
+          return blob.slice(section[0], section[0] + section[1]);
+        }));
+      };
+    };
+  });  
+};
+
 if ('document' in self) {
   volumizer.workers = []; // new Array(navigator.hardwareConcurrency || 1);
   for (var i = 0; i < volumizer.workers.length; i++) {
