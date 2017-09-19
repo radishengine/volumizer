@@ -6,7 +6,6 @@
     <script src='volumizer.js'></script>
     <style>
       #loadbar {
-        background: green;
         position: fixed;
         pointer-events: none;
         opacity: 0.75;
@@ -336,22 +335,24 @@
               }
               var attributes = bytes.subarray(2048*3, 2048*3 + 768);
               for (var i = 0; i < attributes.length; i++) {
-                var bgcol = attributes[i] & 7;
-                var fgcol = (attributes[i] >>> 3) & 7;
-                var bright = (attributes[i] & (1 << 6)) ? 0xFF : 0xD7;
+                var fgcol = attributes[i] & 7;
+                var bgcol = (attributes[i] >>> 3) & 7;
+                var bright = (attributes[i] & (1 << 6)) ? 0xFF : 0xBB;
                 var flash = !!(attributes[i] & (1 << 7));
-                bgcol = 'rgb(' + (bgcol&2?bright:0) + ',' + (bgcol&4?bright:0) + ',' + (bgcol&1?bright:0) + ')';
                 fgcol = 'rgb(' + (fgcol&2?bright:0) + ',' + (fgcol&4?bright:0) + ',' + (fgcol&1?bright:0) + ')';
+                bgcol = 'rgb(' + (bgcol&2?bright:0) + ',' + (bgcol&4?bright:0) + ',' + (bgcol&1?bright:0) + ')';
                 var y = Math.floor(i / 32) * 8;
                 var x = (i % 32) * 8;
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(x, y, 8, 8);
                 ctx.clip();
-                ctx.fillStyle = bgcol;
+                
+                ctx.fillStyle = fgcol;
                 ctx.globalCompositeOperation = 'destination-in';
                 ctx.fillRect(x, y, 8, 8);
-                ctx.fillStyle = fgcol;
+                
+                ctx.fillStyle = bgcol;
                 ctx.globalCompositeOperation = 'destination-over';
                 ctx.fillRect(x, y, 8, 8);
                 ctx.restore();
