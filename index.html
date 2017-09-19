@@ -878,13 +878,17 @@
         function onmousemove(e) {
           width += e.movementX;
           dragBar.previousElementSibling.style.width = width + 'px';
+          e.stopImmediatePropagation();
+          e.preventDefault();
         }
         function onmouseup(e) {
-          document.removeEventListener('mousemove', onmousemove);
-          document.removeEventListener('mouseup', onmouseup);
+          this.removeEventListener('mousemove', onmousemove);
+          this.removeEventListener('mouseup', onmouseup);
+          e.stopImmediatePropagation();
+          e.preventDefault();
         }
-        document.addEventListener('mousemove', onmousemove);
-        document.addEventListener('mouseup', onmouseup);
+        window.addEventListener('mousemove', onmousemove, true);
+        window.addEventListener('mouseup', onmouseup, true);
       };
       
     </script>
