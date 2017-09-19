@@ -885,11 +885,14 @@
         function onmouseup(e) {
           this.removeEventListener('mousemove', onmousemove, true);
           this.removeEventListener('mouseup', onmouseup, true);
+          /*
           this.removeEventListener('mouseleave', onmouseleave, true);
           this.removeEventListener('mouseleave', onmouseenter, true);
+          */
           e.stopImmediatePropagation();
           e.preventDefault();
         }
+        /*
         function onmouseleave(e) {
           if (!e.relatedTarget) {
             dragBar.previousElementSibling.style.width = originalWidth + 'px';
@@ -900,10 +903,13 @@
             if (!e.buttons) onmouseup(e);
           }
         }
+        */
         window.addEventListener('mousemove', onmousemove, true);
         window.addEventListener('mouseup', onmouseup, true);
+        /*
         window.addEventListener('mouseleave', onmouseleave, true);
         window.addEventListener('mouseleave', onmouseenter, true);
+        */
       };
       
     </script>
