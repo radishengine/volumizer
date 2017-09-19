@@ -340,12 +340,16 @@
                 fgcol = 'rgb(' + (fgcol&1?bright:0) + ',' + (fgcol&4?bright:0) + ',' + (fgcol&2?bright:0) + ')';
                 var y = Math.floor(i / 32) * 8;
                 var x = (i % 32) * 8;
+                ctx.save();
+                ctx.rect(x, y, 8, 8);
+                ctx.clip();
                 ctx.fillStyle = fgcol;
                 ctx.globalCompositeOperation = 'destination-in';
                 ctx.fillRect(x, y, 8, 8);
                 ctx.fillStyle = bgcol;
                 ctx.globalCompositeOperation = 'destination-over';
                 ctx.fillRect(x, y, 8, 8);
+                ctx.restore();
               }
             };
             fr.readAsArrayBuffer(blob);
