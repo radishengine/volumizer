@@ -315,19 +315,16 @@
               canvas.height = 192;
               viewer.appendChild(canvas);
               var ctx = canvas.getContext('2d');
-              for (var pb_i = 0; pb_i < 3; pb_i++) {
-                var pixelBlock = bytes.subarray(2048*pb_i, 2048*(pb_i+1));
-                for (var pb_y = 0; pb_y < 64; pb_y++) {
-                  for (var pb_x = 0; pb_x < 32; pb_x++) {
-                    var b = pixelBlock[pb_y*32 + pb_x];
-                    var mask = 1 << 7;
-                    for (var bi = 0; bi < 8; bi++) {
-                      if (b&mask) {
-                        ctx.fillRect(pb_x * 8 + bi, pb_i * 64 + pb_y, 1, 1);
-                      }
-                      mask >>>= 1;
-                    }
+              for (var i = 0; i < 2048*3; i++) {
+                var b = bytes[i];
+                var y = Math.floor(b / 32);
+                var x = (b % 32);
+                var mask = 1 << 7;
+                for (var bi = 0; bi < 8; bi++) {
+                  if (b&mask) {
+                    ctx.fillRect(x*8 + bi, y, 1, 1);
                   }
+                  mask >>>= 1;
                 }
               }
               var attributes = bytes.subarray(2048*3, 2048*3 + 768);
