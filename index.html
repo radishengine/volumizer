@@ -349,7 +349,7 @@
                 ctx.clip();
                 
                 ctx.fillStyle = fgcol;
-                ctx.globalCompositeOperation = 'destination-in';
+                ctx.globalCompositeOperation = 'source-in';
                 ctx.fillRect(x, y, 8, 8);
                 
                 ctx.fillStyle = bgcol;
