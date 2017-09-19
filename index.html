@@ -318,8 +318,8 @@
               for (var i = 0; i < 2048*3; i++) {
                 var b = bytes[i];
                 if (b === 0) continue;
-                var y = Math.floor(i / 32);
-                var x = (i % 32);
+                var x = i % 32;
+                var y = Math.floor(i/2048)*64 + Math.floor((i%2048) / (32*8)) + 32*8*(i % 32);
                 if (b === 0xff) {
                   ctx.fillRect(x*8, y, 8, 1);
                   continue;
