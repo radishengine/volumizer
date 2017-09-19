@@ -877,7 +877,7 @@
         var rect = dragBar.previousElementSibling.getBoundingClientRect();
         var width = rect.right - rect.left;
         function onmousemove(e) {
-          width = e.screenX;
+          width += e.movementX;
           dragBar.previousElementSibling.style.width = width + 'px';
           e.stopImmediatePropagation();
           e.preventDefault();
