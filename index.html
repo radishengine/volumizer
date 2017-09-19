@@ -340,8 +340,8 @@
                 var fgcol = (attributes[i] >>> 3) & 7;
                 var bright = (attributes[i] & (1 << 6)) ? 0xFF : 0xD7;
                 var flash = !!(attributes[i] & (1 << 7));
-                bgcol = 'rgb(' + (bgcol&1?bright:0) + ',' + (bgcol&4?bright:0) + ',' + (bgcol&2?bright:0) + ')';
-                fgcol = 'rgb(' + (fgcol&1?bright:0) + ',' + (fgcol&4?bright:0) + ',' + (fgcol&2?bright:0) + ')';
+                bgcol = 'rgb(' + (bgcol&2?bright:0) + ',' + (bgcol&4?bright:0) + ',' + (bgcol&1?bright:0) + ')';
+                fgcol = 'rgb(' + (fgcol&2?bright:0) + ',' + (fgcol&4?bright:0) + ',' + (fgcol&1?bright:0) + ')';
                 var y = Math.floor(i / 32) * 8;
                 var x = (i % 32) * 8;
                 ctx.save();
