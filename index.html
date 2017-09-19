@@ -317,8 +317,13 @@
               var ctx = canvas.getContext('2d');
               for (var i = 0; i < 2048*3; i++) {
                 var b = bytes[i];
-                var y = Math.floor(b / 32);
-                var x = (b % 32);
+                if (b === 0) continue;
+                var y = Math.floor(i / 32);
+                var x = (i % 32);
+                if (b === 0xff) {
+                  ctx.fillRect(x*8, y, 8, 1);
+                  continue;
+                }
                 var mask = 1 << 7;
                 for (var bi = 0; bi < 8; bi++) {
                   if (b&mask) {
