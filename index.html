@@ -876,18 +876,18 @@
             for (var i = 0; i < items.length; i++) {
               present[items[i].id] = true;
             }
-            var focused = document.activeElement;
+            var focused = itemTree.focusItem;
             for (var i = 0; i < e.detail.sections.length; i++) {
               if (e.detail.sections[i] in present) continue;
               var itemEl = document.getElementById('item-' + e.detail.sections[i]);
               if (itemEl) {
-                if (itemEl === focused) {
-                  itemTree.focusItem = null;
-                }
                 if (itemEl.parentNode.childElementCount === 1) {
                   itemEl.parentNode.parentNode.classList.add('empty');
                 }
                 itemEl.parentNode.removeChild(itemEl);
+                if (itemEl === focused) {
+                  itemTree.dispatchEvent(new Event('item-focus'));
+                }
               }
             }
           }
