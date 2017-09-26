@@ -636,14 +636,22 @@
           return this.querySelector('.focus');
         },
         set: function(item) {
-          var rect = item.selfElement.getBoundingClientRect();
-          if (rect.top < 0) {
-            item.selfElement.scrollIntoView(true);
+          if (item === null) {
+            var focused = document.activeElement;
+            if (focused && focused.classList.contains('item') && this.contains(focused)) {
+              focused.blur();
+            }
           }
-          else if (rect.bottom > this.clientHeight) {
-            item.selfElement.scrollIntoView(false);
+          else {
+            var rect = item.selfElement.getBoundingClientRect();
+            if (rect.top < 0) {
+              item.selfElement.scrollIntoView(true);
+            }
+            else if (rect.bottom > this.clientHeight) {
+              item.selfElement.scrollIntoView(false);
+            }
+            item.focus();
           }
-          item.focus();
           var tempFocus = this.querySelector('.focus');
           if (tempFocus) tempFocus.classList.remove('focus');
         },
