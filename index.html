@@ -876,12 +876,13 @@
             for (var i = 0; i < items.length; i++) {
               present[items[i].id] = true;
             }
+            var focused = document.activeElement;
             for (var i = 0; i < e.detail.sections.length; i++) {
               if (e.detail.sections[i] in present) continue;
               var itemEl = document.getElementById('item-' + e.detail.sections[i]);
               if (itemEl) {
-                if (itemEl === volumizer.focusItem) {
-                  volumizer.focusItem = null;
+                if (itemEl === focused) {
+                  itemTree.focusItem = null;
                 }
                 if (itemEl.parentNode.childElementCount === 1) {
                   itemEl.parentNode.parentNode.classList.add('empty');
