@@ -7,6 +7,8 @@ volumizer.getDB = function getDB() {
     opening.onupgradeneeded = function() {
       var db = this.result;
       var transaction = this.transaction;
+      
+      var workers = db.createObjectStore('workers', {keyPath:'name'});
 
       var dataSources = db.createObjectStore('dataSources', {keyPath:'id', autoIncrement:true});
       dataSources.createIndex('byURL', 'url', {unique:true});
@@ -462,25 +464,33 @@ volumizer.getItemBlob = function getItemBlob(id) {
 };
 
 if ('document' in self) {
-  volumizer.workers = []; // new Array(navigator.hardwareConcurrency || 1);
-  for (var i = 0; i < volumizer.workers.length; i++) {
-    var worker = volumizer.workers[i] = new Worker('volumizer.worker.js');
-    worker.id = 'worker_' + i;
-    worker.addEventListener('message', function(e) {
-      self.dispatchEvent(new CustomEvent('volumizer-section-update', {
-        detail: {sections: e.data.split(',').map(parseInt), worker:this.id},
-      }));
+  volumizer.localWorkers = [];
+  volumizer.spawnWorker = function() {
+    return this.getDB().then(function(db) {
+      var name = new Date().toISOString();
+      return db.withTransaction(['workers'], 'readwrite', function(t) {
+        t.objectStore('workers').put({name:name});
+        var worker = new Worker('volumizer.worker.js');
+        worker.addEventListener('message', function(e) {
+          self.dispatchEvent(new CustomEvent('volumizer-section-update', {
+            detail: {sections: e.data.split(',').map(parseInt), worker:this.id},
+          }));
+        });
+        worker.id = name;
+        volumizer.localWorkers.push(worker);
+        return worker;
+      });
     });
-  }
+  };
   self.addEventListener('volumizer-section-update', function onupdate(e) {
     var sectionString = e.detail.sections.join(',');
     if (!e.detail.external) {
       self.localStorage.setItem('volumizer-section-update', sectionString);
       self.localStorage.removeItem('volumizer-section-update');
     }
-    for (var i = 0; i < volumizer.workers.length; i++) {
-      if (e.detail.worker !== volumizer.workers[i].id) {
-        volumizer.workers[i].postMessage(sectionString);
+    for (var i = 0; i < volumizer.localWorkers.length; i++) {
+      if (e.detail.worker !== volumizer.localWorkers[i].id) {
+        volumizer.localWorkers[i].postMessage(sectionString);
       }
     }
   });
