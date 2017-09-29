@@ -470,11 +470,15 @@ if ('document' in self) {
       var name = new Date().toISOString();
       return db.withTransaction(['workers'], 'readwrite', function(t) {
         t.objectStore('workers').put({name:name});
-        var worker = new Worker('volumizer.worker.js');
+        var worker = new Worker('volumizer.worker.js', {name:name});
         worker.addEventListener('message', function(e) {
           self.dispatchEvent(new CustomEvent('volumizer-section-update', {
             detail: {sections: e.data.split(',').map(parseInt), worker:this.id},
           }));
+        });
+        worker.postMessage({
+          headline: 'init',
+          name: name,
         });
         worker.id = name;
         volumizer.localWorkers.push(worker);
