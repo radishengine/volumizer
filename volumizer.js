@@ -200,6 +200,31 @@ volumizer.createOperation = function createOperation(def) {
   return this.addToStore('operations', def);
 };
 
+volumizer.createDownloadOperation = function download(url, parentItem) {
+  return this.withTransaction(['dataSources', 'operations'], 'readwrite', function(t) {
+    return new Promise(function(resolve, reject) {
+      t.objectStore('dataSources').add({url:url})
+      .onsuccess = function onsuccess(e) {
+        var id = this.result;
+        t.objectStore('operations').add({
+          operation: 'download',
+          outputSource: id,
+          outputRootItem: parentItem || -1,
+          worker: -1,
+        })
+        .onsuccess = function(e) {
+          t.objectStore('dataSources').put({
+            id: id,
+            url: url,
+            getOperation: this.result,
+          });
+          resolve(id);
+        };
+      };
+    });
+  });
+};
+
 volumizer.loadFromDataTransfer = function(dataTransfer) {
   var gotEntries;
   if (dataTransfer.items && dataTransfer.items[0] && 'webkitGetAsEntry' in dataTransfer.items[0]) {
