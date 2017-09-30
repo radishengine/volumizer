@@ -8,18 +8,25 @@ volumizer.getDB = function getDB() {
       var db = this.result;
       var transaction = this.transaction;
       
-      var workers = db.createObjectStore('workers', {keyPath:'name'});
+      var workers = db.createObjectStore('workers', {keyPath:'id', autoIncrement:true});
       
       var operations = db.createObjectStore('operations', {keyPath:'id', autoIncrement:true});
+      operations.createIndex('byType', 'operation');
       operations.createIndex('byWorker', 'worker');
+      operations.createIndex('byInputSource', 'inputSource', {multiEntry:true});
+      operations.createIndex('byInputItem', 'inputItem', {multiEntry:true});
+      operations.createIndex('byOutputSource', 'outputSource');
+      operations.createIndex('byOutputRootItem', 'outputRootItem');
 
       var dataSources = db.createObjectStore('dataSources', {keyPath:'id', autoIncrement:true});
       dataSources.createIndex('byURL', 'url', {unique:true});
+      dataSources.createIndex('fromOperation', 'fromOperation');
 
       var items = db.createObjectStore('items', {keyPath:'id', autoIncrement:true});
       items.createIndex('bySource', 'source', {unique:false});
       items.createIndex('byParent', 'parent', {unique:false});
       items.createIndex('byClass', 'classList', {multiEntry:true});
+      items.createIndex('fromOperation', 'fromOperation');
     };
     opening.onblocked = function() {
       delete volumizer.gotDB;
@@ -172,6 +179,25 @@ volumizer.withTransaction = function openTransaction(storeNames, mode, fn) {
       t.result = fn(t);
     });
   });
+};
+
+volumizer.addToStore = function addToStore(storeName, def) {
+  return this.withTransaction([storeName], 'readwrite', function(t) {
+    return new Promise(function(resolve, reject) {
+      t.objectStore(storeName).add(def)
+      .onsuccess = function onsuccess(e) {
+        resolve(this.result);
+      };
+    });
+  });
+};
+
+volumizer.createSource = function createSource(def) {
+  return this.addToStore('dataSources', def);
+};
+
+volumizer.createOperation = function createOperation(def) {
+  return this.addToStore('operations', def);
 };
 
 volumizer.loadFromDataTransfer = function(dataTransfer) {
