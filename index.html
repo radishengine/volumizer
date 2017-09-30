@@ -206,7 +206,7 @@
         <div class='item-actions'>
           <div class='appender'>
             <span class='symbol'></span>
-            <input type='text' placeholder='Enter URL...' spellcheck='false'>
+            <input type='text' placeholder='Enter URL...' spellcheck='false' id='textEntry'>
           </div>
         </div>
         <div class='item-tree' data-selection-mode='range' tabindex='-1'>
@@ -978,6 +978,15 @@
       };
       
       volumizer.spawnWorker();
+      
+      document.getElementById('textEntry').onkeyup = function onkeyup(e) {
+        if (e.which === 13) {
+          var url = this.value;
+          this.value = '';
+          this.blur();
+          volumizer.createDownloadOperation(url, -1);
+        }
+      };
       
     </script>
   </body>
