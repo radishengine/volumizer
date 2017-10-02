@@ -58,11 +58,11 @@ volumizer.getWorkerContext = function getWorkerContext() {
   });
 };
 
-volumizer.checkTaskTimeout = null;
-volumizer.checkTasks = function checkTasks() {
-  if (volumizer.checkTaskTimeout !== null) {
-    clearTimeout(volumizer.checkTaskTimeout);
-    volumizer.checkTaskTimeout = null;
+volumizer.claimTaskTimeout = null;
+volumizer.tryClaimTask = function tryClaimTask() {
+  if (volumizer.claimTaskTimeout !== null) {
+    clearTimeout(volumizer.claimTaskTimeout);
+    volumizer.claimTaskTimeout = null;
   }
   function doTransaction(t, worker_id) {
     return new Promise(function(resolve, reject) {
@@ -99,10 +99,10 @@ volumizer.checkTasks = function checkTasks() {
       return doTransaction(t, worker_id);
     })
     .then(function(task) {
-      if (volumizer.checkTaskTimeout !== null) {
-        clearTimeout(volumizer.checkTaskTimeout);
+      if (volumizer.claimTaskTimeout !== null) {
+        clearTimeout(volumizer.claimTaskTimeout);
       }
-      volumizer.checkTaskTimeout = self.setTimeout(volumizer.checkTasks, 200);
+      volumizer.claimTaskTimeout = self.setTimeout(volumizer.tryClaimTask, 200);
     });
   });
 };
