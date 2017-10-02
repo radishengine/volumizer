@@ -68,7 +68,7 @@ volumizer.tryClaimTask = function tryClaimTask() {
     return new Promise(function(resolve, reject) {
       t.objectStore('tasks').index('byWorker').openCursor(-1)
       .onsuccess = function(e) {
-        var cursor = e.result;
+        var cursor = this.result;
         if (!cursor) {
           resolve(null);
           return;
