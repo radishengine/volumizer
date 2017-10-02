@@ -64,7 +64,7 @@ volumizer.checkTasks = function checkTasks() {
     clearTimeout(volumizer.checkTaskTimeout);
     volumizer.checkTaskTimeout = null;
   }
-  function withTransaction(t, worker_id) {
+  function doTransaction(t, worker_id) {
     return new Promise(function(resolve, reject) {
       t.objectStore('tasks').index('byWorker').openCursor(-1)
       .onsuccess = function(e) {
@@ -76,7 +76,7 @@ volumizer.checkTasks = function checkTasks() {
         if (t.mode === 'readonly') {
           // upgrade to a writeable transaction
           resolve(volumizer.withTransaction(['tasks'], 'readwrite', function(t) {
-            return withTransaction(t, worker_id);
+            return doTransaction(t, worker_id);
           }));
           return;
         }
@@ -95,8 +95,8 @@ volumizer.checkTasks = function checkTasks() {
     });
   }
   return this.getWorkerContext().then(function(worker_id) {
-    return withTransaction(['tasks'], 'readonly', function(v) {
-      return withTransaction(v, worker_id);
+    return withTransaction(['tasks'], 'readonly', function(t) {
+      return doTransaction(t, worker_id);
     })
     .then(function(task) {
       if (volumizer.checkTaskTimeout !== null) {
