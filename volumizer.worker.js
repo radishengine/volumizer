@@ -3,8 +3,13 @@ importScripts('volumizer.js');
 
 self.addEventListener('volumizer-task-unclaimed', function(e) {
   var task = e.detail;
-  console.log('claiming task ' + task.id);
-  e.preventDefault();
+  switch (task.operation) {
+    case 'prime-source':
+      console.log('claiming task ' + task.id + ' (' + task.operation + ')');
+      console.log(task);
+      e.preventDefault();
+      break;
+  }
 });
 
 self.onmessage = function onmessage(e) {
