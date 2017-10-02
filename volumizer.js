@@ -94,8 +94,8 @@ volumizer.tryClaimTask = function tryClaimTask() {
       };
     });
   }
-  return this.getWorkerContext().then(function(worker_id) {
-    return withTransaction(['tasks'], 'readonly', function(t) {
+  return volumizer.getWorkerContext().then(function(worker_id) {
+    return volumizer.withTransaction(['tasks'], 'readonly', function(t) {
       return doTransaction(t, worker_id);
     })
     .then(function(task) {
@@ -104,6 +104,13 @@ volumizer.tryClaimTask = function tryClaimTask() {
       }
       volumizer.claimTaskTimeout = self.setTimeout(volumizer.tryClaimTask, 200);
     });
+  })
+  .then(null, function(reason) {
+    if (volumizer.claimTaskTimeout !== null) {
+      clearTimeout(volumizer.claimTaskTimeout);
+    }
+    volumizer.claimTaskTimeout = self.setTimeout(volumizer.tryClaimTask, 200);
+    return Promise.reject(reason);
   });
 };
 
