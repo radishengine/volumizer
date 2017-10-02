@@ -81,10 +81,10 @@ volumizer.tryClaimTask = function tryClaimTask() {
           return;
         }
         var task = cursor.value;
+        task.worker = worker_id;
         var e = new CustomEvent('volumizer-task-unclaimed', {detail:task, cancelable:true});
         if (!self.dispatchEvent(e)) {
           // preventDefault() was called, so this worker claims the task
-          task.worker = worker_id;
           cursor.update(task);
           resolve(task);
         }
