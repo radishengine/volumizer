@@ -10,23 +10,23 @@ volumizer.getDB = function getDB() {
       
       var workers = db.createObjectStore('workers', {keyPath:'id', autoIncrement:true});
       
-      var operations = db.createObjectStore('operations', {keyPath:'id', autoIncrement:true});
-      operations.createIndex('byType', 'operation');
-      operations.createIndex('byWorker', 'worker');
-      operations.createIndex('byInputSource', 'inputSource', {multiEntry:true});
-      operations.createIndex('byInputItem', 'inputItem', {multiEntry:true});
-      operations.createIndex('byOutputSource', 'outputSource');
-      operations.createIndex('byOutputRootItem', 'outputRootItem');
+      var tasks = db.createObjectStore('tasks', {keyPath:'id', autoIncrement:true});
+      tasks.createIndex('byOperation', 'operation');
+      tasks.createIndex('byWorker', 'worker');
+      tasks.createIndex('byInputSource', 'inputSource', {multiEntry:true});
+      tasks.createIndex('byInputItem', 'inputItem', {multiEntry:true});
+      tasks.createIndex('byOutputSource', 'outputSource');
+      tasks.createIndex('byOutputRootItem', 'outputRootItem');
 
       var dataSources = db.createObjectStore('dataSources', {keyPath:'id', autoIncrement:true});
       dataSources.createIndex('byURL', 'url', {unique:true});
-      dataSources.createIndex('fromOperation', 'fromOperation');
+      dataSources.createIndex('byOriginTask', 'originTask');
 
       var items = db.createObjectStore('items', {keyPath:'id', autoIncrement:true});
       items.createIndex('bySource', 'source', {unique:false});
       items.createIndex('byParent', 'parent', {unique:false});
       items.createIndex('byClass', 'classList', {multiEntry:true});
-      items.createIndex('fromOperation', 'fromOperation');
+      items.createIndex('byOriginTask', 'originTask');
     };
     opening.onblocked = function() {
       delete volumizer.gotDB;
@@ -43,6 +43,67 @@ volumizer.getDB = function getDB() {
       };
       resolve(db);
     };
+  });
+};
+
+volumizer.getWorkerContext = function getWorkerContext() {
+  return this.getDB().then(function(db) {
+    return db.gotWorkerId = db.gotWorkerId || new Promise(function(resolve, reject) {
+      var t = db.transaction(['workers'], 'readwrite');
+      t.objectStore('workers').add({createdAt:new Date})
+      .onsuccess = function(e) {
+        resolve(this.result);
+      };
+    });
+  });
+};
+
+volumizer.checkTaskTimeout = null;
+volumizer.checkTasks = function checkTasks() {
+  if (volumizer.checkTaskTimeout !== null) {
+    clearTimeout(volumizer.checkTaskTimeout);
+    volumizer.checkTaskTimeout = null;
+  }
+  function withTransaction(t, worker_id) {
+    return new Promise(function(resolve, reject) {
+      t.objectStore('tasks').index('byWorker').openCursor(-1)
+      .onsuccess = function(e) {
+        var cursor = e.result;
+        if (!cursor) {
+          resolve(null);
+          return;
+        }
+        if (t.mode === 'readonly') {
+          // upgrade to a writeable transaction
+          resolve(volumizer.withTransaction(['tasks'], 'readwrite', function(t) {
+            return withTransaction(t, worker_id);
+          }));
+          return;
+        }
+        var task = cursor.value;
+        var e = new CustomEvent('volumizer-task-unclaimed', {detail:task, cancelable:true});
+        if (self.dispatchEvent(e)) {
+          // preventDefault() was called, so this worker claims the task
+          task.worker = worker_id;
+          cursor.update(task);
+          resolve(task);
+        }
+        else {
+          cursor.continue();
+        }
+      };
+    });
+  }
+  return this.getWorkerContext().then(function(worker_id) {
+    return withTransaction(['tasks'], 'readonly', function(v) {
+      return withTransaction(v, worker_id);
+    })
+    .then(function(task) {
+      if (volumizer.checkTaskTimeout !== null) {
+        clearTimeout(volumizer.checkTaskTimeout);
+      }
+      volumizer.checkTaskTimeout = self.setTimeout(volumizer.checkTasks, 200);
+    });
   });
 };
 
@@ -192,33 +253,30 @@ volumizer.addToStore = function addToStore(storeName, def) {
   });
 };
 
-volumizer.createSource = function createSource(def) {
-  return this.addToStore('dataSources', def);
+volumizer.createTask = function createTask(def) {
+  return this.addToStore('tasks', def);
 };
 
-volumizer.createOperation = function createOperation(def) {
-  return this.addToStore('operations', def);
-};
-
-volumizer.createDownloadOperation = function download(url, parentItem) {
-  return this.withTransaction(['dataSources', 'operations'], 'readwrite', function(t) {
+volumizer.createSource = function createSource(def, parentItem) {
+  return this.withTransaction(['dataSources', 'items', 'tasks'], 'readwrite', function(t) {
     return new Promise(function(resolve, reject) {
-      t.objectStore('dataSources').add({url:url})
-      .onsuccess = function onsuccess(e) {
-        var id = this.result;
-        t.objectStore('operations').add({
-          operation: 'download',
-          outputSource: id,
-          outputRootItem: parentItem || -1,
+      t.objectStore('dataSources').add(def)
+      .onsuccess = function(e) {
+        def.id = this.result;
+        if ('blob' in def && def.blob instanceof Blob) {
+          resolve(def.id);
+          return;
+        }
+        t.objectStore('tasks').add({
+          operation: 'prime-source',
+          source: def.id,
+          item: parentItem || -1,
           worker: -1,
         })
         .onsuccess = function(e) {
-          t.objectStore('dataSources').put({
-            id: id,
-            url: url,
-            getOperation: this.result,
-          });
-          resolve(id);
+          def.originTask = this.result;
+          t.objectStore('dataSources').put(def);
+          resolve(def.id);
         };
       };
     });
