@@ -984,7 +984,7 @@
           var url = this.value;
           this.value = '';
           this.blur();
-          volumizer.createSource({url:url}, -1);
+          volumizer.getSource(url);
         }
       };
       
