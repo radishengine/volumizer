@@ -65,13 +65,33 @@ volumizer.update = function(storeName, key, values) {
 };
 
 volumizer.getSource = function getSource(id) {
-  return this.withTransaction(['sources'], 'readonly', function(t) {
+  function doTransaction(t) {
     return new Promise(function(resolve, reject) {
-      t.objectStore('sources').get(id).onsuccess = function(e) {
-        resolve(this.result);
-      };
+      if (typeof id === 'string') {
+        t.objectStore('sources').index('byURL').get(id).onsuccess = function(e) {
+          if (this.result) {
+            resolve(this.result);
+          }
+          else if (t.mode === 'readwrite') {
+            var created = {url:id};
+            t.objectStore('sources').add(created).onsuccess = function(e) {
+              created.id = this.result;
+              resolve(created);
+            };
+          }
+          else {
+            volumizer.withTransaction(['sources'], 'readwrite', doTransaction);
+          }
+        };
+      }
+      else {
+        t.objectStore('sources').get(id).onsuccess = function(e) {
+          resolve(this.result);
+        };
+      }
     });
-  });
+  }
+  return this.withTransaction(['sources'], 'readonly', doTransaction);
 };
 
 volumizer.getWorkerContext = function getWorkerContext() {
