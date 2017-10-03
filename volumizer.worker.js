@@ -3,7 +3,9 @@ importScripts('volumizer.js');
 
 var handlers = {
   'prime-source': function(task) {
-    console.log(task.url);
+    return volumizer.getSource(task.source).then(function(source) {
+      console.log(source.url);
+    });
   },
 };
 
