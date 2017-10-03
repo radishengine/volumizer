@@ -15,10 +15,11 @@ self.addEventListener('volumizer-task-unclaimed', function(e) {
   var handler = handlers[task.operation];
   Promise.resolve(task).then(handler).then(
     function() {
-      volumizer.update('tasks', task.id, {completedAt:new Date});
+      return volumizer.update('tasks', task.id, {completedAt:new Date});
     },
     function(reason) {
-      volumizer.update('tasks', task.id, {worker:-2, failedAt:new Date, error:reason+''});
+      return volumizer.update('tasks', task.id, {worker:-2, failedAt:new Date, error:reason+''})
+      .then(Promise.reject(reason));
     });
 });
 
