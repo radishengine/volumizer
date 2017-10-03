@@ -46,6 +46,16 @@ volumizer.getDB = function getDB() {
   });
 };
 
+volumizer.getSource = function getSource(id) {
+  return this.withTransaction(['sources'], 'readonly', function(t) {
+    return new Promise(function(resolve, reject) {
+      t.objectStore('sources').get(id).onsuccess = function(e) {
+        resolve(this.result);
+      };
+    });
+  });
+};
+
 volumizer.getWorkerContext = function getWorkerContext() {
   return this.getDB().then(function(db) {
     return db.gotWorkerId = db.gotWorkerId || new Promise(function(resolve, reject) {
