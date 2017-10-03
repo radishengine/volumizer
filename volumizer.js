@@ -18,9 +18,9 @@ volumizer.getDB = function getDB() {
       tasks.createIndex('byOutputSource', 'outputSource');
       tasks.createIndex('byOutputRootItem', 'outputRootItem');
 
-      var dataSources = db.createObjectStore('dataSources', {keyPath:'id', autoIncrement:true});
-      dataSources.createIndex('byURL', 'url', {unique:true});
-      dataSources.createIndex('byOriginTask', 'originTask');
+      var sources = db.createObjectStore('sources', {keyPath:'id', autoIncrement:true});
+      sources.createIndex('byURL', 'url', {unique:true});
+      sources.createIndex('byOriginTask', 'originTask');
 
       var items = db.createObjectStore('items', {keyPath:'id', autoIncrement:true});
       items.createIndex('bySource', 'source', {unique:false});
@@ -313,9 +313,9 @@ volumizer.createTask = function createTask(def) {
 };
 
 volumizer.createSource = function createSource(def, parentItem) {
-  return this.withTransaction(['dataSources', 'items', 'tasks'], 'readwrite', function(t) {
+  return this.withTransaction(['sources', 'items', 'tasks'], 'readwrite', function(t) {
     return new Promise(function(resolve, reject) {
-      t.objectStore('dataSources').add(def)
+      t.objectStore('sources').add(def)
       .onsuccess = function(e) {
         def.id = this.result;
         if ('blob' in def && def.blob instanceof Blob) {
@@ -330,7 +330,7 @@ volumizer.createSource = function createSource(def, parentItem) {
         })
         .onsuccess = function(e) {
           def.originTask = this.result;
-          t.objectStore('dataSources').put(def);
+          t.objectStore('sources').put(def);
           resolve(def.id);
         };
       };
@@ -401,8 +401,8 @@ volumizer.loadFromDataTransfer = function(dataTransfer) {
     function doEntries(entries, parentKey) {
       function doEntry(entry, parentKey) {
         if (entry instanceof Blob) {
-          return volumizer.withTransaction(['dataSources', 'items'], 'readwrite', function(t) {
-            t.objectStore('dataSources').add({blob:entry})
+          return volumizer.withTransaction(['sources', 'items'], 'readwrite', function(t) {
+            t.objectStore('sources').add({blob:entry})
             .onsuccess = function() {
               t.objectStore('items').add({
                 name: entry.name,
@@ -510,11 +510,11 @@ volumizer.getItemsIn = function getItems(parentKey) {
 };
 
 volumizer.deleteItems = function deleteItems(ids) {
-  return volumizer.withTransaction(['items', 'dataSources'], 'readwrite', function(t) {
+  return volumizer.withTransaction(['items', 'sources'], 'readwrite', function(t) {
     ids = ids.slice().sort(volumizer.keyCmp);
     var range = IDBKeyRange.bound(ids[0], ids[ids.length-1]);
     var itemStore = t.objectStore('items');
-    var sourceStore = t.objectStore('dataSources');
+    var sourceStore = t.objectStore('sources');
     var sourceList = [];
     var byParent = itemStore.index('byParent');
     var count = 1;
@@ -598,7 +598,7 @@ volumizer.deleteItems = function deleteItems(ids) {
 };
 
 volumizer.getItemBlob = function getItemBlob(id) {
-  return volumizer.withTransaction(['items', 'dataSources'], 'readonly', function(t) {
+  return volumizer.withTransaction(['items', 'sources'], 'readonly', function(t) {
     return new Promise(function(resolve, reject) {
       t.objectStore('items').get(id).onsuccess = function(e) {
         if (!(this.result && 'source' in this.result)) {
@@ -606,7 +606,7 @@ volumizer.getItemBlob = function getItemBlob(id) {
           return;
         }
         var source = this.result.source, sectors = this.result.sectors;
-        var from = t.objectStore('dataSources');
+        var from = t.objectStore('sources');
         if (typeof source === 'string') {
           from = from.index('byURL');
         }
