@@ -46,6 +46,24 @@ volumizer.getDB = function getDB() {
   });
 };
 
+volumizer.update = function(storeName, key, values) {
+  return this.withTransaction([storeName], 'readwrite', function(t) {
+    return new Promise(function(resolve, reject) {
+      t.objectStore(storeName).openCursor(key).onsuccess = function(e) {
+        var cursor = this.result;
+        if (cursor) {
+          var updated = Object.assign(cursor.value, values);
+          cursor.update(updated);
+          resolve(updated);
+        }
+        else {
+          reject(storeName + '[' + key + '] not found');
+        }
+      };
+    });
+  });
+};
+
 volumizer.getSource = function getSource(id) {
   return this.withTransaction(['sources'], 'readonly', function(t) {
     return new Promise(function(resolve, reject) {
