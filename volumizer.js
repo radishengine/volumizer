@@ -75,12 +75,21 @@ volumizer.getSource = function getSource(id) {
           else if (t.mode === 'readwrite') {
             var created = {url:id};
             t.objectStore('sources').add(created).onsuccess = function(e) {
-              created.id = this.result;
+              var source_id = created.id = this.result;
+              var name = id.replace(/^https?:\/\//, '');
+              name = name.replace(/^cors\.archive\.org\/cors\//, 'archive.org/download/');
+              name = name.replace(/^ia\d+\.[a-z]+\.archive\.org\/\d+\/items\//, 'archive.org/download/');
+              t.objectStore('items').add({
+                name: name,
+                parent: -1,
+                source: source_id,
+                classList: ['web'],
+              });
               resolve(created);
             };
           }
           else {
-            volumizer.withTransaction(['sources'], 'readwrite', doTransaction);
+            volumizer.withTransaction(['sources', 'items'], 'readwrite', doTransaction);
           }
         };
       }
